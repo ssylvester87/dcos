@@ -1,0 +1,24 @@
+#!/bin/bash
+
+. /opt/mesosphere/active/mesos-buildenv/activate
+
+mkdir -p build
+pushd build
+
+# configure module build with cmake
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$PKG_PATH" \
+  -Dmesos_INCLUDE_DIR=/opt/mesosphere/include \
+  -Ddefault_LIB_DIR=/opt/mesosphere/lib \
+  -DUSE_LOCAL_PROTOBUF=False \
+  -DUSE_LOCAL_GLOG=False \
+  /pkg/src/mesos-metrics-module/slave/
+
+# build/unittest module
+make -j8
+make test
+# install lib to $PKG_PATH/...
+make install
+
+popd

@@ -1,0 +1,12 @@
+{
+  "docker": "dcos-builder",
+  "requires": ["openssl", "ncurses", "erlang"],
+  "sources": {
+    "networking_api": {
+      "kind": "git",
+      "git": "git@github.com:mesosphere/networking-api-service.git",
+      "ref": "5c9db6c9d79985e7d6fee6959f7588a67e3a4d1f",
+      "ref_origin": "master"
+    }
+  }
+}

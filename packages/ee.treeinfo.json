@@ -1,0 +1,15 @@
+{
+  "upstream": {
+    "root": "https://downloads.dcos.io/dcos",
+    "variant": null
+  },
+  "variants": {
+    "adminrouter": "ee",
+    "dcos-ui": "ee",
+    "marathon": "ee",
+    "dcos-signal": "ee"
+  },
+  "exclude": [
+    "dcos-oauth"
+  ]
+}

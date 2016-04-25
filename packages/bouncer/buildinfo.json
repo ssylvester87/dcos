@@ -1,0 +1,47 @@
+{
+  "requires": ["python", "python-kazoo", "python-passlib", "python-retrying", "six"],
+  "docker": "dcos-builder",
+  "sources": {
+    "bouncer": {
+      "kind": "git",
+      "git": "git@github.com:mesosphere/bouncer.git",
+      "ref": "449a7c88567371d23de54b2ff6ab7c07bc1c4f63",
+      "ref_origin": "dcos/1.7"
+    },
+    "gunicorn": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/source/g/gunicorn/gunicorn-19.4.1.tar.gz",
+      "sha1": "e81f363cdddb09a1a269d9f984815ea2962b05c1"
+    },
+    "jsonschema": {
+      "kind": "url",
+      "url": "https://pypi.python.org/packages/py2.py3/j/jsonschema/jsonschema-2.5.1-py2.py3-none-any.whl",
+      "sha1": "b11eea04c758597e2dbdef0e49823f53ce62445a"
+    },
+    "pyjwt": {
+      "kind": "url",
+      "url": "https://pypi.python.org/packages/2.7/P/PyJWT/PyJWT-1.4.0-py2.py3-none-any.whl",
+      "sha1": "5e9ad9706fe8157cf0d183ddd21b7f0c5ea481fe"
+    },
+    "falcon": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/source/f/falcon/falcon-0.3.0.tar.gz",
+      "sha1": "62171220709b9da7a4ec87d56ae80c3219e5b4ba"
+    },
+    "python-mimeparse": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/source/p/python-mimeparse/python-mimeparse-0.1.4.tar.gz",
+      "sha1": "bebc26249214c66f8c65e904e8eede8453eb4840"
+    },
+    "ldap3": {
+      "kind": "url",
+      "url": "https://pypi.python.org/packages/py2.py3/l/ldap3/ldap3-1.0.3-py2.py3-none-any.whl",
+      "sha1": "60e2e9827da717152e3f5196d98f687a4529548e"
+    },
+    "pyasn1": {
+      "kind": "url",
+      "url": "https://pypi.python.org/packages/3.5/p/pyasn1/pyasn1-0.1.9-py2.py3-none-any.whl",
+      "sha1": "d838c67c619e8d2f955149424dfc8940dea0a9cb"
+    }
+  }
+}

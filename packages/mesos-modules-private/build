@@ -1,0 +1,20 @@
+#!/bin/bash
+set -o nounset -o pipefail
+
+. /opt/mesosphere/active/mesos-buildenv/activate
+
+pushd /pkg/src/mesos-modules-private
+./bootstrap
+popd
+
+export LD_LIBRARY_PATH=/opt/mesosphere/lib
+
+mkdir -p build
+pushd build
+/pkg/src/mesos-modules-private/configure \
+ --with-mesos=/opt/mesosphere/active/mesos \
+ --prefix="$PKG_PATH"
+
+make -j8
+make install
+popd
