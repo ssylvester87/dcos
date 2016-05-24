@@ -1,7 +1,7 @@
 {
   "kind": "git",
   "git": "https://github.com/dcos/dcos",
-  "ref": "ad7c8287c3d76cf08d16ad161bf9130b14c07ea9",
-  "ref_origin": "fix-cached-bootstrap-download"
+  "ref": "c06710670aea905355f1f4dceacf46cb28f0051b",
+  "ref_origin": "master"
 }
 
