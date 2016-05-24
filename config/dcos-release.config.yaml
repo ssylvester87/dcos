@@ -1,0 +1,31 @@
+storage:
+  aws:
+    kind: aws_s3
+    bucket: downloads.mesosphere.io
+    object_prefix: dcos-enterprise
+    download_url: https://downloads.mesosphere.com/dcos-enterprise/
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    region_name: us-east-1
+  azure:
+    kind: azure_block_blob
+    account_name: $AZURE_STORAGE_ACCOUNT
+    account_key: $AZURE_STORAGE_ACCESS_KEY
+    container: dcos-enterprise
+    download_url: https://az837203.vo.msecnd.net/dcos-enterprise/
+testing:
+  aws:
+    bucket: dcos-image-unit-tests
+    object_prefix: test_storage_provider
+    download_url: https://s3.amazonaws.com/dcos-image-unit-tests/test_storage_provider/
+    access_key_id: $AWS_DEV_ACCESS_KEY_ID
+    secret_access_key: $AWS_DEV_SECRET_ACCESS_KEY
+    region_name: us-east-1
+  azure:
+    account_name: $AZURE_DEV_STORAGE_ACCOUNT
+    account_key: $AZURE_DEV_STORAGE_ACCESS_KEY
+    container: dcos-image-test
+    download_url: https://mesospheredev.blob.core.windows.net/dcos-image-test/
+options:
+  preferred: aws
+  cloudformation_s3_url: https://s3.amazonaws.com/downloads.mesosphere.io/dcos-enterprise

@@ -1,8 +1,4 @@
 {
-  "upstream": {
-    "root": "https://downloads.dcos.io/dcos",
-    "variant": null
-  },
   "variants": {
     "adminrouter": "ee",
     "dcos-ui": "ee",

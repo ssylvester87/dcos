@@ -1,6 +1,7 @@
 {
   "kind": "git",
-  "git": "https://github.com/cmaloney/dcos",
-  "ref": "ee12943b7878cdd3626c5d1323c499d139261bba",
-  "ref_origin": "add-upstream"
+  "git": "https://github.com/dcos/dcos",
+  "ref": "ad7c8287c3d76cf08d16ad161bf9130b14c07ea9",
+  "ref_origin": "fix-cached-bootstrap-download"
 }
+
