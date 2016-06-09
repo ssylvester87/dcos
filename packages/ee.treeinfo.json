@@ -6,6 +6,7 @@
     "dcos-signal": "ee"
   },
   "exclude": [
-    "dcos-oauth"
+    "dcos-oauth",
+    "dcos-installer-ui"
   ]
 }
