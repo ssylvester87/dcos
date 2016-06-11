@@ -5,6 +5,6 @@ npm install
 echo "module.exports = {};" > ./src/js/config/Config.dev.js
 echo "module.exports = {};" > ./src/js/config/Config.test.js
 
-npm run build-with-external-plugins
+npm run build-ee
 
 cp -r dist/ "$PKG_PATH"/usr

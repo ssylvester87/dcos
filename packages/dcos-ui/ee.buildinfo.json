@@ -1,17 +1,17 @@
 {
   "docker": "node:4.3",
-  "sources" :{
-      "dcos-ui": {
+  "sources": {
+    "dcos-ui": {
+      "kind": "git",
+      "git": "https://github.com/dcos/dcos-ui.git",
+      "ref": "fe4dd8e1ca92765a3d6d826f7dd9e3dbd7c2efed",
+      "ref_origin": "release/1.7.1"
+    },
+    "dcos-ui-plugins-private": {
         "kind": "git",
-        "git": "git@github.com:mesosphere/dcos-ui.git",
-        "ref": "349fb7ac4afb12d33bd9371719b6c94ed78a3015",
-        "ref_origin": "release/1.7.1"
-      },
-      "dcos-ui-plugins-private": {
-          "kind": "git",
-          "git": "git@github.com:mesosphere/dcos-ui-plugins-private.git",
-          "ref": "ab5c215ae18801fce0e58b89e43c4375326c5422",
-          "ref_origin": "release/1.7"
-      }
+        "git": "git@github.com:mesosphere/dcos-ui-plugins-private.git",
+        "ref": "ab5c215ae18801fce0e58b89e43c4375326c5422",
+        "ref_origin": "release/1.7"
+    }
   }
 }

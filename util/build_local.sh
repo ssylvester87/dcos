@@ -7,8 +7,15 @@ mkdir -p cache
 
 if [ ! -e dcos-release.config.yaml ]
 then
-  echo "ERROR: Must make a dcos-release.config.yaml. See https://github.com/dcos/dcos#setup-a-build-environment for examples."
-  exit 1
+cat <<EOF > dcos-release.config.yaml
+storage:
+  local:
+    kind: local_path
+    path: $HOME/dcos-artifacts
+options:
+  preferred: local
+  cloudformation_s3_url: https://s3-us-west-2.amazonaws.com/downloads.dcos.io/dcos
+EOF
 fi
 
 if [ ! -e cache/build_venv ]
