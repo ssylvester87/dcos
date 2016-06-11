@@ -1,7 +1,7 @@
 {
   "kind": "git",
-  "git": "https://github.com/cmaloney/dcos",
-  "ref": "fd76ddeef4597bc40f4e28fb2574b42b7f581717",
-  "ref_origin": "fix-upstream-overwriting-all-package-variants"
+  "git": "https://github.com/dcos/dcos",
+  "ref": "abdd52b2ba5ae05aeeb78f3869e1ce15654030b2",
+  "ref_origin": "master"
 }
 

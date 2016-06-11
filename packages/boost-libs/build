@@ -5,11 +5,11 @@ export LDFLAGS="-L/opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib"
 export LD_LIBRARY_PATH=/opt/mesosphere/lib
 
 # Use same version of boost as provided by mesos-buildenv
-pushd /pkg/src/boost-system
+pushd /pkg/src/boost-libs
 ./bootstrap.sh
-# Only build the 'system' library, used by ASIO
-# TODO: have mesos-buildenv build this library, instead of having this separate pkg?
-./b2 --with-system
+# Build the following shared libraries.
+# TODO: have mesos-buildenv build these, instead of having this separate pkg?
+./b2 --with-filesystem --with-iostreams --with-program_options --with-system -s NO_BZIP2=1
 # Move lib dir into pkg
 mv -v stage/lib $PKG_PATH
 popd
