@@ -1,5 +1,7 @@
 def validate_customer_key(customer_key):
-    assert isinstance(customer_key, str), "Must be a string."
+    assert isinstance(customer_key, str), "'customer_key' must be a string."
+    assert len(customer_key) == 36 or len(customer_key) == 32, (
+        "'customer_key' must be 36 characters long with hyphens and 32 characters without.")
 
 __default_isolation_modules = [
     'cgroups/cpu',
