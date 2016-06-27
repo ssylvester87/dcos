@@ -5,12 +5,12 @@
       "kind": "git",
       "git": "git@github.com:mesosphere/dcos-signal-enterprise.git",
       "ref": "8dbd273cd6875e5bd9d98c58e0f00cae2ea1b6a5",
-      "ref_origin": "master"
+      "ref_origin": "0.0.1"
     },
     "dcos-signal": {
       "kind": "git",
       "git": "git@github.com:dcos/dcos-signal.git",
-      "ref": "681948e8240fb4c38a22c55f0cc7016cca66e801",
+      "ref": "d690d78815155c3407413338781643081e3ce7fd",
       "ref_origin": "master"
     }
   }

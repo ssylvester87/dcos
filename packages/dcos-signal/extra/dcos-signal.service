@@ -9,5 +9,10 @@ RestartSec=20
 User=dcos_signal
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=-/opt/mesosphere/etc/cfn_signal_metadata
+<<<<<<< HEAD
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-signal
 ExecStart=/opt/mesosphere/bin/dcos-signal -segment-key 51ybGTeFEFU1xo6u10XMDrr6kATFyRyh
+=======
+ExecStartPre=/bin/bash -c '[ -f /var/lib/dcos/cluster-id ] || exit 1'
+ExecStart=/opt/mesosphere/bin/dcos-signal -segment-key dnIh2O3T1ixvywokgnQq3rSHXj5mmR0x 
+>>>>>>> 464cc55... Signal service with HTTPS, JWT and updated Cosmos URL.

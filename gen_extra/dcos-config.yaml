@@ -18,7 +18,18 @@ package:
   - path: /etc/dcos-signal-extra.json
     content: |
       {
-        "customer_key": "{{ customer_key }}"
+        "customer_key": "{{ customer_key }}",
+        "diagnostics_urls": [
+            "https://leader.mesos/system/health/v1/report"
+          ],
+          "cosmos_urls": [
+            "https://leader.mesos/package/list"
+          ],
+          "mesos_urls": [
+            "https://leader.mesos/mesos/frameworks",
+            "https://leader.mesos/mesos/metrics/snapshot"
+          ],`
+        "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
       }
   - path: /etc/mesos-slave-common-extras
     content: |
