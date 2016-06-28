@@ -11,7 +11,7 @@
       "kind": "git",
       "git": "git@github.com:dcos/dcos-signal.git",
       "ref": "d690d78815155c3407413338781643081e3ce7fd",
-      "ref_origin": "master"
+      "ref_origin": "1.1.8"
     }
   }
 }
