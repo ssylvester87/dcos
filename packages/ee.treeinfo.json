@@ -3,7 +3,8 @@
     "adminrouter": "ee",
     "dcos-ui": "ee",
     "marathon": "ee",
-    "dcos-signal": "ee"
+    "dcos-signal": "ee",
+    "bootstrap": "ee"
   },
   "exclude": [
     "dcos-oauth",

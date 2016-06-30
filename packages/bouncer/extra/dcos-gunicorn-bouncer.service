@@ -20,7 +20,7 @@ EnvironmentFile=/opt/mesosphere/environment
 
 # Wait for ZK cluster to be up and running.
 ExecStartPre=/bin/ping -c1 ready.spartan
-ExecStartPre=/opt/mesosphere/bin/exhibitor_wait.py
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-bouncer
 ExecStartPre=/bin/mkdir -p /var/lib/dcos
 
 WorkingDirectory=${PKG_PATH}
