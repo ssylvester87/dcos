@@ -1,0 +1,9 @@
+{
+  "requires": ["python"],
+  "docker": "dcos-builder",
+  "single_source": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/67/9a/a9b49b2225af75bab5328b987f5cf3fd73306188b9272bd69bcf8c57ef04/pycryptodomex-3.4.2.tar.gz",
+      "sha1": "538a9d579631f663ba4f533cc765a619cd9fd1f3"
+  }
+}

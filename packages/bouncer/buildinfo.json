@@ -18,11 +18,6 @@
       "url": "https://pypi.python.org/packages/py2.py3/j/jsonschema/jsonschema-2.5.1-py2.py3-none-any.whl",
       "sha1": "b11eea04c758597e2dbdef0e49823f53ce62445a"
     },
-    "pyjwt": {
-      "kind": "url",
-      "url": "https://pypi.python.org/packages/2.7/P/PyJWT/PyJWT-1.4.0-py2.py3-none-any.whl",
-      "sha1": "5e9ad9706fe8157cf0d183ddd21b7f0c5ea481fe"
-    },
     "falcon": {
       "kind": "url_extract",
       "url": "https://pypi.python.org/packages/source/f/falcon/falcon-0.3.0.tar.gz",

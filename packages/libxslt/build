@@ -1,0 +1,11 @@
+#!/bin/bash -xe
+
+mkdir -p "/build"
+
+pushd "/pkg/src/libxslt"
+./configure "--prefix=$PKG_PATH" --without-python --with-libxml-prefix=/opt/mesosphere --without-crypto || true
+make
+make install
+
+find "$PKG_PATH/lib/" ! -type d -name "*.a"  -delete
+rm -rf "$PKG_PATH/share/"
