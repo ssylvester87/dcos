@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# required to get access to boost headers:
-. /opt/mesosphere/active/mesos-buildenv/activate
-
 export CPPFLAGS=-I/opt/mesosphere/include
 export LDFLAGS="-L/opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib"
 export LD_LIBRARY_PATH=/opt/mesosphere/lib

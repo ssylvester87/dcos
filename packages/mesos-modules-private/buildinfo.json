@@ -1,10 +1,10 @@
 {
-  "requires": ["mesos-buildenv", "mesos", "curl"],
+  "requires": ["mesos", "curl", "openssl"],
   "docker": "dcos-builder",
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "b2e0b9b29504b46c507772fb5f638fdac123009e",
+    "ref" : "1924d936365d22539ca1d0f964bf8ac443739591",
     "ref_origin": "master"
   }
 }

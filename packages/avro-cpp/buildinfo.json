@@ -1,5 +1,5 @@
 {
-  "requires": ["mesos-buildenv", "boost-libs"],
+  "requires": ["mesos", "boost-libs"],
   "docker": "dcos-builder",
   "single_source": {
     "kind": "url_extract",
