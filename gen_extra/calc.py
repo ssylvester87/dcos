@@ -1,6 +1,3 @@
-import gen.calc
-
-
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "Must be a string."
 
@@ -12,6 +9,7 @@ __default_isolation_modules = [
 
 __metrics_isolator_slave_module_name = 'com_mesosphere_MetricsIsolatorModule'
 __metrics_resource_estimator_slave_module_name = 'com_mesosphere_MetricsResourceEstimatorModule'
+
 
 def get_ui_auth_json(ui_organization, ui_networking):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
