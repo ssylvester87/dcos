@@ -1,7 +1,9 @@
 {
+  "libraries": [
+  {
     "file": "/opt/mesosphere/lib/libmetrics-module.so",
     "modules": [{
-        "name": "com_mesosphere_MetricsIsolatorModule",
+        "name": "com_mesosphere_MetricsIsolatorModule"
     }, {
         "name": "com_mesosphere_MetricsResourceEstimatorModule",
         "parameters": [
@@ -23,7 +25,8 @@
             {"key": "output_statsd_chunking", "value": "true"},
             {"key": "output_statsd_chunk_size_bytes", "value": "512"},
             {"key": "state_path_dir",
-             "value": "/var/run/mesos/isolators/com_mesosphere_MetricsIsolatorModule/"},
+             "value": "/var/run/mesos/isolators/com_mesosphere_MetricsIsolatorModule/"}
         ]
     }]
+  }]
 }
