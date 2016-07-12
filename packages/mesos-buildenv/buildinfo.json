@@ -1,0 +1,8 @@
+{
+  "single_source": {
+    "kind": "git",
+    "git": "git@github.com:mesosphere/mesos-buildenv.git",
+    "ref": "14222fec64a47926d556a7fcae5215778da382d4",
+    "ref_origin": "bump-protobuf"
+  }
+}

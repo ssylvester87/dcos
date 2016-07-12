@@ -13,6 +13,10 @@ mkdir -p build
 pushd build
 /pkg/src/mesos-modules-private/configure \
  --with-mesos=/opt/mesosphere/active/mesos \
+ --with-openssl=/opt/mesosphere/active/openssl \
+ --with-protobuf=/opt/mesosphere/active/mesos-buildenv \
+ --with-glog=/opt/mesosphere/active/mesos-buildenv \
+ --with-boost=/opt/mesosphere/active/mesos-buildenv \
  --prefix="$PKG_PATH"
 
 make -j8
