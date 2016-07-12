@@ -1,5 +1,5 @@
 {
-  "requires": ["mesos", "curl", "openssl"],
+  "requires": ["mesos-buildenv", "mesos", "curl", "openssl"],
   "docker": "dcos-builder",
   "single_source" : {
     "kind": "git",
