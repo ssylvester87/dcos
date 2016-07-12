@@ -34,7 +34,10 @@ entry = {
         'ui_branding': 'true',
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
-        'custom_auth_json': get_ui_auth_json
+        'custom_auth_json': get_ui_auth_json,
+        'mesos_isolation_modules': ','.join(__default_isolation_modules + [
+            __metrics_isolator_slave_module_name]),
+        'mesos_resource_estimator_module': __metrics_resource_estimator_slave_module_name
     }
 }
 
