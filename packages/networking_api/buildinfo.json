@@ -5,8 +5,9 @@
     "networking_api": {
       "kind": "git",
       "git": "git@github.com:mesosphere/networking-api-service.git",
-      "ref": "5c9db6c9d79985e7d6fee6959f7588a67e3a4d1f",
+      "ref": "6543b9d55bac36b6750fd94f09cfc8178f698911",
       "ref_origin": "master"
     }
-  }
+  },
+  "username": "dcos_networking_api"
 }

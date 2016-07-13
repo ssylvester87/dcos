@@ -65,11 +65,16 @@ After=dcos-epmd.service
 BindsTo=dcos-epmd.service
 
 [Service]
+PermissionsStartOnly=True
+User=dcos_networking_api
 Restart=always
 StartLimitInterval=0
 RestartSec=5
 WorkingDirectory=${PKG_PATH}/networking_api
 EnvironmentFile=/opt/mesosphere/environment
-ExecStart=${PKG_PATH}/networking_api/bin/env foreground
+EnvironmentFile=/opt/mesosphere/etc/networking_api.env
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-networking_api
+ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/networking_api.crt -a -f /run/dcos/pki/tls/private/networking_api.key
+ExecStart=${PKG_PATH}/networking_api/bin/networking-api-env foreground
 Environment=HOME=/opt/mesosphere
 EOF
