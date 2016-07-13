@@ -1,0 +1,19 @@
+[Unit]
+Description=Certificate Authority: DC/OS Certificate Authority
+
+[Service]
+User=dcos_ca
+PermissionsStartOnly=True
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/mesosphere/environment
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-ca
+ExecStart=/opt/mesosphere/bin/dcos-ca \
+    -loglevel 0 serve \
+        -address=127.0.0.1 -port=8888 \
+        -ca /run/dcos/pki/CA/certs/ca.crt \
+        -ca-key /run/dcos/pki/CA/private/ca.key \
+        -config /opt/mesosphere/etc/dcos-ca/config.json \
+        -db-config /run/dcos/etc/dcos-ca/dbconfig.json
