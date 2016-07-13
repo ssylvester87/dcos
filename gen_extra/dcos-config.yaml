@@ -23,4 +23,3 @@ package:
   - path: /etc/mesos-slave-common-extras
     content: |
       MESOS_ISOLATION={{ mesos_isolation_modules }}
-      MESOS_RESOURCE_ESTIMATOR={{ mesos_resource_estimator_module }}

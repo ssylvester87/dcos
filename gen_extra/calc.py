@@ -4,11 +4,10 @@ def validate_customer_key(customer_key):
 __default_isolation_modules = [
     'cgroups/cpu',
     'cgroups/mem',
-    'posix/disk'
+    'disk/du'
 ]
 
 __metrics_isolator_slave_module_name = 'com_mesosphere_MetricsIsolatorModule'
-__metrics_resource_estimator_slave_module_name = 'com_mesosphere_MetricsResourceEstimatorModule'
 
 
 def get_ui_auth_json(ui_organization, ui_networking):
@@ -34,8 +33,7 @@ entry = {
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
         'mesos_isolation_modules': ','.join(__default_isolation_modules + [
-            __metrics_isolator_slave_module_name]),
-        'mesos_resource_estimator_module': __metrics_resource_estimator_slave_module_name
+            __metrics_isolator_slave_module_name])
     }
 }
 
