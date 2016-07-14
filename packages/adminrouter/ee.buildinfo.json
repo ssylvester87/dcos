@@ -4,13 +4,13 @@
   "sources" :{
       "nginx": {
           "kind": "url_extract",
-          "url": "https://s3.amazonaws.com/downloads.mesosphere.io/openresty_mirror/ngx_openresty-1.7.10.2.tar.gz",
-          "sha1": "79b086d55ba8a323e36f939026769d16072a7f27"
+          "url": "https://openresty.org/download/openresty-1.9.15.1.tar.gz",
+          "sha1": "491a84d70ed10b79abb9d1a7496ee57a9244350b"
       },
       "adminrouter": {
           "kind": "git",
           "git": "git@github.com:mesosphere/adminrouter.git",
-          "ref": "1f14307bf38cdb591b2a9c0afdcd86bf2e13a964",
+          "ref": "87ca18c3f013001ecd72a1acd1ed1a1caadae2f1",
           "ref_origin": "enterprise"
       }
   }
