@@ -1,0 +1,20 @@
+{
+  "docker": "dcos-builder",
+  "requires": [
+    "boto",
+    "dcos-image-deps",
+    "dnspython",
+    "openssl",
+    "pytest",
+    "python",
+    "python-cryptography",
+    "python-jwt",
+    "python-requests",
+    "python-retrying",
+    "python-kazoo"],
+  "single_source": {
+    "kind": "url_extract",
+    "url": "https://pypi.python.org/packages/2d/f2/8b2afdef7fc60314d35065801933675fc228eb031db3176c6b99a9de36a1/pytest-html-1.9.0.tar.gz",
+    "sha1": "40bdb9c829627dac345c781a24a247bbf5d5b255"
+  }
+}
