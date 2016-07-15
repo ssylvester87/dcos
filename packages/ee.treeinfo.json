@@ -3,6 +3,7 @@
     "adminrouter": "ee",
     "dcos-ui": "ee",
     "marathon": "ee",
+    "metronome": "ee",
     "dcos-signal": "ee",
     "bootstrap": "ee",
     "3dt": "ee"
