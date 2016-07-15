@@ -4,7 +4,8 @@
     "dcos-ui": "ee",
     "marathon": "ee",
     "dcos-signal": "ee",
-    "bootstrap": "ee"
+    "bootstrap": "ee",
+    "3dt": "ee"
   },
   "exclude": [
     "dcos-oauth",
