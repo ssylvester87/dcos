@@ -1,6 +1,6 @@
 {
   "kind": "git",
-  "git": "https://github.com/alberts/dcos",
-  "ref": "0300a26d16145f25d86e521283a843539ece12ce",
-  "ref_origin": "albert/pwhash"
+  "git": "https://github.com/mesosphere/dcos",
+  "ref": "34a20da926ab3068ed2b1152c374a0b076cc3ab4",
+  "ref_origin": "next"
 }
