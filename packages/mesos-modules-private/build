@@ -25,3 +25,15 @@ pushd build
 make -j8
 make install
 popd
+
+# Install master modules.
+mkdir -p "$PKG_PATH/etc/mesos-master-modules"
+cp /pkg/extra/master_dcos_security_modules.json "$PKG_PATH/etc/mesos-master-modules/"
+
+# Install agent modules.
+mkdir -p "$PKG_PATH/etc/mesos-slave-modules"
+cp /pkg/extra/agent_dcos_security_modules.json "$PKG_PATH/etc/mesos-slave-modules/"
+
+# Install DC/OS authenticatee module.
+mkdir -p "$PKG_PATH/etc/mesos-scheduler-modules"
+cp /pkg/extra/dcos_authenticatee_module.json "$PKG_PATH/etc/mesos-scheduler-modules/"
