@@ -31,6 +31,99 @@ package:
           ],`
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
       }
+  - path: /etc/mesos/master_firewall.json
+    content: |
+      {
+        "disabled_endpoints" : {
+          "paths" : [
+              "/slaves",
+              "/profiler/start",
+              "/profiler/stop",
+              "/registrar(1)/registry",
+              "/api/v1",
+              "/api/v1/scheduler",
+              "/maintenance/schedule",
+              "/maintenance/status",
+              "/machine/down",
+              "/machine/up"
+          ]
+        }
+      }
+  - path: /etc/mesos-master-extras
+    content: |
+{% switch httpauth_available %}
+{% case "true" %}
+      MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
+      MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
+{% case "false" %}
+{% endswitch %}
+      # TODO(adam-mesos): Disable if security!= strict
+      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/master_firewall.json
+      MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
+      # Always load authenticator, allow authentication.
+      MESOS_AUTHENTICATORS={{ mesos_fwk_authenticators }}
+      # Conditionally require authentication (reject unauthenticated).
+      MESOS_AUTHENTICATE_FRAMEWORKS={{ mesos_authenticate_frameworks }}
+      # TODO(adam-mesos): Disable if security!=strict
+      MESOS_AUTHENTICATE_AGENTS=true
+      # TODO(adam-mesos): should be false in disabled mode
+      SSL_ENABLED=true
+      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      SSL_VERIFY_CERT=false
+      SSL_REQUIRE_CERT=false
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-master.crt
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-master.key
+  - path: /etc/mesos/agent_firewall.json
+    content: |
+      {
+        "disabled_endpoints": {
+          "paths": [
+            "/profiler/start",
+            "/profiler/stop",
+            "/api/v1",
+            "/api/v1/executor"
+          ]
+        }
+      }
+  - path: /etc/mesos/agent_principal.json
+    content: |
+      { "principal": "dcos_mesos_agent" }
+  - path: /etc/mesos/public_agent_principal.json
+    content: |
+      { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
     content: |
       MESOS_ISOLATION={{ mesos_isolation_modules }}
+      MESOS_RESOURCE_ESTIMATOR={{ mesos_resource_estimator_module }}
+      # TODO(adam-mesos): should be false in disabled mode
+      SSL_ENABLED=true
+      # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
+      SSL_SUPPORT_DOWNGRADE=true
+      SSL_VERIFY_CERT=false
+      SSL_REQUIRE_CERT=false
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+{% switch httpauth_available %}
+{% case "true" %}
+      MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
+      MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
+{% case "false" %}
+{% endswitch %}
+      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/agent_firewall.json
+      MESOS_AUTHORIZER={{ mesos_agent_authorizer }}
+      # TODO(adam-mesos): Disable these 2 agent-authn lines for security=off mode.
+      MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
+      DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/mesos/agent_service_account.json
+      {{ mesos_hooks_env_var }}
+  - path: /etc/mesos-slave-extras
+    content: |
+      # TODO(adam-mesos): Disable this agent-authn line for security=off mode.
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/agent_principal.json
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
+  - path: /etc/mesos-slave-public-extras
+    content: |
+      # TODO(adam-mesos): Disable this agent-authn line for security=off mode.
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/public_agent_principal.json
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave-public.crt
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave-public.key
