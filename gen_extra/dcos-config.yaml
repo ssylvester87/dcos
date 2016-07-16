@@ -15,6 +15,16 @@ package:
         "GUNICORN_BIND_ADDRESS": "127.0.0.1:8101",
         "GUNICORN_WORKER_TIMEOUT_SECONDS": 10
       }
+  - path: /etc/dcos-secrets.env
+    content: |
+      SECRETS_BOOTSTRAP={{ bootstrap_secrets }}
+  - path: /etc_master/cosmos
+    content: |
+      TLS_ENABLED=true
+      TLS_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      TLS_CERT_FILE=/run/dcos/pki/tls/certs/cosmos.crt
+      TLS_KEY_FILE=/run/dcos/pki/tls/private/cosmos.key
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
   - path: /etc/dcos-signal-extra.json
     content: |
       {
