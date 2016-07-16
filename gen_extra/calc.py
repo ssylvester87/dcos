@@ -149,7 +149,7 @@ entry = {
         validate_mesos_authz_enforced
     ],
     'default': {
-        'security': 'strict',
+        'security': 'permissive',
         'bootstrap_secrets': 'true',
         'httpauth_enabled': calculate_httpauth_enabled,  # 'false',
         'httpauth_available': calculate_httpauth_available,
