@@ -29,6 +29,7 @@ def calculate_adminrouter_enforce_https(security):
     elif security == 'disabled':
         return 'false'
 
+
 def validate_bootstrap_secrets(bootstrap_secrets):
     # Should correspond with bootstrap_secrets in gen/azure/calc.py
     if bootstrap_secrets in ["[[[variables('bootstrapSecrets')]]]", '{ "Ref" : "BootstrapSecrets" }']:
