@@ -1,6 +1,6 @@
 {
   "kind": "git",
-  "git": "https://github.com/mesosphere/dcos",
-  "ref": "34a20da926ab3068ed2b1152c374a0b076cc3ab4",
-  "ref_origin": "next"
+  "git": "https://github.com/mellenburg/dcos",
+  "ref": "10f22d8983f6f6ed1a2c45b7a9d39ce02d3b478e",
+  "ref_origin": "increase_installer_timeout"
 }
