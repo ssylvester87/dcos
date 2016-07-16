@@ -7,7 +7,8 @@ cp -rp /pkg/src/marathon/target/scala-2.11/marathon-assembly-*.jar "$PKG_PATH/us
 if [ "$PKG_VARIANT" = "ee" ]; then
   mkdir -p "$PKG_PATH/usr/plugins/lib"
   unzip /pkg/src/marathon-plugins/plugins.zip -d "$PKG_PATH/usr/plugins/lib"
-  cat /pkg/src/marathon-plugin-conf/plugin-conf.json | sed -e 's|ACS_URL|http://127.0.0.1:8101|g' > "$PKG_PATH/usr/plugins/plugin-conf.json"
+# cat /pkg/src/marathon-plugin-conf/plugin-conf.json | sed -e 's|ACS_URL|http://127.0.0.1:8101|g' > "$PKG_PATH/usr/plugins/plugin-conf.json"
+  cp /pkg/src/marathon-plugin-conf/plugin-conf.json "$PKG_PATH/usr/plugins/plugin-conf.json"
 fi
 
 sudo chmod -R o+r "$PKG_PATH/usr"
@@ -23,11 +24,38 @@ After=dcos-mesos-master.service
 Restart=always
 StartLimitInterval=0
 RestartSec=15
+User=dcos_marathon
+PermissionsStartOnly=True
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=-/opt/mesosphere/environment.ip.marathon
-ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-marathon
+EnvironmentFile=/opt/mesosphere/etc/marathon
+EnvironmentFile=-/run/dcos/etc/marathon/tls.env
 ExecStartPre=/bin/bash -c 'echo "HOST_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" > /opt/mesosphere/environment.ip.marathon'
 ExecStartPre=/bin/bash -c 'echo "MARATHON_HOSTNAME=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /opt/mesosphere/environment.ip.marathon'
 ExecStartPre=/bin/bash -c 'echo "LIBPROCESS_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /opt/mesosphere/environment.ip.marathon'
-ExecStart=/opt/mesosphere/bin/java -Xmx2G -jar "$PKG_PATH/usr/marathon.jar" --plugin_dir "$PKG_PATH/usr/plugins/lib" --plugin_conf "$PKG_PATH/usr/plugins/plugin-conf.json" --zk zk://localhost:2181/marathon --master zk://localhost:2181/mesos --hostname "\$MARATHON_HOSTNAME" --default_accepted_resource_roles "*" --mesos_role "slave_public" --max_tasks_per_offer 100 --task_launch_timeout 86400000 --decline_offer_duration 300000 --revive_offers_for_new_apps --zk_compression --mesos_leader_ui_url "/mesos" --enable_features "vips,task_killing" --mesos_authentication_principal "marathon"
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-marathon
+ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/marathon.crt -a -f /run/dcos/pki/tls/private/marathon.key -a -f /run/dcos/pki/tls/private/marathon.jks
+ExecStart=/opt/mesosphere/bin/java \\
+    -Xmx2G \\
+    -Djavax.net.ssl.trustStore=\${TLS_TRUSTSTORE} \\
+    -jar "$PKG_PATH/usr/marathon.jar" \\
+    --plugin_dir "$PKG_PATH/usr/plugins/lib" \\
+    --plugin_conf "$PKG_PATH/usr/plugins/plugin-conf.json" \\
+    --zk "\$MARATHON_ZK" \\
+    --master zk://127.0.0.1:2181/mesos \\
+    --hostname "\$MARATHON_HOSTNAME" \\
+    --default_accepted_resource_roles "*" \\
+    --mesos_role "slave_public" \\
+    --max_tasks_per_offer 100 \\
+    --task_launch_timeout 86400000 \\
+    --decline_offer_duration 300000 \\
+    --revive_offers_for_new_apps \\
+    --zk_compression \\
+    --mesos_leader_ui_url "/mesos" \\
+    --enable_features "vips,task_killing,external_volumes,secrets" \\
+    --mesos_authentication \\
+    --mesos_authentication_principal "dcos_marathon" \\
+    --ssl_keystore_path "\$SSL_KEYSTORE_PATH" \\
+    --ssl_keystore_password "\$SSL_KEYSTORE_PASSWORD" \\
+    \$MARATHON_EXTRA_ARGS
 EOF
