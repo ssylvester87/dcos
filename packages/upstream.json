@@ -1,6 +1,6 @@
 {
   "kind": "git",
-  "git": "https://github.com/mellenburg/dcos",
-  "ref": "10f22d8983f6f6ed1a2c45b7a9d39ce02d3b478e",
-  "ref_origin": "increase_installer_timeout"
+  "git": "https://github.com/dcos/dcos",
+  "ref": "8fae8a8df71109194df42aaa24fcce90daa9e2ec",
+  "ref_origin": "master"
 }
