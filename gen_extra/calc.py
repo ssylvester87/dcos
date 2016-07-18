@@ -1,3 +1,7 @@
+import hashlib
+from base64 import b64encode
+
+
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "'customer_key' must be a string."
     assert len(customer_key) == 36 or len(customer_key) == 32, (
@@ -106,6 +110,61 @@ def calculate_marathon_extra_args(security):
 
     elif security == 'disabled':
         return ''
+
+
+def empty(s):
+    return not s or s == ''
+
+
+def validate_zk_super_creds(zk_super_creds):
+    if empty(zk_super_creds):
+        return
+    assert len(zk_super_creds.split(':', 1)) == 2, "Super ZK credentials must be of the form username:password"
+
+
+def validate_zk_master_creds(zk_master_creds):
+    if empty(zk_master_creds):
+        return
+    assert len(zk_master_creds.split(':', 1)) == 2, "Master ZK credentials must be of the form username:password"
+
+
+def validate_zk_agent_creds(zk_agent_creds):
+    if empty(zk_agent_creds):
+        return
+    assert len(zk_agent_creds.split(':', 1)) == 2, "Agent ZK credentials must be of the form username:password"
+
+
+def calculate_digest(creds):
+    if empty(creds):
+        return ''
+    username, password = creds.split(':', 1)
+    credential = username.encode('utf-8') + b":" + password.encode('utf-8')
+    cred_hash = b64encode(hashlib.sha1(credential).digest()).strip()
+    return username + ":" + cred_hash.decode('utf-8')
+
+
+def calculate_zk_super_digest(zk_super_creds):
+    return calculate_digest(zk_super_creds)
+
+
+def calculate_zk_master_digest(zk_master_creds):
+    return calculate_digest(zk_master_creds)
+
+
+def validate_os_type(os_type):
+    can_be = ['coreos', 'el7']
+    assert os_type in can_be, 'Must be one of {}. Got {}'.format(can_be, os_type)
+
+
+def calculate_zk_agent_digest(zk_agent_creds):
+    return calculate_digest(zk_agent_creds)
+
+
+def calculate_zk_super_digest_jvmflags(zk_super_creds):
+    if empty(zk_super_creds):
+        return ''
+    digest = calculate_zk_super_digest(zk_super_creds)
+    return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
 __http_authn_module_name = 'com_mesosphere_dcos_http_Authenticator'
