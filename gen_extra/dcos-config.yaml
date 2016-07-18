@@ -105,7 +105,6 @@ package:
   - path: /etc/mesos-slave-common-extras
     content: |
       MESOS_ISOLATION={{ mesos_isolation_modules }}
-      MESOS_RESOURCE_ESTIMATOR={{ mesos_resource_estimator_module }}
       MESOS_HOOKS={{ mesos_hooks }}
       # TODO(adam-mesos): should be false in disabled mode
       SSL_ENABLED=true

@@ -193,7 +193,6 @@ entry = {
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': ','.join(__enterprise_hook_modules),
         'mesos_isolation_modules': ','.join(__enterprise_isolation_modules),
-        'mesos_resource_estimator_module': __metrics_resource_estimator_slave_module_name,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args
     }
