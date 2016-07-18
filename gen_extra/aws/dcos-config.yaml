@@ -1,0 +1,4 @@
+package:
+  - path: /etc/lb_dnsnames
+    content: |
+      MASTER_INTERNAL_LB_DNSNAME={{ exhibitor_address }}
