@@ -184,7 +184,7 @@ entry = {
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
         'mesos_isolation_modules': ','.join(__default_isolation_modules + [
-            __metrics_isolator_slave_module_name])
+            __metrics_isolator_slave_module_name]),
         'mesos_http_authenticators': __http_authn_module_name,
         'mesos_authenticate_http': calculate_httpauth_available,
         'mesos_fwk_authenticators': __framework_authenticator_module_name,
