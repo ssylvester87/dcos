@@ -21,8 +21,7 @@ pytestmark = [
     pytest.mark.security,
     pytest.mark.skipif(
         not pytest.config.getoption('expect_strict_security'),
-        reason=("Authentication tests skipped: currently adjusted "
-                 "to strict security mode")
+        reason=("Authentication tests skipped: currently adjusted to strict security mode")
         )
     ]
 

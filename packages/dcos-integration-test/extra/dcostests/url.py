@@ -25,7 +25,7 @@ class Url:
 
         # In lockdown mode, override default scheme with HTTPS.
         if pytest.config.getoption('expect_strict_security'):
-            self._default_scheme =  'https'
+            self._default_scheme = 'https'
 
         self.scheme = scheme if scheme else self._default_scheme
 

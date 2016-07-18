@@ -155,7 +155,6 @@ sleep 36000
     return cluster
 
 
-
 def _setup_logging():
     """Setup logging for the script"""
     logger = logging.getLogger()

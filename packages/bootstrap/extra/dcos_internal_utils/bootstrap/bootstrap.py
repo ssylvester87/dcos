@@ -568,7 +568,7 @@ class Bootstrapper(object):
         env1 = env1.format_map(zk_creds)
 
         keystore_password = utils.random_string(64)
-        env2 =  'METRONOME_PLAY_SERVER_HTTPS_KEYSTORE_PASSWORD={keystore_password}\n'
+        env2 = 'METRONOME_PLAY_SERVER_HTTPS_KEYSTORE_PASSWORD={keystore_password}\n'
         env2 = env2.format(keystore_password=keystore_password)
 
         env = bytes(env1 + env2, 'ascii')
@@ -755,9 +755,8 @@ class Bootstrapper(object):
         _write_file(filename, env, 0o600)
         return token
 
-    def write_key_certificate(self, cn, key_filename, crt_filename,
-        service_account=None, master=False, marathon=False, extra_san=[],
-        key_mode=0o600):
+    def write_key_certificate(self, cn, key_filename, crt_filename, service_account=None,
+                              master=False, marathon=False, extra_san=[], key_mode=0o600):
         log.info('Generating CSR for key {}'.format(key_filename))
         privkey_pem, csr_pem = utils.generate_key_CSR(cn, master=master, marathon=marathon, extra_san=extra_san)
 

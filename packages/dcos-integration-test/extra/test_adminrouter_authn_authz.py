@@ -103,9 +103,7 @@ class TestCookieAuth:
     def test_access_with_both_cookie_and_auth_header(self, superuser, peter):
         """Existence of Authorization header overrides auth cookie."""
 
-        wucookie = {'dcos-acs-auth-cookie':  peter.authcookie}
-        sucookie = {'dcos-acs-auth-cookie':  superuser.authcookie}
-        invalidcookie = {'dcos-acs-auth-cookie': 'wrong-token'}
+        sucookie = {'dcos-acs-auth-cookie': superuser.authcookie}
         invalidauthheader = {'Authorization': 'token=wrong-token'}
 
         # Set valid auth header and invalid cookie: must succeed.

@@ -59,6 +59,7 @@ def test_retrieve_server_cert(netloc):
     # Verify that the remote end expects an SSL/TLS connection at all, and
     # that it presents a certificate.
     cert_pem = ssl.get_server_certificate((netloc.host, netloc.port))
+    _ = cert_pem  # noqa
 
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)
@@ -67,6 +68,7 @@ def test_retrieve_server_cert_enforce_tls_1_2(netloc):
         addr=(netloc.host, netloc.port),
         ssl_version=ssl.PROTOCOL_TLSv1_2
         )
+    _ = cert_pem  # noqa
 
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)
@@ -75,6 +77,7 @@ def test_verify_server_cert_against_root_cert(netloc):
         addr=(netloc.host, netloc.port),
         ca_certs=dcos.ca_crt_file_path
         )
+    _ = cert_pem  # noqa
 
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)

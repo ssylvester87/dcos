@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 
 
 PORT_3DT = 1050
+BASE_ENDPOINT_3DT = '/system/health/v1'
 
 
 # Note(JP): skip these tests for now, seem not to be adjusted to current
@@ -33,7 +34,7 @@ def cluster():
 
 
 def make_3dt_request(host, endpoint, port=None):
-    if port == None:
+    if port is None:
         assert endpoint.startswith('/'), \
             'endpoint {} must start with /'.format(endpoint)
         json_response = requests.get(path=endpoint).json()

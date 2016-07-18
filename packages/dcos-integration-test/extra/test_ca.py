@@ -17,7 +17,7 @@ import requests
 import pytest
 
 
-from dcostests import CAUrl, dcos
+from dcostests import CAUrl
 
 
 log = logging.getLogger(__name__)

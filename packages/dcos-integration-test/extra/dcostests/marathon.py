@@ -52,13 +52,7 @@ class MarathonApp:
             )
         return r
 
-    def wait(
-            self,
-            timeout=300,
-            check_health=True,
-            ignore_failed_tasks=False,
-            headers=None
-        ):
+    def wait(self, timeout=300, check_health=True, ignore_failed_tasks=False, headers=None):
         """
         Wait for Marathon to acknowledge successful creation or raise an
         exception.
@@ -110,7 +104,7 @@ class MarathonApp:
 
             if not ignore_failed_tasks:
                 assert 'lastTaskFailure' not in data['app'], (
-                    'Application deployment failed, reason: %s' %
+                        'Application deployment failed, reason: %s' %
                         data['app']['lastTaskFailure']['message']
                     )
 

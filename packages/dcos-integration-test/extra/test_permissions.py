@@ -9,7 +9,7 @@ Test authorization behavior of various components.
 
 import logging
 
-from jwt.utils import base64url_decode
+
 import pytest
 import requests
 
@@ -46,7 +46,6 @@ class TestAdminRouterOpsEndpoints:
             return
         assert r.status_code == 200
 
-
     @pytest.mark.usefixtures(
         "iam_verify_and_reset",
         "with_peter_in_superuser_acl"
@@ -60,7 +59,6 @@ class TestAdminRouterOpsEndpoints:
             assert r.status_code == 405
             return
         assert r.status_code == 200
-
 
     @pytest.mark.usefixtures(
         "iam_verify_and_reset",
@@ -272,25 +270,6 @@ class TestAdminRouterACLs:
             json={},
             headers=headers
             )
-        assert r.status_code == 200
-
-    def test_adminrouter_ops_exhibitor(self, peter, superuser):
-
-        url = Url('/exhibitor')
-
-        r = requests.get(url)
-        assert r.status_code == 401
-
-        r = requests.get(url, headers=peter.authheader)
-        assert r.status_code == 403
-
-        superuser.set_user_permission(
-            rid='dcos:adminrouter:ops:exhibitor',
-            uid=peter.uid,
-            action='full'
-            )
-
-        r = requests.get(url, headers=peter.authheader)
         assert r.status_code == 200
 
     def test_adminrouter_ops_exhibitor(self, peter, superuser):

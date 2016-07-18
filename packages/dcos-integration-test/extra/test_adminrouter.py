@@ -16,9 +16,8 @@ import logging
 import pytest
 import requests
 import retrying
-from jwt.utils import base64url_decode
 
-from dcostests import Url, dcos
+from dcostests import Url
 
 
 log = logging.getLogger(__name__)
@@ -28,18 +27,18 @@ log = logging.getLogger(__name__)
 class TestHttpHttpsConfig:
 
     @pytest.mark.xfail(
-    pytest.config.getoption('expect_strict_security'),
-    reason='AR must not serve content over HTTP in strict security mode.',
-    strict=True
+        pytest.config.getoption('expect_strict_security'),
+        reason='AR must not serve content over HTTP in strict security mode.',
+        strict=True
     )
     def test_root_path_http(self):
         r = requests.get(Url('/', scheme='http'), allow_redirects=False)
         assert r.status_code == 200
 
     @pytest.mark.xfail(
-    not pytest.config.getoption('expect_strict_security'),
-    reason='AR is not expected to redirect from HTTP to HTTPS.',
-    strict=True
+        not pytest.config.getoption('expect_strict_security'),
+        reason='AR is not expected to redirect from HTTP to HTTPS.',
+        strict=True
     )
     def test_root_path_http_https_redirect(self):
         r = requests.get(Url('/', scheme='http'), allow_redirects=False)
@@ -159,8 +158,7 @@ def test_agents_endpoint_unknown_agent():
 # Retry if returncode is False, do not retry on exceptions.
 @retrying.retry(wait_fixed=2000,
                 retry_on_result=lambda r: r is False,
-                retry_on_exception=lambda _
-                : False)
+                retry_on_exception=lambda _: False)
 def test_agents_endpoint_all_agents(superuser):
 
     # Get currently known agents. This request is served through Admin Router
@@ -201,6 +199,6 @@ def test_agents_endpoint_all_agents(superuser):
 
 
 class TestServiceEndpoint:
-    pass
     # Test the more subtle details of the service endpoint, such as slash
     # behavior test /service/marathon and /service/marathon/
+    pass

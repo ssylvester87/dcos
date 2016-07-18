@@ -46,7 +46,7 @@ class TestIAMPublicEndpointReachability:
     def test_login(self):
         r = requests.get(IAMUrl('/auth/login'))
         assert r.status_code == 400
-        d = r.json()
+        r.json()
 
     def test_logout(self):
         r = requests.get(IAMUrl('/auth/logout'))
@@ -91,7 +91,7 @@ class TestIAMLoginEndpointBehavior:
     def test_post_invalid_credentials(self):
         r = requests.post(
             self.login_url,
-            json={'uid':'unknown', 'password':'not-the-right-one'}
+            json={'uid': 'unknown', 'password': 'not-the-right-one'}
             )
         assert r.status_code == 401
         assert r.json()['code'] == "ERR_INVALID_CREDENTIALS"
@@ -145,7 +145,7 @@ class TestIAMLoginEndpointBehavior:
         info = json.loads(info_json)
         assert 'description' in info
         assert info['uid'] == dcos.su_uid
-        assert info['is_remote'] == False
+        assert not info['is_remote']
 
         cookies = r.headers['set-cookie'].split(',')
         assert len(cookies) == 2

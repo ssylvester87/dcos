@@ -7,7 +7,7 @@ import subprocess
 
 from kazoo.client import KazooClient
 from kazoo.client import KazooRetry
-from kazoo.security import Permissions, ANYONE_ID_UNSAFE
+# from kazoo.security import Permissions, ANYONE_ID_UNSAFE
 from kazoo.security import make_digest_acl_credential
 from requests.packages.urllib3.util import Retry
 from requests.adapters import HTTPAdapter
@@ -96,10 +96,10 @@ class TestBootstrap():
         b.init_acls()
 
         # TODO https://mesosphere.atlassian.net/browse/DCOS-8189
-        #acls, st = self.zk.get_acls('/')
-        #assert len(acls) == 1
-        #assert acls[0].perms == Permissions.CREATE | Permissions.READ
-        #assert acls[0].id == ANYONE_ID_UNSAFE
+        # acls, st = self.zk.get_acls('/')
+        # assert len(acls) == 1
+        # assert acls[0].perms == Permissions.CREATE | Permissions.READ
+        # assert acls[0].id == ANYONE_ID_UNSAFE
 
         b.init_acls()
 
