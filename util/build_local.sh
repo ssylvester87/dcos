@@ -1,7 +1,9 @@
-#!/bin/bash -xe
+#!/bin/bash
+
+set -x
+set -o errexit -o pipefail
 
 ./util/fetch_dcos.py
-
 
 mkdir -p cache
 
