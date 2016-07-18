@@ -66,6 +66,16 @@
               ]
             },
             {
+              "rid": "flags",
+              "displayName": "Flags",
+              "actions": ["read"]
+            },
+            {
+              "rid": "log",
+              "displayName": "Log",
+              "actions": ["read"]
+            },
+            {
               "rid": "executor",
               "displayName": "Executor",
               "groupName": "Namespace",
@@ -148,6 +158,16 @@
           "displayName": "Master",
           "groupName": "Object",
           "items": [
+            {
+              "rid": "flags",
+              "displayName": "Flags",
+              "actions": ["read"]
+            },
+            {
+              "rid": "log",
+              "displayName": "Log",
+              "actions": ["read"]
+            },
             {
               "rid": "endpoint",
               "displayName": "Endpoint",
