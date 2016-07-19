@@ -46,7 +46,8 @@ class TestIAMPublicEndpointReachability:
     def test_login(self):
         r = requests.get(IAMUrl('/auth/login'))
         assert r.status_code == 400
-        r.json()
+        d = r.json()
+        _ = d  # noqa
 
     def test_logout(self):
         r = requests.get(IAMUrl('/auth/logout'))
@@ -59,6 +60,20 @@ class TestIAMPublicEndpointReachability:
     def test_oidc_providers(self):
         r = requests.get(IAMUrl('/auth/oidc/providers'))
         assert r.status_code == 200
+
+    def test_oidc_callback_url(self):
+        r = requests.get(IAMUrl('/auth/oidc/callback'))
+        assert r.status_code == 401
+        data = r.json()
+        assert 'dcos-iam-oidc-state cookie missing' in data['description']
+
+    def test_saml_callback_url(self):
+        r = requests.post(
+            IAMUrl('/auth/saml/providers/unknown/acs-callback'),
+            json={}
+            )
+        data = r.json()
+        assert 'SAML provider `unknown` not known' in data['description']
 
 
 class TestIAMLoginEndpointBehavior:
@@ -198,6 +213,7 @@ class TestIAMInvalidAuthHeader:
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
+@pytest.mark.usefixtures("iam_verify_and_reset")
 class TestIAMUserGroupCRUD:
 
     def test_create_user_account_log_in_delete(self, superuser):
