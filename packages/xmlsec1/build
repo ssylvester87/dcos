@@ -1,6 +1,4 @@
-#!/bin/bash -xe
-
-mkdir -p "/build"
+#!/bin/bash
 
 pushd "/pkg/src/xmlsec1"
 ./configure "--prefix=$PKG_PATH" --with-libxml=/opt/mesosphere --with-libxslt=/opt/mesosphere

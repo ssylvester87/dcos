@@ -1,5 +1,5 @@
 {
-  "requires": ["python", "python-kazoo", "python-passlib", "python-retrying", "six"],
+  "requires": ["python", "python-jwt", "python-kazoo", "python-passlib", "python-retrying", "six"],
   "docker": "dcos-builder",
   "sources": {
     "bouncer": {

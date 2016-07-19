@@ -1,6 +1,4 @@
-#!/bin/bash -xe
-
-mkdir -p "/build"
+#!/bin/bash
 
 pushd "/pkg/src/libxslt"
 ./configure "--prefix=$PKG_PATH" --without-python --with-libxml-prefix=/opt/mesosphere --without-crypto || true

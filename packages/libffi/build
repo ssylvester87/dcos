@@ -1,6 +1,4 @@
-#!/bin/bash -xe
-
-mkdir -p "/build"
+#!/bin/bash
 
 pushd "/pkg/src/libffi"
 ./configure "--prefix=$PKG_PATH"

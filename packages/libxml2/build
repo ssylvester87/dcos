@@ -1,6 +1,4 @@
-#!/bin/bash -xe
-
-mkdir -p "/build"
+#!/bin/bash
 
 pushd "/pkg/src/libxml2"
 ./configure "--prefix=$PKG_PATH" --without-python --without-lzma
