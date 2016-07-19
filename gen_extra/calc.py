@@ -42,6 +42,24 @@ def validate_bootstrap_secrets(bootstrap_secrets):
     assert bootstrap_secrets in can_be, 'Must be one of {}. Got {}'.format(can_be, bootstrap_secrets)
 
 
+def validate_firewall_enabled(firewall_enabled):
+    if firewall_enabled in ["[[[variables('firewallEnabled')]]]", '{ "Ref" : "FirewallEnabled" }']:
+        return
+    can_be = ['true', 'false']
+    assert firewall_enabled in can_be, 'Must be one of {}. Got {}'.format(can_be, firewall_enabled)
+
+
+def calculate_firewall_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'false'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def validate_httpauth_enabled(httpauth_enabled):
     if httpauth_enabled in ["[[[variables('httpauthEnabled')]]]", '{ "Ref" : "HTTPAuthEnabled" }']:
         return
@@ -204,12 +222,14 @@ entry = {
         validate_customer_key,
         validate_security,
         validate_bootstrap_secrets,
+        validate_firewall_enabled,
         validate_httpauth_enabled,
         validate_mesos_authz_enforced
     ],
     'default': {
         'security': 'permissive',
         'bootstrap_secrets': 'true',
+        'firewall_enabled': calculate_firewall_enabled,
         'httpauth_enabled': calculate_httpauth_enabled,
         'httpauth_available': calculate_httpauth_available,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,

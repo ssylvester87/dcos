@@ -67,8 +67,11 @@ package:
       MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
 {% case "false" %}
 {% endswitch %}
-      # TODO(adam-mesos): Disable if security!= strict
+{% switch firewall_enabled %}
+{% case "true" %}
       MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/master_firewall.json
+{% case "false" %}
+{% endswitch %}
       MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
       # Always load authenticator, allow authentication.
       MESOS_AUTHENTICATORS={{ mesos_fwk_authenticators }}
@@ -119,7 +122,11 @@ package:
       MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
 {% case "false" %}
 {% endswitch %}
+{% switch firewall_enabled %}
+{% case "true" %}
       MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/agent_firewall.json
+{% case "false" %}
+{% endswitch %}
       MESOS_AUTHORIZER={{ mesos_agent_authorizer }}
       # TODO(adam-mesos): Disable these 2 agent-authn lines for security=off mode.
       MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
