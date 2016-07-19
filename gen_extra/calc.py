@@ -119,6 +119,28 @@ def calculate_mesos_authenticate_frameworks(security):
         return 'false'
 
 
+def calculate_mesos_authenticate_agents(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'false'
+
+    elif security == 'disabled':
+        return 'false'
+
+
+def calculate_agent_authn_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'true'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def calculate_marathon_extra_args(security):
     if security == 'strict':
         return '--disable_http'
@@ -266,6 +288,8 @@ entry = {
         'mesos_authenticate_http': calculate_httpauth_available,
         'mesos_fwk_authenticators': __framework_authenticator_module_name,
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
+        'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
+        'agent_authn_enabled': calculate_agent_authn_enabled,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': ','.join(__enterprise_hook_modules),
