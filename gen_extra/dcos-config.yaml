@@ -78,8 +78,7 @@ package:
       # Conditionally require authentication (reject unauthenticated).
       MESOS_AUTHENTICATE_FRAMEWORKS={{ mesos_authenticate_frameworks }}
       MESOS_AUTHENTICATE_AGENTS={{ mesos_authenticate_agents }}
-      # TODO(adam-mesos): should be false in disabled mode
-      SSL_ENABLED=true
+      SSL_ENABLED={{ ssl_enabled }}
       SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       SSL_VERIFY_CERT=false
       SSL_REQUIRE_CERT=false
@@ -108,8 +107,7 @@ package:
     content: |
       MESOS_ISOLATION={{ mesos_isolation_modules }}
       MESOS_HOOKS={{ mesos_hooks }}
-      # TODO(adam-mesos): should be false in disabled mode
-      SSL_ENABLED=true
+      SSL_ENABLED={{ ssl_enabled }}
       # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
       SSL_SUPPORT_DOWNGRADE=true
       SSL_VERIFY_CERT=false
@@ -161,7 +159,7 @@ package:
       PLUGIN_FRAMEWORK_TYPE=marathon
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
-      SSL_ENABLED=true
+      SSL_ENABLED={{ ssl_enabled }}
       SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
       SSL_KEYSTORE_PATH=/run/dcos/pki/tls/private/marathon.jks

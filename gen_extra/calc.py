@@ -11,6 +11,17 @@ def validate_security(security):
     assert security in ['strict', 'permissive', 'disabled'], "Must be either 'strict', 'permissive' or 'disabled'"
 
 
+def calculate_ssl_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'true'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def calculate_ssl_support_downgrade(security):
     if security == 'strict':
         return 'false'
@@ -293,6 +304,7 @@ entry = {
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': ','.join(__enterprise_hook_modules),
         'mesos_isolation_modules': ','.join(__enterprise_isolation_modules),
+        'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args
     }
