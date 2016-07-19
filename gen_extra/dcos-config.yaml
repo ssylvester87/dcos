@@ -198,6 +198,9 @@ package:
       SSL_REQUIRE_CERT=false
       SSL_VERIFY_CERT=false
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
+{% switch zk_acls_enabled %}
+{% case "false" %}
+{% case "true" %}
   - path: /etc_master/zk_super_credentials
     permissions: "0600"
     content: |
@@ -240,4 +243,5 @@ package:
   - path: /etc/exhibitor-extras
     content: |
       {{ zk_super_digest_jvmflags }}
+{% endswitch %}
 {% endswitch %}

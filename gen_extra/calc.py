@@ -131,6 +131,17 @@ def calculate_marathon_extra_args(security):
         return ''
 
 
+def calculate_zk_acls_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'false'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def empty(s):
     return s == ''
 
@@ -258,7 +269,8 @@ entry = {
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
-        'marathon_extra_args': calculate_marathon_extra_args
+        'marathon_extra_args': calculate_marathon_extra_args,
+        'zk_acls_enabled': calculate_zk_acls_enabled,
     }
 }
 
