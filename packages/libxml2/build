@@ -1,0 +1,10 @@
+#!/bin/bash
+
+pushd "/pkg/src/libxml2"
+./configure "--prefix=$PKG_PATH" --without-python --without-lzma
+make
+make install
+
+find "$PKG_PATH/lib/" ! -type d -name "*.a"  -delete
+rm -rf "$PKG_PATH/lib/cmake/"
+rm -rf "$PKG_PATH/share/"

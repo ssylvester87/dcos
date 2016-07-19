@@ -1,0 +1,9 @@
+{
+  "requires": ["libxml2"],
+  "docker": "dcos-builder",
+  "single_source" : {
+    "kind": "url_extract",
+    "url": "http://www.xmlsoft.org/sources/libxslt-1.1.28.tar.gz",
+    "sha1": "4df177de629b2653db322bfb891afa3c0d1fa221"
+  }
+}
