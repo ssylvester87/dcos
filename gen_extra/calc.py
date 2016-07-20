@@ -258,7 +258,7 @@ entry = {
         'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
         'superuser_username': '',
         'superuser_password_hash': '',
-        'customer_key': '',
+        'customer_key': 'Customer Key Not Set ---------------',
         'ui_tracking': 'true',
         'ui_banner': 'false',
         'ui_banner_background_color': '#1E232F',
