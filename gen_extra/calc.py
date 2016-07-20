@@ -5,6 +5,8 @@ from base64 import b64encode
 
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "'customer_key' must be a string."
+    if customer_key == "Cloud Template Missing Parameter":
+        return
     assert len(customer_key) == 36, "'customer_key' must be 36 characters long with hyphens"
 
 
