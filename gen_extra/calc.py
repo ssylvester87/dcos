@@ -1,3 +1,4 @@
+import gen.calc
 import hashlib
 from base64 import b64encode
 
@@ -217,21 +218,6 @@ def calculate_zk_super_digest_jvmflags(zk_super_creds):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-__default_isolation_modules = [
-    'cgroups/cpu',
-    'cgroups/mem',
-    'disk/du',
-    'filesystem/linux',
-    'docker/volume',
-    'network/cni',
-    'docker/runtime'
-]
-__enterprise_isolation_modules = __default_isolation_modules + [
-    'com_mesosphere_MetricsIsolatorModule',
-    'com_mesosphere_dcos_SecretsIsolator'
-]
-
-
 def get_ui_auth_json(ui_organization, ui_networking):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
@@ -293,7 +279,7 @@ entry = {
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
-        'mesos_isolation_modules': ','.join(__enterprise_isolation_modules),
+        'mesos_isolation': ','.join(gen.calc.mesos_isolation + ['com_mesosphere_MetricsIsolatorModule', 'com_mesosphere_dcos_SecretsIsolator']),
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args

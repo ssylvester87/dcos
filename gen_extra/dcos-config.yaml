@@ -113,7 +113,6 @@ package:
       { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
     content: |
-      MESOS_ISOLATION={{ mesos_isolation_modules }}
       MESOS_HOOKS={{ mesos_hooks }}
       SSL_ENABLED={{ ssl_enabled }}
       # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
