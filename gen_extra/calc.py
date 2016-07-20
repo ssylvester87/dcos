@@ -72,18 +72,7 @@ def calculate_firewall_enabled(security):
         return 'false'
 
 
-def validate_httpauth_enabled(httpauth_enabled):
-    if httpauth_enabled in ["[[[variables('httpauthEnabled')]]]", '{ "Ref" : "HTTPAuthEnabled" }']:
-        return
-    can_be = ['true', 'false']
-    assert httpauth_enabled in can_be, 'Must be one of {}. Got {}'.format(can_be, httpauth_enabled)
-
-
-def calculate_httpauth_available(httpauth_enabled):
-    return httpauth_enabled
-
-
-def calculate_httpauth_enabled(security):
+def calculate_mesos_authenticate_http(security):
     if security == 'strict':
         return 'true'
 
@@ -238,15 +227,12 @@ entry = {
         validate_zk_agent_credentials,
         validate_bootstrap_secrets,
         validate_firewall_enabled,
-        validate_httpauth_enabled,
         validate_mesos_authz_enforced
     ],
     'default': {
         'security': 'permissive',
         'bootstrap_secrets': 'true',
         'firewall_enabled': calculate_firewall_enabled,
-        'httpauth_enabled': calculate_httpauth_enabled,
-        'httpauth_available': calculate_httpauth_available,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args,
@@ -283,7 +269,7 @@ entry = {
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
         'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
-        'mesos_authenticate_http': calculate_httpauth_available,
+        'mesos_authenticate_http': calculate_mesos_authenticate_http,
         'mesos_fwk_authenticators': 'com_mesosphere_dcos_ClassicRPCAuthenticator',
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,

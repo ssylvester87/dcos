@@ -65,7 +65,7 @@ package:
 {% endswitch %}
   - path: /etc/mesos-master-extras
     content: |
-{% switch httpauth_available %}
+{% switch mesos_authenticate_http %}
 {% case "true" %}
       MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
       MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
@@ -121,7 +121,7 @@ package:
       SSL_VERIFY_CERT=false
       SSL_REQUIRE_CERT=false
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
-{% switch httpauth_available %}
+{% switch mesos_authenticate_http %}
 {% case "true" %}
       MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
       MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
