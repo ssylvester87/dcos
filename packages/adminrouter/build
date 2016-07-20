@@ -1,6 +1,4 @@
-#!/bin/bash -xe
-
-mkdir -p "/build"
+#!/bin/bash
 
 export CXXFLAGS=-I/opt/mesosphere/include
 
@@ -10,16 +8,16 @@ pushd "/pkg/src/nginx"
   "--prefix=$PKG_PATH" \
   --with-cc-opt="-I /opt/mesosphere/include" \
   --with-ld-opt="-L /opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib" \
+  --with-http_ssl_module \
   --with-ipv6 \
   --with-file-aio \
+  --with-luajit \
   --with-http_v2_module \
   --with-http_gunzip_module \
   --with-http_gzip_static_module \
   --without-mail_pop3_module \
   --without-mail_imap_module \
-  --without-mail_smtp_module \
-  --with-http_ssl_module \
-  --with-luajit
+  --without-mail_smtp_module
 
 make -j8
 make install

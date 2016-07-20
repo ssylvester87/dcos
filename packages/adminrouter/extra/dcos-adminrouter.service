@@ -13,7 +13,6 @@ PIDFile=$PKG_PATH/nginx/logs/nginx.pid
 PrivateDevices=yes
 StandardOutput=journal
 StandardError=journal
-#Environment=SECRET_KEY_FILE_PATH=/var/lib/dcos/auth-token-secret
 # SECRET_KEY_FILE_PATH points to a certificate when using RS256
 Environment=SECRET_KEY_FILE_PATH=/run/dcos/etc/jwks.pub
 Environment=JWT_ALG=RS256
