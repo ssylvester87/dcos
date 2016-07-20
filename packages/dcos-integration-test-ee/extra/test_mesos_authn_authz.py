@@ -77,9 +77,14 @@ def test_mesos_endpoint_authn(superuser):
                     'authenticated endpoint {} does not accept authentication' \
                     .format(endpoint['path'])
             else:
-                assert r.status_code == 401, \
-                    'authenticated endpoint {} incorrectly allows unauthenticated requests' \
-                    .format(endpoint['path'])
+                if 'disabled' in r.text:
+                    assert r.status_code == 403, \
+                        'disabled endpoint {} did not return 403 as expected' \
+                        .format(endpoint['path'])
+                else:
+                    assert r.status_code == 401, \
+                        'authenticated endpoint {} incorrectly allows unauthenticated requests' \
+                        .format(endpoint['path'])
         else:
             assert r.status_code != 401, \
                 'unauthenticated endpoint {} rejected request due to missing authentication' \
@@ -89,9 +94,11 @@ def test_mesos_endpoint_authn(superuser):
     agent_url = str(Url('', host=dcos.agents[0], port=5051))
 
     for endpoint in get_mesos_endpoints(master_url):
+        log.info('Test Mesos master endpoint: %s', endpoint)
         for do_authed in [False, True]:
             request(url=(endpoint['path']), do_authed=do_authed, master=True)
 
     for endpoint in get_mesos_endpoints(agent_url):
+        log.info('Test Mesos agent endpoint: %s', endpoint)
         for do_authed in [False, True]:
             request(url=(endpoint['path']), do_authed=do_authed, master=False)
