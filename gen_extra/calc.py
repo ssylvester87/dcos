@@ -46,21 +46,6 @@ def calculate_adminrouter_enforce_https(security):
         return 'false'
 
 
-def validate_bootstrap_secrets(bootstrap_secrets):
-    # Should correspond with bootstrap_secrets in gen/azure/calc.py
-    if bootstrap_secrets in ["[[[variables('bootstrapSecrets')]]]", '{ "Ref" : "BootstrapSecrets" }']:
-        return
-    can_be = ['true', 'false']
-    assert bootstrap_secrets in can_be, 'Must be one of {}. Got {}'.format(can_be, bootstrap_secrets)
-
-
-def validate_firewall_enabled(firewall_enabled):
-    if firewall_enabled in ["[[[variables('firewallEnabled')]]]", '{ "Ref" : "FirewallEnabled" }']:
-        return
-    can_be = ['true', 'false']
-    assert firewall_enabled in can_be, 'Must be one of {}. Got {}'.format(can_be, firewall_enabled)
-
-
 def calculate_firewall_enabled(security):
     if security == 'strict':
         return 'true'
@@ -81,13 +66,6 @@ def calculate_mesos_authenticate_http(security):
 
     elif security == 'disabled':
         return 'false'
-
-
-def validate_mesos_authz_enforced(mesos_authz_enforced):
-    if mesos_authz_enforced in ["[[[variables('mesosAuthzEnforced')]]]", '{ "Ref" : "MesosAuthzEnforced" }']:
-        return
-    can_be = ['true', 'false']
-    assert mesos_authz_enforced in can_be, 'Must be one of {}. Got {}'.format(can_be, mesos_authz_enforced)
 
 
 def calculate_mesos_authz_enforced(security):
@@ -221,22 +199,13 @@ def get_ui_auth_json(ui_organization, ui_networking):
 entry = {
     'validate': [
         validate_customer_key,
-        validate_security,
         validate_zk_super_credentials,
         validate_zk_master_credentials,
         validate_zk_agent_credentials,
-        validate_bootstrap_secrets,
-        validate_firewall_enabled,
-        validate_mesos_authz_enforced
+        validate_security
     ],
     'default': {
         'security': 'permissive',
-        'bootstrap_secrets': 'true',
-        'firewall_enabled': calculate_firewall_enabled,
-        'mesos_authz_enforced': calculate_mesos_authz_enforced,
-        'ssl_support_downgrade': calculate_ssl_support_downgrade,
-        'marathon_extra_args': calculate_marathon_extra_args,
-        'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
         'superuser_username': '',
         'superuser_password_hash': '',
         'zk_super_credentials': 'super:secret',
@@ -256,9 +225,11 @@ entry = {
     'must': {
         'oauth_enabled': 'false',
         'oauth_available': 'false',
-        'adminrouter_auth_enabled': 'true',
         'zk_super_digest_jvmflags': calculate_zk_super_digest_jvmflags,
         'zk_agent_digest': calculate_zk_agent_digest,
+        'adminrouter_auth_enabled': 'true',
+        'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
+        'bootstrap_secrets': 'true',
         'ui_auth_providers': 'true',
         'ui_secrets': 'true',
         'ui_networking': 'true',
@@ -274,6 +245,7 @@ entry = {
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,
+        'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
@@ -282,6 +254,7 @@ entry = {
                 'com_mesosphere_MetricsIsolatorModule',
                 'com_mesosphere_dcos_SecretsIsolator'
             ]),
+        'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args
