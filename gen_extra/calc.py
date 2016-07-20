@@ -203,11 +203,6 @@ def calculate_zk_master_digest(zk_master_creds):
     return calculate_digest(zk_master_creds)
 
 
-def validate_os_type(os_type):
-    can_be = ['coreos', 'el7']
-    assert os_type in can_be, 'Must be one of {}. Got {}'.format(can_be, os_type)
-
-
 def calculate_zk_agent_digest(zk_agent_creds):
     return calculate_digest(zk_agent_creds)
 
