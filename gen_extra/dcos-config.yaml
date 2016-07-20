@@ -41,6 +41,8 @@ package:
           ],`
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
       }
+{% switch firewall_enabled %}
+{% case "true" %}
   - path: /etc/mesos/master_firewall.json
     content: |
       {
@@ -59,6 +61,8 @@ package:
           ]
         }
       }
+{% case "false" %}
+{% endswitch %}
   - path: /etc/mesos-master-extras
     content: |
 {% switch httpauth_available %}
@@ -85,7 +89,9 @@ package:
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-master.crt
       SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-master.key
-  - path: /etc/mesos/agent_firewall.json
+{% switch firewall_enabled %}
+{% case "true" %}
+  - path: /etc/mesos/slave_firewall.json
     content: |
       {
         "disabled_endpoints": {
@@ -97,10 +103,12 @@ package:
           ]
         }
       }
-  - path: /etc/mesos/agent_principal.json
+{% case "false" %}
+{% endswitch %}
+  - path: /etc/mesos/slave_principal.json
     content: |
       { "principal": "dcos_mesos_agent" }
-  - path: /etc/mesos/public_agent_principal.json
+  - path: /etc/mesos/public_slave_principal.json
     content: |
       { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
@@ -121,7 +129,7 @@ package:
 {% endswitch %}
 {% switch firewall_enabled %}
 {% case "true" %}
-      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/agent_firewall.json
+      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/slave_firewall.json
 {% case "false" %}
 {% endswitch %}
       MESOS_AUTHORIZER={{ mesos_agent_authorizer }}
@@ -135,7 +143,7 @@ package:
     content: |
 {% switch agent_authn_enabled %}
 {% case "true" %}
-      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/agent_principal.json
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/slave_principal.json
 {% case "false" %}
 {% endswitch %}
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
@@ -144,7 +152,7 @@ package:
     content: |
 {% switch agent_authn_enabled %}
 {% case "true" %}
-      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/public_agent_principal.json
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/public_slave_principal.json
 {% case "false" %}
 {% endswitch %}
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave-public.crt
