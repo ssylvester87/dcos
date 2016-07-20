@@ -228,10 +228,6 @@ __default_isolation_modules = [
     'network/cni',
     'docker/runtime'
 ]
-__enterprise_isolation_modules = __default_isolation_modules + [
-    'com_mesosphere_MetricsIsolatorModule',
-    'com_mesosphere_dcos_SecretsIsolator'
-]
 
 
 def get_ui_auth_json(ui_organization, ui_networking):
@@ -295,7 +291,11 @@ entry = {
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
-        'mesos_isolation_modules': ','.join(__enterprise_isolation_modules),
+        'mesos_isolation': ','.join(
+            __default_isolation_modules + [
+                'com_mesosphere_MetricsIsolatorModule',
+                'com_mesosphere_dcos_SecretsIsolator'
+            ]),
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'marathon_extra_args': calculate_marathon_extra_args
