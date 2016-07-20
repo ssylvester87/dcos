@@ -1,10 +1,5 @@
 #!/bin/bash
 
-set -e  # exit if any command exits with non-zero status
-set -x  # print commands on the fly
-set -u  # undefined vars
-
-
 export GOPATH=/pkg:$GOPATH
 export SQLSURVIVOR_CTR_MOUNT=/pkg/src/sqlsurvivor/
 

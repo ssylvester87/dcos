@@ -574,42 +574,34 @@ def parse_args():
     parser.add_argument('services', nargs='+')
     parser.add_argument(
         '--zk',
-        type=str,
         default=zk_default,
         help='Host string passed to Kazoo client constructor.')
     parser.add_argument(
         '--zk_super_creds',
-        type=str,
         default='/opt/mesosphere/etc/zk_super_creds',
         help='File with ZooKeeper agent digest')
     parser.add_argument(
         '--zk_master_creds',
-        type=str,
         default='/opt/mesosphere/etc/zk_master_creds',
         help='File with ZooKeeper master credentials')
     parser.add_argument(
         '--zk_agent_creds',
-        type=str,
         default='/opt/mesosphere/etc/zk_agent_creds',
         help='File with ZooKeeper agent credentials')
     parser.add_argument(
         '--zk_agent_digest',
-        type=str,
         default='/opt/mesosphere/etc/zk_agent_digest',
         help='File with ZooKeeper agent digest')
     parser.add_argument(
         '--master_count',
-        type=str,
         default='/opt/mesosphere/etc/master_count',
         help='File with number of master servers')
     parser.add_argument(
         '--iam_url',
-        type=str,
         default=iam_default,
         help='IAM Service (Bouncer) URL')
     parser.add_argument(
         '--ca_url',
-        type=str,
         default=ca_default,
         help='CA URL')
     return parser.parse_args()

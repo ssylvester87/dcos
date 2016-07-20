@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) Mesosphere, Inc. See LICENSE file for details.
-
-
 """
 Test Admin Router's authentication and authorization behavior.
 

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) Mesosphere, Inc. See LICENSE file for details.
-
-
 """
 Test if nginx endpoints are serving, either static or dynamic.
 
