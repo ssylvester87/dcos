@@ -578,15 +578,15 @@ def parse_args():
         help='Host string passed to Kazoo client constructor.')
     parser.add_argument(
         '--zk_super_creds',
-        default='/opt/mesosphere/etc/zk_super_creds',
-        help='File with ZooKeeper agent digest')
+        default='/opt/mesosphere/etc/zk_super_credentials',
+        help='File with ZooKeeper super credentials')
     parser.add_argument(
         '--zk_master_creds',
-        default='/opt/mesosphere/etc/zk_master_creds',
+        default='/opt/mesosphere/etc/zk_master_credentials',
         help='File with ZooKeeper master credentials')
     parser.add_argument(
         '--zk_agent_creds',
-        default='/opt/mesosphere/etc/zk_agent_creds',
+        default='/opt/mesosphere/etc/zk_agent_credentials',
         help='File with ZooKeeper agent credentials')
     parser.add_argument(
         '--zk_agent_digest',

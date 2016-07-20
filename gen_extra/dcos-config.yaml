@@ -174,3 +174,23 @@ package:
       SSL_REQUIRE_CERT=false
       SSL_VERIFY_CERT=false
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
+  - path: /etc_master/zk_super_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_super_credentials }}
+  - path: /etc_master/zk_master_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_master_credentials }}
+  - path: /etc_master/zk_agent_digest
+    permissions: "0600"
+    content: |
+      {{ zk_agent_digest }}
+  - path: /etc_slave/zk_agent_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_agent_credentials }}
+  - path: /etc_slave_public/zk_agent_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_agent_credentials }}

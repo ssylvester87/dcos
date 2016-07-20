@@ -187,31 +187,27 @@ def validate_zk_agent_credentials(zk_agent_credentials):
     validate_zk_credentials(zk_agent_credentials, "Agent ZK")
 
 
-def calculate_digest(creds):
-    if empty(creds):
+def calculate_digest(credentials):
+    if empty(credentials):
         return ''
-    username, password = creds.split(':', 1)
+    username, password = credentials.split(':', 1)
     credential = username.encode('utf-8') + b":" + password.encode('utf-8')
     cred_hash = b64encode(hashlib.sha1(credential).digest()).strip()
     return username + ":" + cred_hash.decode('utf-8')
 
 
-def calculate_zk_super_digest(zk_super_creds):
-    return calculate_digest(zk_super_creds)
+def calculate_zk_agent_digest(zk_agent_credentials):
+    return calculate_digest(zk_agent_credentials)
 
 
-def calculate_zk_master_digest(zk_master_creds):
-    return calculate_digest(zk_master_creds)
+def calculate_zk_super_digest(zk_super_credentials):
+    return calculate_digest(zk_super_credentials)
 
 
-def calculate_zk_agent_digest(zk_agent_creds):
-    return calculate_digest(zk_agent_creds)
-
-
-def calculate_zk_super_digest_jvmflags(zk_super_creds):
-    if empty(zk_super_creds):
+def calculate_zk_super_digest_jvmflags(zk_super_credentials):
+    if empty(zk_super_credentials):
         return ''
-    digest = calculate_zk_super_digest(zk_super_creds)
+    digest = calculate_zk_super_digest(zk_super_credentials)
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
@@ -237,6 +233,9 @@ entry = {
     'validate': [
         validate_customer_key,
         validate_security,
+        validate_zk_super_credentials,
+        validate_zk_master_credentials,
+        validate_zk_agent_credentials,
         validate_bootstrap_secrets,
         validate_firewall_enabled,
         validate_httpauth_enabled,
@@ -254,6 +253,9 @@ entry = {
         'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
         'superuser_username': '',
         'superuser_password_hash': '',
+        'zk_super_credentials': 'super:secret',
+        'zk_master_credentials': 'dcos-master:secret1',
+        'zk_agent_credentials': 'dcos-agent:secret2',
         'customer_key': 'CUSTOMER KEY NOT SET',
         'ui_tracking': 'true',
         'ui_banner': 'false',
@@ -269,6 +271,8 @@ entry = {
         'oauth_enabled': 'false',
         'oauth_available': 'false',
         'adminrouter_auth_enabled': 'true',
+        'zk_super_digest_jvmflags': calculate_zk_super_digest_jvmflags,
+        'zk_agent_digest': calculate_zk_agent_digest,
         'ui_auth_providers': 'true',
         'ui_secrets': 'true',
         'ui_networking': 'true',
