@@ -4,7 +4,7 @@ from base64 import b64encode
 
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "'customer_key' must be a string."
-    if customer_key == "Cloud Template Missing Parameter":
+    if customer_key == "Cloud Template Missing Parameter" or customer_key == "CUSTOMER KEY NOT SET":
         return
     assert len(customer_key) == 36, "'customer_key' must be 36 characters long with hyphens"
 
@@ -253,7 +253,7 @@ entry = {
         'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
         'superuser_username': '',
         'superuser_password_hash': '',
-        'customer_key': 'Customer Key Not Set ---------------',
+        'customer_key': 'CUSTOMER KEY NOT SET',
         'ui_tracking': 'true',
         'ui_banner': 'false',
         'ui_banner_background_color': '#1E232F',
