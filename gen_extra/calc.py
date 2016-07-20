@@ -112,7 +112,7 @@ def calculate_mesos_authz_enforced(security):
 
 def calculate_mesos_authorizer(mesos_authz_enforced):
     if mesos_authz_enforced == 'true':
-        return __authz_module_name
+        return 'com_mesosphere_dcos_Authorizer'
 
     else:
         return 'local'
@@ -217,14 +217,6 @@ def calculate_zk_super_digest_jvmflags(zk_super_creds):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-__http_authn_module_name = 'com_mesosphere_dcos_http_Authenticator'
-__authz_module_name = 'com_mesosphere_dcos_Authorizer'
-__secrets_isolator_name = 'com_mesosphere_dcos_SecretsIsolator'
-__secrets_hook_name = 'com_mesosphere_dcos_SecretsHook'
-__framework_authenticator_module_name = 'com_mesosphere_dcos_ClassicRPCAuthenticator'
-__framework_authenticatee_module_name = 'com_mesosphere_dcos_ClassicRPCAuthenticatee'
-
-
 __default_isolation_modules = [
     'cgroups/cpu',
     'cgroups/mem',
@@ -234,12 +226,10 @@ __default_isolation_modules = [
     'network/cni',
     'docker/runtime'
 ]
-
-__metrics_isolator_slave_module_name = 'com_mesosphere_MetricsIsolatorModule'
-
-__enterprise_only_isolation_modules = [__metrics_isolator_slave_module_name, __secrets_isolator_name]
-__enterprise_isolation_modules = __default_isolation_modules + __enterprise_only_isolation_modules
-__enterprise_hook_modules = [__secrets_hook_name]
+__enterprise_isolation_modules = __default_isolation_modules + [
+    'com_mesosphere_MetricsIsolatorModule',
+    'com_mesosphere_dcos_SecretsIsolator'
+]
 
 
 def get_ui_auth_json(ui_organization, ui_networking):
@@ -294,15 +284,15 @@ entry = {
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
-        'mesos_http_authenticators': __http_authn_module_name,
+        'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
         'mesos_authenticate_http': calculate_httpauth_available,
-        'mesos_fwk_authenticators': __framework_authenticator_module_name,
+        'mesos_fwk_authenticators': 'com_mesosphere_dcos_ClassicRPCAuthenticator',
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
-        'mesos_hooks': ','.join(__enterprise_hook_modules),
+        'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
         'mesos_isolation_modules': ','.join(__enterprise_isolation_modules),
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
