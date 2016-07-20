@@ -178,6 +178,7 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
+# TODO(adam): Inherit this from dcos/dcos once we pull in the necessary upstream.
 __default_isolation_modules = [
     'cgroups/cpu',
     'cgroups/mem',
