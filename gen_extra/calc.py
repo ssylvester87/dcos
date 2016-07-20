@@ -165,25 +165,26 @@ def calculate_marathon_extra_args(security):
 
 
 def empty(s):
-    return not s or s == ''
+    return s == ''
 
 
-def validate_zk_super_creds(zk_super_creds):
-    if empty(zk_super_creds):
+def validate_zk_credentials(credentials, human_name):
+    if credentials == '':
         return
-    assert len(zk_super_creds.split(':', 1)) == 2, "Super ZK credentials must be of the form username:password"
+    assert len(credentials.split(':', 1)) == 2, (
+        "{human_name} must of the form username: password".format(human_name = human_name))
 
 
-def validate_zk_master_creds(zk_master_creds):
-    if empty(zk_master_creds):
-        return
-    assert len(zk_master_creds.split(':', 1)) == 2, "Master ZK credentials must be of the form username:password"
+def validate_zk_super_credentials(zk_super_credentials):
+    validate_zk_credentials(zk_super_credentials, "Super ZK")
 
 
-def validate_zk_agent_creds(zk_agent_creds):
-    if empty(zk_agent_creds):
-        return
-    assert len(zk_agent_creds.split(':', 1)) == 2, "Agent ZK credentials must be of the form username:password"
+def validate_zk_master_credentials(zk_master_credentials):
+    validate_zk_credentials(zk_master_credentials, "Master ZK")
+
+
+def validate_zk_agent_credentials(zk_agent_credentials):
+    validate_zk_credentials(zk_agent_credentials, "Agent ZK")
 
 
 def calculate_digest(creds):
