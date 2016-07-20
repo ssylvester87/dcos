@@ -4,17 +4,17 @@
   "sources": {
     "metronome": {
       "kind": "url_extract",
-      "url": "https://downloads.mesosphere.com/maven/dcos/metronome/0.1.5-SNAPSHOT/metronome-0.1.5-SNAPSHOT.tgz",
-      "sha1": "819ce34796229bfe4a3718b3f4c4ab621ea50114"
+      "url": "https://downloads.mesosphere.com/maven/dcos/metronome/0.1.6-SNAPSHOT/metronome-0.1.6-SNAPSHOT.tgz",
+      "sha1": "0307cc57db368f2fc269542a3b043bc6d3215c45"
     },
     "metronome-plugins": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC8/plugins.zip",
-      "sha1": "7a539bcbc641dc3b4e90906bc13c1ef588a3ce6d"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC9/plugins.zip",
+      "sha1": "49c2892e40a42a4de624778e85a93513ec3fc889"
     },
     "metronome-plugin-conf": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC8/plugin-conf.json",
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC9/plugin-conf.json",
       "sha1": "ad1af05322b6adff27f0c8fd0edbde763327be6f"
     }
   },
