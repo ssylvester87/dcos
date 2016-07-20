@@ -15,13 +15,13 @@ cp -r /pkg/bin/ "$PKG_PATH"
 # Copy the snapshot config file
 cp -v /pkg/src/github.com/dcos/3dt/endpoints_config.json $PKG_PATH/
 
-master_service=${PKG_PATH}/dcos.target.wants_master/dcos-ddt.service
-slave_service=${PKG_PATH}/dcos.target.wants_slave/dcos-ddt.service
-slave_public_service=${PKG_PATH}/dcos.target.wants_slave_public/dcos-ddt.service
+master_service=${PKG_PATH}/dcos.target.wants_master/dcos-3dt.service
+slave_service=${PKG_PATH}/dcos.target.wants_slave/dcos-3dt.service
+slave_public_service=${PKG_PATH}/dcos.target.wants_slave_public/dcos-3dt.service
 
-master_socket_service=${PKG_PATH}/dcos.target.wants_master/dcos-ddt.socket
-slave_socket_service=${PKG_PATH}/dcos.target.wants_slave/dcos-ddt.socket
-slave_public_socket_service=${PKG_PATH}/dcos.target.wants_slave_public/dcos-ddt.socket
+master_socket_service=${PKG_PATH}/dcos.target.wants_master/dcos-3dt.socket
+slave_socket_service=${PKG_PATH}/dcos.target.wants_slave/dcos-3dt.socket
+slave_public_socket_service=${PKG_PATH}/dcos.target.wants_slave_public/dcos-3dt.socket
 mkdir -p $(dirname $master_service)
 mkdir -p $(dirname $slave_service)
 mkdir -p $(dirname $slave_public_service)
@@ -33,7 +33,7 @@ Description=Diagnostics socket: DCOS Distributed Diagnostics Tool Master API and
 ListenStream=/run/dcos/3dt.sock
 
 [Install]
-WantedBy=dcos-ddt.service
+WantedBy=dcos-3dt.service
 EOF
 
 cat <<EOF | tee $slave_service $slave_public_service
@@ -45,7 +45,7 @@ EnvironmentFile=/opt/mesosphere/environment
 Restart=always
 StartLimitInterval=0
 RestartSec=5
-ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-ddt-agent
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-3dt-agent
 ExecStart=/opt/mesosphere/bin/3dt -endpoint-config ${PKG_PATH}/endpoints_config.json -agent-port 61002 -force-tls
 User=dcos_3dt
 EOF
@@ -59,7 +59,7 @@ EnvironmentFile=/opt/mesosphere/environment
 Restart=always
 StartLimitInterval=0
 RestartSec=5
-ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-ddt-master
+ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-3dt-master
 ExecStart=/opt/mesosphere/bin/3dt -pull -ca-cert /run/dcos/pki/CA/certs/ca.crt -endpoint-config ${PKG_PATH}/endpoints_config.json -master-port 443 -agent-port 61002 -force-tls
 User=dcos_3dt
 EOF
