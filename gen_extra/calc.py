@@ -205,7 +205,7 @@ entry = {
         validate_security
     ],
     'default': {
-        'security': 'permissive',
+        'security': 'disabled',
         'superuser_username': '',
         'superuser_password_hash': '',
         'zk_super_credentials': 'super:secret',
