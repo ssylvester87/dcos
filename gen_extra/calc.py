@@ -172,7 +172,7 @@ def validate_zk_credentials(credentials, human_name):
     if credentials == '':
         return
     assert len(credentials.split(':', 1)) == 2, (
-        "{human_name} must of the form username: password".format(human_name = human_name))
+        "{human_name} must of the form username: password".format(human_name=human_name))
 
 
 def validate_zk_super_credentials(zk_super_credentials):
