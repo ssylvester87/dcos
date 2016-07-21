@@ -194,3 +194,26 @@ package:
     permissions: "0600"
     content: |
       {{ zk_agent_credentials }}
+{% switch exhibitor_storage_backend %}
+{% case "agent_only_group_no_exhibitor" %}
+{% case "aws_s3" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "shared_filesystem" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "static" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "zookeeper" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "azure" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% endswitch %}
