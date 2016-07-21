@@ -390,23 +390,23 @@ def dcos_signal(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_signal')
 
 
-def dcos_ddt_master(b, opts):
+def dcos_3dt_master(b, opts):
     b.init_acls()
     b.create_master_secrets(opts.zk_master_creds)
-    b.create_service_account('dcos_ddt_master')
-    svc_acc_creds_fn = '/run/dcos/etc/ddt/master_service_account.json'
-    b.write_service_account_credentials('dcos_ddt_master', svc_acc_creds_fn)
+    b.create_service_account('dcos_3dt_master')
+    svc_acc_creds_fn = '/run/dcos/etc/3dt/master_service_account.json'
+    b.write_service_account_credentials('dcos_3dt_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
 
-    # ddt agent secrets are needed for it to contact the ddt master
+    # 3dt agent secrets are needed for it to contact the 3dt master
     b.create_agent_secrets(opts.zk_agent_digest)
-    b.create_service_account('dcos_ddt_agent')
+    b.create_service_account('dcos_3dt_agent')
 
 
-def dcos_ddt_agent(b, opts):
-    b.read_ddt_agent_secrets()
-    svc_acc_creds_fn = '/run/dcos/etc/ddt/agent_service_account.json'
-    b.write_service_account_credentials('dcos_ddt_agent', svc_acc_creds_fn)
+def dcos_3dt_agent(b, opts):
+    b.read_3dt_agent_secrets()
+    svc_acc_creds_fn = '/run/dcos/etc/3dt/agent_service_account.json'
+    b.write_service_account_credentials('dcos_3dt_agent', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
 
 
@@ -475,7 +475,7 @@ def main():
     dirs = [
         '/run/dcos',
         '/run/dcos/etc',
-        '/run/dcos/etc/ddt',
+        '/run/dcos/etc/3dt',
         '/run/dcos/etc/marathon',
         '/run/dcos/etc/mesos',
         '/run/dcos/etc/mesos-dns',

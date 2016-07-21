@@ -271,11 +271,11 @@ class Bootstrapper(object):
 
         return self.secrets
 
-    def read_ddt_agent_secrets(self):
-        path = '/dcos/agent/secrets/services/dcos_ddt_agent'
+    def read_3dt_agent_secrets(self):
+        path = '/dcos/agent/secrets/services/dcos_3dt_agent'
         js = self._consensus(path, None)
         self.secrets['services'] = {
-            'dcos_ddt_agent': json.loads(js.decode('ascii'))
+            'dcos_3dt_agent': json.loads(js.decode('ascii'))
         }
         return self.secrets
 
