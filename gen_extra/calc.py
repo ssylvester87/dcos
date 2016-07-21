@@ -136,7 +136,7 @@ def calculate_zk_acls_enabled(security):
         return 'true'
 
     elif security == 'permissive':
-        return 'false'
+        return 'true'
 
     elif security == 'disabled':
         return 'false'
