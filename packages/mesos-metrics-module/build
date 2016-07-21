@@ -11,13 +11,14 @@ cmake \
   -Ddefault_BIN_DIR=/opt/mesosphere/bin \
   -Ddefault_LIB_DIR=/opt/mesosphere/lib \
   -DUSE_LOCAL_PROTOBUF=False \
+  -Dprotobuf_INCLUDE_DIR=/opt/mesosphere/lib/mesos/3rdparty/include \
   -DUSE_LOCAL_GLOG=False \
+  -Dglog_INCLUDE_DIR=/opt/mesosphere/lib/mesos/3rdparty/include \
   -DUSE_LOCAL_AVRO=False \
   /pkg/src/mesos-metrics-module/module/
 
-# build/unittest module
 make -j8
-make test
+
 # install lib to $PKG_PATH/...
 make install
 
