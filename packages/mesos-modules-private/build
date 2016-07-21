@@ -10,7 +10,6 @@ export LD_LIBRARY_PATH=/opt/mesosphere/lib
 mkdir -p build
 pushd build
 /pkg/src/mesos-modules-private/configure \
- --enable-install-module-dependencies \
  --with-mesos=/opt/mesosphere/active/mesos \
  --with-openssl=/opt/mesosphere/active/openssl \
  --prefix="$PKG_PATH"
