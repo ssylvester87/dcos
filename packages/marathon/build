@@ -4,12 +4,9 @@ mkdir -p "$PKG_PATH/usr/"
 
 cp -rp /pkg/src/marathon/target/scala-2.11/marathon-assembly-*.jar "$PKG_PATH/usr/marathon.jar"
 
-if [ "$PKG_VARIANT" = "ee" ]; then
-  mkdir -p "$PKG_PATH/usr/plugins/lib"
-  unzip /pkg/src/marathon-plugins/plugins.zip -d "$PKG_PATH/usr/plugins/lib"
-# cat /pkg/src/marathon-plugin-conf/plugin-conf.json | sed -e 's|ACS_URL|http://127.0.0.1:8101|g' > "$PKG_PATH/usr/plugins/plugin-conf.json"
-  cp /pkg/src/marathon-plugin-conf/plugin-conf.json "$PKG_PATH/usr/plugins/plugin-conf.json"
-fi
+mkdir -p "$PKG_PATH/usr/plugins/lib"
+unzip /pkg/src/marathon-plugins/plugins.zip -d "$PKG_PATH/usr/plugins/lib"
+cp /pkg/src/marathon-plugin-conf/plugin-conf.json "$PKG_PATH/usr/plugins/plugin-conf.json"
 
 sudo chmod -R o+r "$PKG_PATH/usr"
 
@@ -18,7 +15,7 @@ mkdir -p $(dirname "$marathon_service")
 
 cat <<EOF > "$marathon_service"
 [Unit]
-Description=Marathon: DCOS Init System
+Description=Marathon: DC/OS Init System
 After=dcos-mesos-master.service
 [Service]
 Restart=always
@@ -27,13 +24,14 @@ RestartSec=15
 User=dcos_marathon
 PermissionsStartOnly=True
 EnvironmentFile=/opt/mesosphere/environment
-EnvironmentFile=-/opt/mesosphere/environment.ip.marathon
 EnvironmentFile=/opt/mesosphere/etc/marathon
+EnvironmentFile=-/opt/mesosphere/etc/marathon-extras
+EnvironmentFile=-/var/lib/dcos/marathon/environment.ip.marathon
 EnvironmentFile=-/run/dcos/etc/marathon/tls.env
-ExecStartPre=/bin/bash -c 'echo "HOST_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" > /opt/mesosphere/environment.ip.marathon'
-ExecStartPre=/bin/bash -c 'echo "MARATHON_HOSTNAME=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /opt/mesosphere/environment.ip.marathon'
-ExecStartPre=/bin/bash -c 'echo "LIBPROCESS_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /opt/mesosphere/environment.ip.marathon'
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-marathon
+ExecStartPre=/bin/bash -c 'echo "HOST_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" > /var/lib/dcos/marathon/environment.ip.marathon'
+ExecStartPre=/bin/bash -c 'echo "MARATHON_HOSTNAME=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /var/lib/dcos/marathon/environment.ip.marathon'
+ExecStartPre=/bin/bash -c 'echo "LIBPROCESS_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /var/lib/dcos/marathon/environment.ip.marathon'
 ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/marathon.crt -a -f /run/dcos/pki/tls/private/marathon.key -a -f /run/dcos/pki/tls/private/marathon.jks
 ExecStart=/opt/mesosphere/bin/java \\
     -Xmx2G \\
