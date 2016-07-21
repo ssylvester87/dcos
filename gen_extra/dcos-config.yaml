@@ -1,4 +1,42 @@
 package:
+  - path: /etc_master/adminrouter-redirect-http-https.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      server {
+         listen 80;
+         return 302 https://$host$request_uri;
+      }
+{% case "false" %}
+      # No HTTP -> HTTPS redirect as of `adminrouter_enforce_https` setting
+{% endswitch %}
+  - path: /etc_master/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 443 ssl http2 default_server;
+{% case "false" %}
+      listen 80 default_server;
+      listen 443 ssl http2 default_server;
+{% endswitch %}
+  - path: /etc_slave/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 61002 ssl http2 default_server;
+{% case "false" %}
+      listen 61001 default_server;
+      listen 61002 ssl http2 default_server;
+{% endswitch %}
+  - path: /etc_slave_public/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 61002 ssl http2 default_server;
+{% case "false" %}
+      listen 61001 default_server;
+      listen 61002 ssl http2 default_server;
+{% endswitch %}
   - path: /etc/bouncer-config.json
     content: |
       {
