@@ -68,7 +68,7 @@ class Bootstrapper(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def cluster_id(self, path):
+    def cluster_id(self, path='/var/lib/dcos/cluster-id'):
         dirpath = os.path.dirname(os.path.abspath(path))
         log.info('Opening {} for locking'.format(dirpath))
         with utils.Directory(dirpath) as d:
@@ -140,7 +140,7 @@ class Bootstrapper(object):
         _write_file(filename, key, 0o600)
         return key
 
-    def write_CA_certificate(self, filename):
+    def write_CA_certificate(self, filename='/run/dcos/pki/CA/certs/ca.crt'):
         """"
         CA_certificate on the masters will happen after
         consensus has been reached about the master secrets,

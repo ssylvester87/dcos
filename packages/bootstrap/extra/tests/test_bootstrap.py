@@ -139,9 +139,9 @@ class TestBootstrap():
         except FileNotFoundError:
             pass
 
-        id1 = b.cluster_id(self.tmpdir + '/cluster-id')
+        id1 = b.cluster_id(path=self.tmpdir + '/cluster-id')
         # repeat to test reading from file
-        id2 = b.cluster_id(self.tmpdir + '/cluster-id')
+        id2 = b.cluster_id(path=self.tmpdir + '/cluster-id')
         assert id1 == id2
 
         bouncer_zk_user = b.secrets['zk']['dcos_bouncer']['username']
@@ -176,7 +176,7 @@ class TestBootstrap():
         b.write_service_auth_token('dcos_adminrouter', self.tmpdir + '/adminrouter.env', exp=0)
 
         ca_fn = self.tmpdir + '/ca.crt'
-        b.write_CA_certificate(ca_fn)
+        b.write_CA_certificate(filename=ca_fn)
         b.write_CA_key(self.tmpdir + '/ca.key')
 
         subprocess.check_call([
@@ -216,7 +216,7 @@ class TestBootstrap():
 
         # test agent mode
         b.secrets = {}
-        b.write_CA_certificate(self.tmpdir + '/ca2.crt')
+        b.write_CA_certificate(filename=(self.tmpdir + '/ca2.crt'))
 
         b.write_jwks_public_keys(self.tmpdir + '/jwks.pub')
 

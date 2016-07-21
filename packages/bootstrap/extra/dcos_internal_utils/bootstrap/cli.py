@@ -14,11 +14,11 @@ log = logging.getLogger(__name__)
 
 
 def dcos_adminrouter(b, opts):
-    b.cluster_id('/var/lib/dcos/cluster-id')
+    b.cluster_id()
 
 
 def dcos_signal(b, opts):
-    b.cluster_id('/var/lib/dcos/cluster-id')
+    b.cluster_id()
 
 
 def dcos_oauth(b, opts):
