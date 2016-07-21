@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. /opt/mesosphere/active/mesos-buildenv/activate
-
 mkdir -p build
 pushd build
 
