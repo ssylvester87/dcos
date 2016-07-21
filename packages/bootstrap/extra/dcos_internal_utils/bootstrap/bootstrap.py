@@ -169,106 +169,42 @@ class Bootstrapper(object):
 
         log.info('Creating master secrets with user {}'.format(user))
 
-        zk_creds = {
-            'dcos_mesos_master': {
-                'scheme': 'digest',
-                'username': 'dcos_mesos_master',
-                'password': utils.random_string(64),
-            },
-            'dcos_marathon': {
-                'scheme': ' digest',
-                'username': 'dcos_marathon',
-                'password': utils.random_string(64),
-            },
-            'dcos_metronome': {
-                'scheme': ' digest',
-                'username': 'dcos_metronome',
-                'password': utils.random_string(256),
-            },
-            'dcos_cosmos': {
-                'scheme': 'digest',
-                'username': 'dcos_cosmos',
-                'password': utils.random_string(64),
-            },
-            'dcos_bouncer': {
-                'scheme': 'digest',
-                'username': 'dcos_bouncer',
-                'password': utils.random_string(64),
-            },
-            'dcos_ca': {
-                'scheme': 'digest',
-                'username': 'dcos_ca',
-                'password': utils.random_string(64),
-            },
-            'dcos_secrets': {
-                'scheme': 'digest',
-                'username': 'dcos_secrets',
-                'password': utils.random_string(64),
-            },
-            'dcos_vault_default': {
-                'scheme': 'digest',
-                'username': 'dcos_vault_default',
-                'password': utils.random_string(64),
-            },
-        }
+        service_account_zk_creds = [
+            'dcos_mesos_master',
+            'dcos_marathon',
+            'dcos_metronome',
+            'dcos_cosmos',
+            'dcos_bouncer',
+            'dcos_ca',
+            'dcos_secrets',
+            'dcos_vault_default']
 
-        service_account_creds = {
-            'dcos_adminrouter': {
+        zk_creds = {}
+
+        for account in service_account_zk_creds:
+            zk_creds[account] = {'scheme': 'digest', 'username': account, 'password': utils.random_string(64)}
+
+        service_accounts = [
+            'dcos_adminrouter',
+            'dcos_history_service',
+            'dcos_marathon',
+            'dcos_metronome',
+            'dcos_minuteman_master',
+            'dcos_navstar_master',
+            'dcos_spartan_master',
+            'dcos_networking_api_master',
+            'dcos_signal_service',
+            'dcos_mesos_dns',
+            'dcos_ddt_master'
+        ]
+
+        service_account_creds = {}
+
+        for account in service_accounts:
+            service_account_creds[account] = {
                 'scheme': 'RS256',
-                'uid': 'dcos_adminrouter',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_history_service': {
-                'scheme': 'RS256',
-                'uid': 'dcos_history_service',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_marathon': {
-                'scheme': 'RS256',
-                'uid': 'dcos_marathon',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_metronome': {
-                'scheme': 'RS256',
-                'uid': 'dcos_metronome',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_minuteman_master': {
-                'scheme': 'RS256',
-                'uid': 'dcos_minuteman_master',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_navstar_master': {
-                'scheme': 'RS256',
-                'uid': 'dcos_navstar_master',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_spartan_master': {
-                'scheme': 'RS256',
-                'uid': 'dcos_spartan_master',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_networking_api_master': {
-                'scheme': 'RS256',
-                'uid': 'dcos_networking_api_master',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_signal_service': {
-                'scheme': 'RS256',
-                'uid': 'dcos_signal_service',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_mesos_dns': {
-                'scheme': 'RS256',
-                'uid': 'dcos_mesos_dns',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_ddt_master': {
-                'scheme': 'RS256',
-                'uid': 'dcos_ddt_master',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            }
-        }
+                'uid': account,
+                'private_key': utils.generate_RSA_keypair(2048)[0]}
 
         ca_key, ca_crt = utils.generate_CA_key_certificate(3650)
         ca_certs = {
@@ -297,53 +233,25 @@ class Bootstrapper(object):
     def create_agent_secrets(self, digest):
         acl = [make_acl('digest', digest, read=True)]
 
-        service_account_creds = {
-            'dcos_agent': {
+        service_account_creds = {}
+
+        service_accounts = [
+            'dcos_agent',
+            'dcos_mesos_agent',
+            'dcos_mesos_agent_public',
+            'dcos_ddt_agent',
+            'dcos_minuteman_agent',
+            'dcos_navstar_agent',
+            'dcos_spartan_agent',
+            'dcos_adminrouter_agent',
+            'dcos_scheduler'
+        ]
+
+        for account in service_accounts:
+            service_account_creds[account] = {
                 'scheme': 'RS256',
-                'uid': 'dcos_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_mesos_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_mesos_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_mesos_agent_public': {
-                'scheme': 'RS256',
-                'uid': 'dcos_mesos_agent_public',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_ddt_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_ddt_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_minuteman_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_minuteman_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_navstar_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_navstar_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_spartan_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_spartan_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_adminrouter_agent': {
-                'scheme': 'RS256',
-                'uid': 'dcos_adminrouter_agent',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-            'dcos_scheduler': {
-                'scheme': 'RS256',
-                'uid': 'dcos_scheduler',
-                'private_key': utils.generate_RSA_keypair(2048)[0]
-            },
-        }
+                'uid': account,
+                'private_key': utils.generate_RSA_keypair(2048)[0]}
 
         secrets = {
             'services': service_account_creds,

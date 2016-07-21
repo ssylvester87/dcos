@@ -19,7 +19,6 @@ setup(
         'dcos_internal_utils.iam',
         'dcos_internal_utils.utils',
     ],
-    scripts=['bin/bootstrap'],
     version='0.0.1',
     description='DC/OS Internal Utilities Library',
     author='Mesosphere, Inc.',
@@ -27,5 +26,10 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
+    ],
+    entry_points={
+        'console_scripts': [
+            'bootstrap=bootstrap:main'
         ],
-    )
+    },
+)
