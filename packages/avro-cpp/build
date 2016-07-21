@@ -2,7 +2,6 @@
 
 export CPPFLAGS=-I/opt/mesosphere/include
 export LDFLAGS="-L/opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib"
-export LD_LIBRARY_PATH=/opt/mesosphere/lib
 
 pushd /pkg/src/avro-cpp
 mkdir -p build
