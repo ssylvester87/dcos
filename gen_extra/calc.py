@@ -242,7 +242,7 @@ entry = {
         'custom_auth_json': get_ui_auth_json,
         'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
         'mesos_authenticate_http': calculate_mesos_authenticate_http,
-        'mesos_fwk_authenticators': 'com_mesosphere_dcos_ClassicRPCAuthenticator',
+        'mesos_classic_authenticator': 'com_mesosphere_dcos_ClassicRPCAuthenticator',
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,

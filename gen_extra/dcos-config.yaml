@@ -78,7 +78,7 @@ package:
 {% endswitch %}
       MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
       # Always load authenticator, allow authentication.
-      MESOS_AUTHENTICATORS={{ mesos_fwk_authenticators }}
+      MESOS_AUTHENTICATORS={{ mesos_classic_authenticator }}
       # Conditionally require authentication (reject unauthenticated).
       MESOS_AUTHENTICATE_FRAMEWORKS={{ mesos_authenticate_frameworks }}
       MESOS_AUTHENTICATE_AGENTS={{ mesos_authenticate_agents }}
