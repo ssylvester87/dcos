@@ -1,4 +1,13 @@
 package:
+  - path: /etc/adminrouter-extras.env
+    content: |
+      ADMINROUTER_ACTIVATE_AUTH_MODULE=true
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      DEFAULT_SCHEME=https://
+{% case "false" %}
+      DEFAULT_SCHEME=http://
+{% endswitch %}
   - path: /etc_master/adminrouter-redirect-http-https.conf
     content: |
 {% switch adminrouter_enforce_https %}
