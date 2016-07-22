@@ -504,7 +504,7 @@ def main():
     opts.zk_super_creds = _verify_and_set_zk_creds(opts.zk_super_creds, "ZooKeeper super")
     opts.zk_master_creds = _verify_and_set_zk_creds(opts.zk_master_creds, "ZooKeeper master")
     opts.zk_agent_creds = _verify_and_set_zk_creds(opts.zk_agent_creds, "ZooKeeper agent")
-    opts.zk_agent_creds = _verify_and_set_zk_creds(opts.zk_agent_digest, "ZooKeeper agent digest")
+    opts.zk_agent_digest = _verify_and_set_zk_creds(opts.zk_agent_digest, "ZooKeeper agent digest")
 
     if opts.zk_super_creds:
         log.info('Using ZK super credentials')
