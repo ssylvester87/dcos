@@ -4,6 +4,7 @@ import time
 
 import jwt
 import requests
+import retrying
 
 
 log = logging.getLogger(__name__)
@@ -35,15 +36,11 @@ class IAMClient:
             raise Exception('invalid HTTP method: ' + method)
         return r
 
+    @retrying.retry(wait_fixed=100)
     def ping(self):
-        while True:
-            try:
-                r = self.request('get', '/acs/api/v1/auth/logout', timeout=0.1)
-                if r.status_code == 200:
-                    return
-            except Exception:
-                pass
-            time.sleep(0.1)
+        r = self.request('get', '/acs/api/v1/auth/logout', timeout=0.1)
+        if r.status_code == 200:
+            return
 
     def create_service_account(self, id, secret=None, public_key=None, exist_ok=False):
         data = {
@@ -73,7 +70,11 @@ class IAMClient:
         }
         r = self.request('post', '/acs/api/v1/auth/login', json=data)
         if r.status_code != 200:
-            raise Exception('login failed with status {}'.format(r.status_code))
+            raise Exception('login failed with status {code}. Reason: {reason}. Output: {text}'.format(
+                code=r.status_code,
+                reason=r.reason,
+                text=r.text))
+
         return r.cookies['dcos-acs-auth-cookie']
 
     def service_account_login(self, id, secret=None, private_key=None, exp=None):

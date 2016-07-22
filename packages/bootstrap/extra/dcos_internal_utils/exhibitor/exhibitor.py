@@ -4,9 +4,7 @@ import logging
 import os
 import urllib.request
 
-
 from .. import utils
-
 
 log = logging.getLogger(__name__)
 

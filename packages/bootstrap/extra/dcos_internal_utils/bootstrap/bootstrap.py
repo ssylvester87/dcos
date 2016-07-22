@@ -484,14 +484,12 @@ class Bootstrapper(object):
         log.info('Writing Metronome environment to {}'.format(env_fn))
         _write_file(env_fn, env, 0o600)
 
-        openssl = shutil.which('openssl')
-        if not openssl:
-            raise Exception('openssl not found')
-
         service_name = 'metronome'
 
         cmd = [
-            openssl, 'pkcs12', '-export',
+            '/opt/mesosphere/bin/openssl',
+            'pkcs12',
+            '-export',
             '-out', pfx_fn,
             '-inkey', key_fn,
             '-in', crt_fn,
@@ -505,17 +503,13 @@ class Bootstrapper(object):
             'SSL_KEYSTORE_PASSWORD': keystore_password,
             'RANDFILE': '/tmp/.rnd',
         }
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc, env=env)
-        if proc.wait() != 0:
-            raise Exception('openssl failed')
+
+        subprocess.check_call(cmd, preexec_fn=_set_umask, env=env)
+
         os.chmod(pfx_fn, stat.S_IRUSR | stat.S_IWUSR)
 
-        keytool = shutil.which('keytool')
-        if not keytool:
-            raise Exception('keytool not found')
-
         cmd = [
-            keytool,
+            '/opt/mesosphere/bin/keytool',
             '-importkeystore',
             '-noprompt',
             '-srcalias', service_name,
@@ -526,7 +520,7 @@ class Bootstrapper(object):
             '-deststorepass', keystore_password,
         ]
         log.info('Importing PKCS12 into Java KeyStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc)
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
 
@@ -562,14 +556,12 @@ class Bootstrapper(object):
 
         _write_file(env_fn, env, 0o600)
 
-        openssl = shutil.which('openssl')
-        if not openssl:
-            raise Exception('openssl not found')
-
         service_name = 'marathon'
 
         cmd = [
-            openssl, 'pkcs12', '-export',
+            '/opt/mesosphere/bin/openssl',
+            'pkcs12',
+            '-export',
             '-out', pfx_fn,
             '-inkey', key_fn,
             '-in', crt_fn,
@@ -583,7 +575,7 @@ class Bootstrapper(object):
             'SSL_KEYSTORE_PASSWORD': password,
             'RANDFILE': '/tmp/.rnd',
         }
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc, env=env)
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask, env=env)
         if proc.wait() != 0:
             raise Exception('openssl failed')
 
@@ -604,10 +596,7 @@ class Bootstrapper(object):
             '-deststorepass', password,
         ]
         log.info('Importing PKCS12 into Java KeyStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc)
-        if proc.wait() != 0:
-            raise Exception('keytool failed')
-
+        subprocess.check_call(cmd, preexec_fn=_set_umask)
         os.remove(pfx_fn)
 
     def write_truststore(self, ts_fn, ca_fn):
@@ -631,7 +620,7 @@ class Bootstrapper(object):
             '-destkeystore', ts_fn
         ]
         log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc)
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
 
@@ -646,7 +635,7 @@ class Bootstrapper(object):
             '-storepass', 'changeit',
         ]
         log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_initchildproc)
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
 
@@ -701,7 +690,7 @@ def _write_file(path, data, mode):
                 os.umask(umask_original)
 
 
-def _initchildproc():
+def _set_umask():
     os.setpgrp()
     # prevent other users from reading files created by this process
     os.umask(0o077)

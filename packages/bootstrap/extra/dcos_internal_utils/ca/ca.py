@@ -23,7 +23,9 @@ class CAClient:
         r = requests.post(url, headers=headers, json=data, verify=self.CA_certificate_filename)
 
         if r.status_code != 200:
-            raise Exception('sign certificate failed: status {}'.format(r.status_code))
-            return
+            raise Exception('sign certificate failed: status {code}. Reason: {reason}. Output: {text}'.format(
+                code=r.status_code,
+                reason=r.reason,
+                text=r.text))
 
         return r.json()['result']['certificate'].strip() + '\n'

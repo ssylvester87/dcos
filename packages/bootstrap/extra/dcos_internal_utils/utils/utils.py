@@ -162,8 +162,9 @@ def generate_CA_key_certificate(valid_days=3650):
 def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=[]):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
 
-    detect_ip = os.getenv('MESOS_IP_DISCOVERY_COMMAND', '/opt/mesosphere/bin/detect_ip')
-    machine_ip = subprocess.check_output([detect_ip], stderr=subprocess.DEVNULL).decode('ascii').strip()
+    machine_ip = subprocess.check_output(
+            ['/opt/mesosphere/bin/detect_ip'],
+            stderr=subprocess.DEVNULL).decode('ascii').strip()
 
     san = [
         x509.DNSName(machine_ip),
