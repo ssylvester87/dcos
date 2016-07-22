@@ -20,6 +20,7 @@ export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
 # for speed-up if Cython is availble.
 echo "Install packages from local source directories."
 for package in \
+    pycparser \
     cffi \
     falcon \
     gunicorn \

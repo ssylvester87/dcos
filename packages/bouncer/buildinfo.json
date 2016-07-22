@@ -88,6 +88,11 @@
       "url": "https://pypi.python.org/packages/f4/5b/fe03d46ced80639b7be9285492dc8ce069b841c0cebe5baacdd9b090b164/isodate-0.5.4.tar.gz",
       "sha1": "40ccf07a8e46284a79cfc4d41e151f71ae63f535"
     },
+    "pycparser": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/6d/31/666614af3db0acf377876d48688c5d334b6e493b96d21aa7d332169bee50/pycparser-2.14.tar.gz",
+      "sha1": "922162bad4aa8503988035506c1c65bbf8690ba4"
+    },
     "cffi": {
       "kind": "url_extract",
       "url": "https://pypi.python.org/packages/b6/98/11feff87072e2e640fb8320712b781eccdef05d588618915236b32289d5a/cffi-1.6.0.tar.gz",
