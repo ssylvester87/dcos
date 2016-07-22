@@ -5,13 +5,21 @@ pushd /pkg/src/mesos-modules-private
 ./bootstrap
 popd
 
-export LD_LIBRARY_PATH=/opt/mesosphere/lib
+# Add `protoc` to the path.
+export PATH=/opt/mesosphere/lib/mesos/3rdparty/bin:$PATH
+
+# Add the 3rdparty directories.
+export CPPFLAGS=-I/opt/mesosphere/lib/mesos/3rdparty/include
+export CFLAGS=-I/opt/mesosphere/lib/mesos/3rdparty/include
+export LDFLAGS=-L/opt/mesosphere/lib/mesos/3rdparty/lib
 
 mkdir -p build
 pushd build
 /pkg/src/mesos-modules-private/configure \
  --with-mesos=/opt/mesosphere/active/mesos \
  --with-openssl=/opt/mesosphere/active/openssl \
+ --with-glog=/opt/mesosphere/lib/mesos/3rdparty/include/glog \
+ --with-boost=/opt/mesosphere/lib/mesos/3rdparty/include/boost \
  --prefix="$PKG_PATH"
 
 make -j8
