@@ -50,7 +50,7 @@ class Bootstrapper(object):
             'dcos_mesos_agent',
             'dcos_mesos_agent_public',
             'dcos_adminrouter_agent',
-            'dcos_ddt_agent',
+            'dcos_3dt_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
             'dcos_spartan_agent',
