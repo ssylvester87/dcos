@@ -290,7 +290,8 @@ def dcos_spartan_agent(b, opts):
 
 def dcos_erlang_service(servicename, b, opts):
     if servicename == 'networking_api':
-        for file in ['/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/vm.args.2.config', '/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/sys.config.2.config']:
+        for file in ['/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/vm.args.2.config',
+                     '/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/sys.config.2.config']:
             if not os.path.exists(file):
                 open(file, 'a').close()
                 shutil.chown(file, user='dcos_networking_api')
