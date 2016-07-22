@@ -4,7 +4,7 @@ import logging
 import os
 import urllib.request
 
-import utils
+from dcos_internal_utils import utils
 
 log = logging.getLogger(__name__)
 

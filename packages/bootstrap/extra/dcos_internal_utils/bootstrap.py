@@ -15,9 +15,9 @@ from kazoo.security import ACL, Permissions, ANYONE_ID_UNSAFE
 from kazoo.security import make_digest_acl, make_acl
 
 
-import ca
-import iam
-import utils
+from dcos_internal_utils import ca
+from dcos_internal_utils import iam
+from dcos_internal_utils import utils
 
 log = logging.getLogger(__name__)
 
