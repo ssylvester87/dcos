@@ -194,7 +194,7 @@ class Bootstrapper(object):
             'dcos_networking_api_master',
             'dcos_signal_service',
             'dcos_mesos_dns',
-            'dcos_ddt_master'
+            'dcos_3dt_master'
         ]
 
         service_account_creds = {}
@@ -238,7 +238,7 @@ class Bootstrapper(object):
             'dcos_agent',
             'dcos_mesos_agent',
             'dcos_mesos_agent_public',
-            'dcos_ddt_agent',
+            'dcos_3dt_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
             'dcos_spartan_agent',

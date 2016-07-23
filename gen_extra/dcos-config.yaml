@@ -107,7 +107,7 @@ package:
           "mesos_urls": [
             "https://leader.mesos/mesos/frameworks",
             "https://leader.mesos/mesos/metrics/snapshot"
-          ],`
+          ],
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
       }
 {% switch firewall_enabled %}
