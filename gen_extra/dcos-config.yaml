@@ -46,6 +46,28 @@ package:
       listen 61001 default_server;
       listen 61002 ssl http2 default_server;
 {% endswitch %}
+  - path: /etc/mesos-dns-extras.env
+    content: |
+      MESOS_DNS_CONFIG=/opt/mesosphere/etc/mesos-dns-enterprise.json
+  - path: /etc/mesos-dns-enterprise.json
+    content: |
+      {
+        "zk": "zk://127.0.0.1:2181/mesos",
+        "refreshSeconds": 30,
+        "ttl": 60,
+        "domain": "mesos",
+        "port": 61053,
+        {{ mesos_dns_resolvers_str }},
+        "timeout": 5,
+        "listener": "0.0.0.0",
+        "email": "root.mesos-dns.mesos",
+        "IPSources": {{ mesos_dns_ip_sources }},
+        "HTTPListener": "127.0.0.1",
+        "MesosHTTPSOn": true,
+        "CACertFile": "/run/dcos/pki/CA/certs/ca.crt",
+        "mesosAuthentication": "iam",
+        "IAMConfigFile": "/run/dcos/etc/mesos-dns/iam.json"
+      }
   - path: /etc/bouncer-config.json
     content: |
       {
