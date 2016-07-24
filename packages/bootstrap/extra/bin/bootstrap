@@ -410,7 +410,7 @@ def dcos_ddt_agent(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
 
 
-def dcos_history_service(b, opts):
+def dcos_history(b, opts):
     b.create_master_secrets(opts.zk_master_creds)
     b.create_service_account('dcos_history_service')
 
@@ -437,7 +437,7 @@ bootstrappers = {
     'dcos-cosmos': dcos_cosmos,
     'dcos-ddt-agent': dcos_ddt_agent,
     'dcos-ddt-master': dcos_ddt_master,
-    'dcos-history-service': dcos_history_service,
+    'dcos-history': dcos_history,
     'dcos-marathon': dcos_marathon,
     'dcos-mesos-slave': dcos_mesos_agent,
     'dcos-mesos-slave-public': dcos_mesos_agent_public,
