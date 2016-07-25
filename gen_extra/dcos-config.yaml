@@ -174,10 +174,10 @@ package:
       }
 {% case "false" %}
 {% endswitch %}
-  - path: /etc/mesos/slave_principal.json
+  - path: /etc_slave/mesos/slave_principal.json
     content: |
       { "principal": "dcos_mesos_agent" }
-  - path: /etc/mesos/public_slave_principal.json
+  - path: /etc_slave_public/mesos/slave_principal.json
     content: |
       { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
@@ -190,6 +190,7 @@ package:
       SSL_VERIFY_CERT=false
       SSL_REQUIRE_CERT=false
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      # TODO(adam): Contents should be different for public agents, if not each individual agent.
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
       SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
 {% switch mesos_authenticate_http %}
@@ -207,27 +208,10 @@ package:
 {% switch agent_authn_enabled %}
 {% case "true" %}
       MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/slave_principal.json
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/mesos/agent_service_account.json
 {% case "false" %}
 {% endswitch %}
-  - path: /etc/mesos-slave-extras
-    content: |
-{% switch agent_authn_enabled %}
-{% case "true" %}
-      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/slave_principal.json
-{% case "false" %}
-{% endswitch %}
-      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
-      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
-  - path: /etc/mesos-slave-public-extras
-    content: |
-{% switch agent_authn_enabled %}
-{% case "true" %}
-      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/public_slave_principal.json
-{% case "false" %}
-{% endswitch %}
-      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave-public.crt
-      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave-public.key
   - path: /etc_master/marathon-extras
     content: |
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/marathon/service_account.json
