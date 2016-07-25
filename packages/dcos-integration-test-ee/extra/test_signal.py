@@ -60,7 +60,7 @@ def test_signal_service(cluster):
         'clusterId': cluster_id,
         'customerKey': customer_key,
         'environmentVersion': dcos_version,
-        'variant': 'open'
+        'variant': 'enterprise'
     }
 
     # Insert the generic property data which is the same between all signal tracks
@@ -71,6 +71,7 @@ def test_signal_service(cluster):
     # Insert all the diagnostics data programmatically
     master_units = [
         'adminrouter-service',
+        'ca-service',
         'cosmos-service',
         'exhibitor-service',
         'history-service',
@@ -80,7 +81,9 @@ def test_signal_service(cluster):
         'mesos-dns-service',
         'mesos-master-service',
         'metronome-service',
-        'signal-service']
+        'secrets-service',
+        'signal-service',
+        'vault-service']
     all_node_units = [
         'adminrouter-reload-service',
         'adminrouter-reload-timer',
