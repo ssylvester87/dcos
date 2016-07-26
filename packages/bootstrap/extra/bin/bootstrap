@@ -133,8 +133,8 @@ def dcos_mesos_agent_public(b, opts):
     b.read_agent_secrets()
     b.write_CA_certificate()
 
-    keypath = '/run/dcos/pki/tls/private/mesos-slave-public.key'
-    crtpath = '/run/dcos/pki/tls/certs/mesos-slave-public.crt'
+    keypath = '/run/dcos/pki/tls/private/mesos-slave.key'
+    crtpath = '/run/dcos/pki/tls/certs/mesos-slave.crt'
     b.write_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
 
     svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'

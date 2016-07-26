@@ -45,6 +45,7 @@ class Bootstrapper(object):
         self.CA_certificate = None
         self.CA_certificate_filename = None
 
+        # TODO(adam): Only include agent_public or agent, not both.
         self.agent_services = [
             'dcos_agent',
             'dcos_mesos_agent',
