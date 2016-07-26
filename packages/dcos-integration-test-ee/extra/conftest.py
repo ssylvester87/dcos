@@ -7,6 +7,7 @@ This is the place to define globally visible fixtures.
 
 import json
 import logging
+import os
 
 import requests
 import pytest
@@ -25,6 +26,16 @@ def pytest_addoption(parser):
         dest='expect_strict_security',
         help='Expect the cluster to be in strict security mode.',
         )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def https_enabled():
+    """This fixture allows upstream integration tests
+    to have CA bundle available
+    """
+    dcos_addr = os.environ['DCOS_DNS_ADDRESS']
+    os.environ['DCOS_DNS_ADDRESS'] = dcos_addr.replace('http', 'https')
+    return dcos
 
 
 @pytest.fixture(scope="session")
