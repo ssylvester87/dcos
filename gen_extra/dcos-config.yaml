@@ -110,6 +110,23 @@ package:
           ],
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
       }
+  - path: /etc_master/networking_api.env
+    content: |
+{% switch ssl_enabled %}
+{% case "false" %}
+{% case "true" %}
+      MESOS_STATE_SSL_ENABLED=true
+      ERLANG_DISTRIBUTION=inet_tls
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
+      CLIENT_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
+      CLIENT_VERIFY=verify_peer
+      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
+      SERVER_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
+      SERVER_VERIFY=verify_peer
+      SERVER_FAIL_IF_NO_PEER_CERT=true
+{% endswitch %}
 {% switch firewall_enabled %}
 {% case "true" %}
   - path: /etc/mesos/master_firewall.json
