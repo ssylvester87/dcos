@@ -1,0 +1,4 @@
+#!/bin/bash
+export PKG_PATH
+mkdir -p "$PKG_PATH/etc"
+cp /pkg/extra/acl-schema.json "$PKG_PATH/etc/acl-schema.json"
