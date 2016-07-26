@@ -103,11 +103,11 @@ class _DCOS:
             )
 
     def _get_su_credentials(self):
-        self.su_uid = os.getenv('DCOS_LOGIN_UNAME')
-        self.su_password = os.getenv('DCOS_LOGIN_PW')
+        self.su_uid = os.environ['DCOS_LOGIN_UNAME']
+        self.su_password = os.environ['DCOS_LOGIN_PW']
 
     def _get_hostname(self):
-        dns = os.getenv('DCOS_DNS_ADDRESS')
+        dns = os.environ['DCOS_DNS_ADDRESS']
         h = dns.split('//')[-1]
         log.info('Test if host `%s` can be resolved.', h)
         try:
