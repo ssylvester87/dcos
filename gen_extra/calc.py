@@ -201,11 +201,14 @@ __default_isolation_modules = [
 ]
 
 
-def get_ui_auth_json(ui_organization, ui_networking):
+def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
         '"organization":{"enabled":%s}, ' \
-        '"networking":{"enabled":%s},' % (ui_organization, ui_networking)
+        '"networking":{"enabled":%s},' \
+        '"secrets":{"enabled":%s},' \
+        '"auth-providers":{"enabled":%s},' \
+        % (ui_organization, ui_networking, ui_secrets, ui_auth_providers)
 
 
 entry = {
