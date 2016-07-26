@@ -80,7 +80,7 @@ class _DCOS:
     # w/o setting permissions explicitly.
     authenticated_users_endpoints = [
         '/capabilities',
-        '/navstar/lashup/keys'
+        '/navstar/lashup/key'
         ]
 
     def __init__(self):
