@@ -137,7 +137,8 @@ package:
 {% switch mesos_authenticate_http %}
 {% case "true" %}
       MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
-      MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READWRITE={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READONLY={{ mesos_authenticate_http }}
 {% case "false" %}
 {% endswitch %}
 {% switch firewall_enabled %}
@@ -195,7 +196,8 @@ package:
 {% switch mesos_authenticate_http %}
 {% case "true" %}
       MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
-      MESOS_AUTHENTICATE_HTTP={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READWRITE={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READONLY={{ mesos_authenticate_http }}
 {% case "false" %}
 {% endswitch %}
 {% switch firewall_enabled %}
