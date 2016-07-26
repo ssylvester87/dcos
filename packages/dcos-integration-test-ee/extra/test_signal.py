@@ -15,7 +15,7 @@ def cluster():
     return dcos
 
 
-def test_signal_service(cluster):
+def test_ee_signal_service(cluster):
     """
     signal-service runs on an hourly timer, this test runs it as a one-off
     and pushes the results to the test_server app for easy retrieval
