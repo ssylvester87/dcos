@@ -9,7 +9,6 @@ import atexit
 import logging
 import os
 import socket
-import re
 import tempfile
 
 import pytest
@@ -93,9 +92,11 @@ class _DCOS:
         self._make_ca_crt_file()
 
     def _get_hosts(self):
-        self.masters = re.split('[,\s]+', os.environ['MASTER_HOSTS'])
+        self.masters = os.environ['MASTER_HOSTS'].split(',')
         self.public_masters = os.environ['PUBLIC_MASTER_HOSTS'].split(',')
-        self.agents = re.split('[,\s]+', os.environ['SLAVE_HOSTS'])
+        self.private_agents = os.environ['SLAVE_HOSTS'].split(',')
+        self.public_agents = os.environ['PUBLIC_SLAVE_HOSTS'].split(',')
+        self.agents = set(self.public_agents+self.private_agents)
 
         # Build ZK hostports string.
         self.zk_hostports = ','.join(
