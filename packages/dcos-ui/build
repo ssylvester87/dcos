@@ -1,10 +1,15 @@
 #!/bin/bash
 
 cd "/pkg/src/dcos-ui"
-npm install
-echo "module.exports = {};" > ./src/js/config/Config.dev.js
-echo "module.exports = {};" > ./src/js/config/Config.test.js
 
-npm run build-ee
+npm install -g npm@3.9.1
+
+npm install
+
+echo "module.exports = {};" > ./src/js/config/Config.dev.js
+npm run scaffold
+
+npm config set externalplugins ../dcos-ui-plugins-private
+npm run build-with-external-plugins
 
 cp -r dist/ "$PKG_PATH"/usr
