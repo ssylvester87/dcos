@@ -96,7 +96,7 @@ class _DCOS:
         self.public_masters = os.environ['PUBLIC_MASTER_HOSTS'].split(',')
         self.private_agents = os.environ['SLAVE_HOSTS'].split(',')
         self.public_agents = os.environ['PUBLIC_SLAVE_HOSTS'].split(',')
-        self.agents = set(self.public_agents+self.private_agents)
+        self.agents = sorted(self.private_agents + self.public_agents)
 
         # Build ZK hostports string.
         self.zk_hostports = ','.join(
