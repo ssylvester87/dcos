@@ -43,7 +43,7 @@ Restart=always
 StartLimitInterval=0
 RestartSec=5
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-3dt-agent
-ExecStart=/opt/mesosphere/bin/3dt -endpoint-config ${PKG_PATH}/endpoints_config.json -agent-port 61002 -force-tls
+ExecStart=/opt/mesosphere/bin/3dt -endpoint-config ${PKG_PATH}/endpoints_config.json -agent-port 61002 -force-tls -ca-cert /run/dcos/pki/CA/certs/ca.crt -iam-config /run/dcos/etc/3dt/agent_service_account.json
 User=dcos_3dt
 EOF
 
@@ -57,6 +57,6 @@ Restart=always
 StartLimitInterval=0
 RestartSec=5
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-3dt-master
-ExecStart=/opt/mesosphere/bin/3dt -pull -ca-cert /run/dcos/pki/CA/certs/ca.crt -endpoint-config ${PKG_PATH}/endpoints_config.json -master-port 443 -agent-port 61002 -force-tls -iam-config /run/dcos/etc/3dt/master_service_account.json
+ExecStart=/opt/mesosphere/bin/3dt -pull -ca-cert /run/dcos/pki/CA/certs/ca.crt -diagnostics-bundle-dir /var/lib/dcos/3dt/diag-bundles -endpoint-config ${PKG_PATH}/endpoints_config.json -master-port 443 -agent-port 61002 -force-tls -iam-config /run/dcos/etc/3dt/master_service_account.json
 User=dcos_3dt
 EOF
