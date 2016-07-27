@@ -20,7 +20,6 @@ def test_ee_signal_service(cluster):
     signal-service runs on an hourly timer, this test runs it as a one-off
     and pushes the results to the test_server app for easy retrieval
     """
-    cluster = cluster()
     dcos_version = os.getenv("DCOS_VERSION", "")
     signal_config = open('/opt/mesosphere/etc/dcos-signal-config.json', 'r')
     signal_config_data = json.loads(signal_config.read())
@@ -117,16 +116,16 @@ def test_ee_signal_service(cluster):
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_node_units:
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(
-            cluster.all_slaves+cluster.masters)
+            cluster.agents+cluster.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.slaves)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.private_agents)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in public_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_slaves)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_agents)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.all_slaves)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.agents)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
 
     # Check the entire hash of diagnostics data

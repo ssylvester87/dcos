@@ -103,6 +103,7 @@ class _DCOS:
         self._get_hostname()
         self._get_su_credentials()
         self._get_hosts()
+        self._get_provider()
         self._make_ca_crt_file()
 
     def _get_hosts(self):
@@ -131,6 +132,9 @@ class _DCOS:
             pytest.exit(
                 "Cannot reach DCOS_DNS_ADDRESS `%s`: %s" % (h, str(e)))
         self.hostname = h
+
+    def _get_provider(self):
+        self.provider = os.environ['DCOS_PROVIDER']
 
     def _make_ca_crt_file(self):
         def _remove_file():
