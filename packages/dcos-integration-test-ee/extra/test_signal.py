@@ -23,7 +23,7 @@ def test_ee_signal_service(cluster):
     dcos_version = os.getenv("DCOS_VERSION", "")
     signal_config = open('/opt/mesosphere/etc/dcos-signal-config.json', 'r')
     signal_config_data = json.loads(signal_config.read())
-    customer_key = signal_config_data.get('customer_key', '')
+    customer_key = signal_config_data.get('customer_key', 'CUSTOMER KEY NOT SET')
     cluster_id_file = open('/var/lib/dcos/cluster-id')
     cluster_id = cluster_id_file.read().strip()
 
@@ -37,6 +37,7 @@ def test_ee_signal_service(cluster):
     exp_data = {
         'diagnostics': {
             'event': 'health',
+            'userId': customer_key,
             'anonymousId': cluster_id,
             'properties': {}
         },
@@ -70,6 +71,7 @@ def test_ee_signal_service(cluster):
     # Insert all the diagnostics data programmatically
     master_units = [
         'adminrouter-service',
+        'bouncer-service',
         'ca-service',
         'cosmos-service',
         'exhibitor-service',
@@ -80,6 +82,7 @@ def test_ee_signal_service(cluster):
         'mesos-dns-service',
         'mesos-master-service',
         'metronome-service',
+        'networking_api-service',
         'secrets-service',
         'signal-service',
         'vault-service']
@@ -87,6 +90,7 @@ def test_ee_signal_service(cluster):
         'adminrouter-reload-service',
         'adminrouter-reload-timer',
         '3dt-service',
+        '3dt-socket',
         'epmd-service',
         'gen-resolvconf-service',
         'gen-resolvconf-timer',
@@ -103,13 +107,10 @@ def test_ee_signal_service(cluster):
         'mesos-slave-public-service',
         'vol-discovery-pub-agent-service']
     all_slave_units = [
-        '3dt-socket',
         'adminrouter-agent-service',
         'logrotate-agent-service',
         'logrotate-agent-timer',
         'rexray-service']
-
-    master_units.append('oauth-service')
 
     for unit in master_units:
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.masters)
