@@ -5,7 +5,7 @@ Test Cosmos.
 
 import logging
 
-import pytest
+
 import requests
 
 
