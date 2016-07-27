@@ -121,7 +121,8 @@ def test_ee_signal_service(cluster):
             cluster.agents+cluster.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.private_agents)
+        total_key = "health-unit-dcos-{}-total".format(unit)
+        exp_data['diagnostics']['properties'][total_key] = len(cluster.private_agents)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in public_slave_units:
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_agents)
