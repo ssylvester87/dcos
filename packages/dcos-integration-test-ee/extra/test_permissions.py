@@ -46,7 +46,7 @@ class TestAdminRouterOpsEndpoints:
         "iam_verify_and_reset",
         "with_peter_in_superuser_acl"
         )
-    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints)
+    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints_xfail_secrets)
     def test_superuser_acl(self, endpoint, peter):
 
         url = str(Url(endpoint))
