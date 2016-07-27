@@ -54,7 +54,8 @@ tls_netloc_labels = [str(n) for n in tls_netlocs]
 def test_retrieve_server_cert(netloc):
     # Verify that the remote end expects an SSL/TLS connection at all, and
     # that it presents a certificate.
-    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port))
+    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port),
+                                          ssl_version=ssl.PROTOCOL_SSLv23)
     _ = cert_pem  # noqa
 
 
@@ -71,14 +72,16 @@ def test_retrieve_server_cert_enforce_tls_1_2(netloc):
 def test_verify_server_cert_against_root_cert(netloc):
     cert_pem = ssl.get_server_certificate(
         addr=(netloc.host, netloc.port),
-        ca_certs=dcos.ca_crt_file_path
+        ca_certs=dcos.ca_crt_file_path,
+        ssl_version=ssl.PROTOCOL_SSLv23
         )
     _ = cert_pem  # noqa
 
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)
 def test_cert_issuer_and_subject(netloc):
-    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port))
+    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port),
+                                          ssl_version=ssl.PROTOCOL_SSLv23)
     cert = x509.load_pem_x509_certificate(
         cert_pem.encode('ascii'), crypto_backend())
 
@@ -95,7 +98,8 @@ def test_cert_issuer_and_subject(netloc):
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)
 def test_cert_dns_names(netloc):
-    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port))
+    cert_pem = ssl.get_server_certificate((netloc.host, netloc.port),
+                                          ssl_version=ssl.PROTOCOL_SSLv23)
     cert = x509.load_pem_x509_certificate(
         cert_pem.encode('ascii'), crypto_backend())
 
