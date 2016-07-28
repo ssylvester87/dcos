@@ -5,7 +5,7 @@
       "sqlsurvivor": {
           "kind": "git",
           "git": "git@github.com:mesosphere/sqlsurvivor.git",
-          "ref": "ec3074c1f467c5025748d669fee3de3f96d2adb7",
+          "ref": "a01235b1a453f072143baf58daedc1ca2673e6a2",
           "ref_origin": "master"
       },
       "dcos-ca": {
