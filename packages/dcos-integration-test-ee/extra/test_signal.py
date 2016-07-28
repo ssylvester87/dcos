@@ -36,7 +36,6 @@ def test_ee_signal_service(cluster):
     signal_cmd = ["sudo", "-E", "/opt/mesosphere/bin/dcos-signal", "-test"]
     # universal_newlines means utf-8
     with subprocess.Popen(signal_cmd, stdout=subprocess.PIPE, universal_newlines=True, env=env) as p:
-
         signal_results = p.stdout.read()
 
     r_data = json.loads(signal_results)
