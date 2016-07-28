@@ -22,19 +22,18 @@ def test_ee_signal_service(cluster):
     """
     dcos_version = os.getenv("DCOS_VERSION", "")
     signal_config = open('/opt/mesosphere/etc/dcos-signal-config.json', 'r')
+    signal_config_extra = open('/opt/mesosphere/etc/dcos-signal-extra.json')
+
     signal_config_data = json.loads(signal_config.read())
+    signal_config_data.update(json.loads(signal_config_extra.read()))
+
     customer_key = signal_config_data.get('customer_key', 'CUSTOMER KEY NOT SET')
     cluster_id_file = open('/var/lib/dcos/cluster-id')
     cluster_id = cluster_id_file.read().strip()
 
-    print("Version: ", dcos_version)
-    print("Customer Key: ", customer_key)
-    print("Cluster ID: ", cluster_id)
-
     # sudo is required to read /run/dcos/etc/signal-service/service_account.json
     env = os.environ.copy()
     signal_cmd = ["sudo", "-E", "/opt/mesosphere/bin/dcos-signal", "-test"]
-
     # universal_newlines means utf-8
     with subprocess.Popen(signal_cmd, stdout=subprocess.PIPE, universal_newlines=True, env=env) as p:
 
