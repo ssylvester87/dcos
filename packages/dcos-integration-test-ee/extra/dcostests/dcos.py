@@ -6,6 +6,7 @@
 
 
 import atexit
+import functools
 import logging
 import os
 import socket
@@ -164,7 +165,14 @@ class _DCOS:
         # requests by default attempts to verify certificates when
         # communicating HTTPS (and also performs hostname verification).
         # Instruct it to verify against this bundle.
-        os.environ['REQUESTS_CA_BUNDLE'] = f.name
+        # Don't use REQUESTS_CA_BUNDLE for achieving this, as this
+        # affects other requests package instances executed in the
+        # context of this test runner (such as botocore's).
+
+        for m in ['get', 'post', 'put', 'delete', 'patch', 'head', 'options']:
+            orig = getattr(requests, m)
+            patched = functools.partial(orig, verify=self.ca_crt_file_path)
+            setattr(requests, m, patched)
 
 
 # Instantiate singleton.
