@@ -32,7 +32,8 @@ def test_ee_signal_service(cluster):
     print("Cluster ID: ", cluster_id)
 
     # sudo is required to read /run/dcos/etc/signal-service/service_account.json
-    signal_results = subprocess.check_output(["sudo", "/opt/mesosphere/bin/dcos-signal", "-test"], universal_newlines=True)
+    signal_cmd = ["sudo", "/opt/mesosphere/bin/dcos-signal", "-test"]
+    signal_results = subprocess.check_output(signal_cmd, universal_newlines=True)
     r_data = json.loads(signal_results)
 
     exp_data = {
