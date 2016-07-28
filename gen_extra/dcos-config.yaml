@@ -99,16 +99,23 @@ package:
       {
         "customer_key": "{{ customer_key }}",
         "diagnostics_urls": [
-            "https://leader.mesos/system/health/v1/report"
-          ],
-          "cosmos_urls": [
-            "https://leader.mesos/package/list"
-          ],
-          "mesos_urls": [
-            "https://leader.mesos/mesos/frameworks",
-            "https://leader.mesos/mesos/metrics/snapshot"
-          ],
+          "https://leader.mesos/system/health/v1/report"
+        ],
+        "cosmos_urls": [
+          "https://leader.mesos/package/list"
+        ],
+        "mesos_urls": [
+          "https://leader.mesos/mesos/frameworks",
+          "https://leader.mesos/mesos/metrics/snapshot"
+        ],
+{% switch security %}
+{% case "disabled" %}
+        "ca_cert_path": "",
+{% case "permissive" %}
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
+{% case "strict" %}
+        "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
+{% endswitch %}
       }
   - path: /etc_master/networking_api.env
     content: |
