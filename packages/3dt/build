@@ -8,7 +8,7 @@ cd /pkg/src/github.com/dcos/3dt/
 # Add enterprise patch. TODO(mnaboka): use variant variable here.
 cp -r /pkg/src/3dt-enterprise/* ./
 go get
-go install
+make install
 # Copy the build from the bin to the correct place
 cp -r /pkg/bin/ "$PKG_PATH"
 
