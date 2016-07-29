@@ -12,9 +12,11 @@ import os
 import socket
 import tempfile
 
+import dns.exception
+import dns.resolver
 import pytest
 import requests
-
+import retrying
 
 logfmt = "%(asctime)s.%(msecs)03d %(name)s %(funcName)s() %(levelname)s: %(message)s"
 datefmt = "%y%m%d-%H:%M:%S"
@@ -42,6 +44,7 @@ class _DCOS:
     ca_crt_file_path = None
     su_uid = None
     su_password = None
+    authheader = None
 
     # Endpoints that are expected to be accessible only by users that have
     # special permissions explicitly set.
@@ -99,6 +102,7 @@ class _DCOS:
 
     def __init__(self):
         self.configure()
+        self._wait_for_DCOS()
 
     def configure(self):
         self._get_hostname()
@@ -174,6 +178,124 @@ class _DCOS:
             patched = functools.partial(orig, verify=self.ca_crt_file_path)
             setattr(requests, m, patched)
 
+    @retrying.retry(wait_fixed=1000,
+                    retry_on_result=lambda ret: ret is False,
+                    retry_on_exception=lambda x: False)
+    def _wait_for_leader_election(self):
+        mesos_resolver = dns.resolver.Resolver()
+        mesos_resolver.nameservers = self.public_masters
+        mesos_resolver.port = 61053
+        try:
+            # Yeah, we can also put it in retry_on_exception, but
+            # this way we will loose debug messages
+            mesos_resolver.query('leader.mesos', 'A')
+        except dns.exception.DNSException as e:
+            msg = "Cannot resolve leader.mesos, error string: '{}', continuing to wait"
+            logging.info(msg.format(e))
+            return False
+        else:
+            logging.info("leader.mesos dns entry is UP!")
+            return True
+
+    @retrying.retry(wait_fixed=1000,
+                    retry_on_result=lambda ret: ret is False,
+                    retry_on_exception=lambda x: False)
+    def _wait_for_Marathon_up(self):
+        r = self.get('/marathon/ui/')
+        # resp_code >= 500 -> backend is still down probably
+        if r.status_code < 500:
+            logging.info("Marathon is probably up")
+            return True
+        else:
+            msg = "Waiting for Marathon, resp code is: {}"
+            logging.info(msg.format(r.status_code))
+            return False
+
+    @retrying.retry(wait_fixed=1000,
+                    retry_on_result=lambda ret: ret is False,
+                    retry_on_exception=lambda x: False)
+    def _wait_for_slaves_to_join(self):
+        r = self.get('/mesos/master/slaves')
+        if r.status_code != 200:
+            msg = "Mesos master returned status code {} != 200 "
+            msg += "continuing to wait..."
+            logging.info(msg.format(r.status_code))
+            return False
+        data = r.json()
+        # Check that there are all the slaves the test knows about. They are all
+        # needed to pass the test.
+        num_slaves = len(data['slaves'])
+        if num_slaves >= len(self.agents):
+            msg = "Sufficient ({} >= {}) number of slaves have joined the cluster"
+            logging.info(msg.format(num_slaves, self.agents))
+            return True
+        else:
+            msg = "Current number of slaves: {} < {}, continuing to wait..."
+            logging.info(msg.format(num_slaves, self.agents))
+            return False
+
+    @retrying.retry(wait_fixed=1000,
+                    retry_on_result=lambda ret: ret is False,
+                    retry_on_exception=lambda x: False)
+    def _wait_for_DCOS_history_up(self):
+        r = self.get('/dcos-history-service/ping')
+        # resp_code >= 500 -> backend is still down probably
+        if r.status_code <= 500:
+            logging.info("DC/OS History is probably up")
+            return True
+        else:
+            msg = "Waiting for DC/OS History, resp code is: {}"
+            logging.info(msg.format(r.status_code))
+            return False
+
+    # Retry if returncode is False, do not retry on exceptions.
+    @retrying.retry(wait_fixed=2000,
+                    retry_on_result=lambda r: r is False,
+                    retry_on_exception=lambda _: False)
+    def _wait_for_srouter_slaves_endpoints(self):
+        # Get currently known agents. This request is served straight from
+        # Mesos (no AdminRouter-based caching is involved).
+        r = self.get('/mesos/master/slaves')
+        assert r.status_code == 200
+
+        data = r.json()
+        slaves_ids = sorted(x['id'] for x in data['slaves'])
+
+        for slave_id in slaves_ids:
+            # AdminRouter's slave endpoint internally uses cached Mesos
+            # state data. That is, slave IDs of just recently joined
+            # slaves can be unknown here. For those, this endpoint
+            # returns a 404. Retry in this case, until this endpoint
+            # is confirmed to work for all known agents.
+            uri = '/slave/{}/slave%281%29/state.json'.format(slave_id)
+            r = self.get(uri)
+            if r.status_code == 404:
+                return False
+            assert r.status_code == 200
+            data = r.json()
+            assert "id" in data
+            assert data["id"] == slave_id
+
+    @retrying.retry(wait_fixed=1000,
+                    retry_on_result=lambda ret: ret is False,
+                    retry_on_exception=lambda x: False)
+    def _login(self):
+        r = requests.post('https://{}/acs/api/v1/auth/login'.format(self.hostname),
+                          json={'uid': self.su_uid, 'password': self.su_password})
+        r.raise_for_status()
+        data = r.json()
+        self.authheader = {'Authorization': 'token=%s' % data['token']}
+
+    def get(self, path="", params=None, **kwargs):
+        return requests.get("https://" + self.hostname + path, params=params, headers=self.authheader, **kwargs)
+
+    def _wait_for_DCOS(self):
+        self._login()
+        self._wait_for_leader_election()
+        self._wait_for_Marathon_up()
+        self._wait_for_slaves_to_join()
+        self._wait_for_DCOS_history_up()
+        self._wait_for_srouter_slaves_endpoints()
 
 # Instantiate singleton.
 dcos = _DCOS()
