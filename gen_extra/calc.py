@@ -120,6 +120,17 @@ def calculate_agent_authn_enabled(security):
         return 'false'
 
 
+def calculate_default_task_user(security):
+    if security == 'strict':
+        return 'nobody'
+
+    elif security == 'permissive':
+        return 'root'
+
+    elif security == 'disabled':
+        return 'root'
+
+
 def calculate_marathon_extra_args(security):
     if security == 'strict':
         return '--disable_http'
@@ -272,6 +283,7 @@ entry = {
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
+        'default_task_user': calculate_default_task_user,
         'marathon_extra_args': calculate_marathon_extra_args,
         'zk_acls_enabled': calculate_zk_acls_enabled,
     }

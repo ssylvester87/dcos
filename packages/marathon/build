@@ -53,6 +53,7 @@ ExecStart=/opt/mesosphere/bin/java \\
     --enable_features "vips,task_killing,external_volumes,secrets" \\
     --mesos_authentication \\
     --mesos_authentication_principal "dcos_marathon" \\
+    --mesos_user "\$MESOS_USER" \\
     --ssl_keystore_path "\$SSL_KEYSTORE_PATH" \\
     --ssl_keystore_password "\$SSL_KEYSTORE_PASSWORD" \\
     \$MARATHON_EXTRA_ARGS

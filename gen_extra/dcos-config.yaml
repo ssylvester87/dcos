@@ -243,6 +243,7 @@ package:
       MARATHON_EXTRA_ARGS={{ marathon_extra_args }}
       MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
       MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+      MESOS_USER={{ default_task_user }}
       PLUGIN_ACS_URL=https://127.0.0.1
       PLUGIN_FRAMEWORK_TYPE=marathon
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
@@ -259,6 +260,7 @@ package:
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/metronome/service_account.json
       MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
       MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+      METRONOME_MESOS_USER={{ default_task_user }}
       METRONOME_MESOS_AUTHENTICATION_PRINCIPAL=dcos_metronome
       METRONOME_MESOS_AUTHENTICATION_SECRET_FILE=/run/dcos/etc/metronome/service_account.json
       METRONOME_MESOS_LEADER_UI_URL=https://leader.mesos:5050
