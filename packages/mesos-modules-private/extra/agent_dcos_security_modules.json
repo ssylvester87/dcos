@@ -12,11 +12,7 @@
             },
             {
               "key": "iam",
-              "value": "master.mesos:443"
-            },
-            {
-              "key": "scheme",
-              "value": "https"
+              "value": "https://master.mesos:443"
             }
           ]
         },
@@ -29,14 +25,10 @@
             },
             {
               "key": "iam",
-              "value": "master.mesos:443"
+              "value": "https://master.mesos:443"
             },
             {
-              "key": "scheme",
-              "value": "https"
-            },
-            {
-              "key": "cache_timeout ",
+              "key": "cache_timeout",
               "value": "5secs"
             },
             {
