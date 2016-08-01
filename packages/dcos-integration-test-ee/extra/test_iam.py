@@ -161,16 +161,17 @@ class TestIAMLoginEndpointBehavior:
         cookies = r.headers['set-cookie'].split(',')
         assert len(cookies) == 2
         for c in cookies:
+            c = c.lower()
             if 'dcos-acs-auth-cookie' in c:
                 assert 'httponly' in c
-                assert 'path=/' in c.lower()
-                assert 'domain' not in c.lower()
-                assert 'secure' not in c.lower()
+                assert 'path=/' in c
+                assert 'domain' not in c
+                assert 'secure' not in c
             if 'dcos-acs-info-cookie' in c:
                 assert 'httponly' not in c
-                assert 'domain' not in c.lower()
-                assert 'secure' not in c.lower()
-                assert 'path=/' in c.lower()
+                assert 'domain' not in c
+                assert 'secure' not in c
+                assert 'path=/' in c
 
 
 class TestIAMLogoutEndpointBehavior:
