@@ -20,7 +20,7 @@ Environment=AUTH_ERROR_PAGE_DIR_PATH=${PKG_PATH}/nginx/conf/errorpages
 EnvironmentFile=/opt/mesosphere/etc/adminrouter.env
 EnvironmentFile=/opt/mesosphere/etc/dcos-oauth.env
 EnvironmentFile=/opt/mesosphere/etc/adminrouter-extras.env
-EnvironmentFile=-/opt/mesosphere/etc/lb_dnsnames
+EnvironmentFile=-/opt/mesosphere/etc/aws_dnsnames
 EnvironmentFile=-/run/dcos/etc/adminrouter.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-adminrouter
 ExecStartPre=/usr/bin/test -f /var/lib/dcos/cluster-id

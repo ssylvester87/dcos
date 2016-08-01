@@ -232,9 +232,12 @@ def dcos_adminrouter(b, opts):
     crtpath = '/run/dcos/pki/tls/certs/adminrouter.crt'
 
     extra_san = []
-    internal_lb = os.getenv('MASTER_INTERNAL_LB_DNSNAME')
+    internal_lb = os.getenv('INTERNAL_MASTER_LB_DNSNAME')
     if internal_lb:
-        extra_san = [internal_lb]
+        extra_san.append(internal_lb)
+    external_lb = os.getenv('MASTER_LB_DNSNAME')
+    if external_lb:
+        extra_san.append(external_lb)
 
     b.write_key_certificate('AdminRouter', keypath, crtpath, master=True, extra_san=extra_san)
 
