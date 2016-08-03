@@ -21,10 +21,18 @@ package:
 {% endswitch %}
   - path: /etc_master/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
+{% switch security %}
+{% case "strict" %}
       listen 443 ssl http2 default_server;
-{% case "false" %}
+{% case "permissive" %}
+      listen 80 default_server;
+      listen 443 ssl http2 default_server;
+      location = / {
+          if ($scheme = http) {
+              return 302 https://$host$request_uri;
+          }
+      }
+{% case "disabled" %}
       listen 80 default_server;
       listen 443 ssl http2 default_server;
 {% endswitch %}

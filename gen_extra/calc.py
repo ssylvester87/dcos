@@ -40,7 +40,7 @@ def calculate_adminrouter_enforce_https(security):
         return 'true'
 
     elif security == 'permissive':
-        return 'true'
+        return 'false'
 
     elif security == 'disabled':
         return 'false'
