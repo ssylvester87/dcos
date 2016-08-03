@@ -30,10 +30,6 @@ EnvironmentFile=-/var/lib/dcos/environment.proxy
 EnvironmentFile=/opt/mesosphere/etc/cosmos
 EnvironmentFile=-/run/dcos/etc/cosmos.env
 ExecStartPre=/bin/ping -c1 ready.spartan
-## CoreOS
-ExecStartPre=-/usr/bin/mkdir -p /var/lib/cosmos
-## Ubuntu
-ExecStartPre=-/bin/mkdir -p /var/lib/cosmos
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-cosmos
 ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/cosmos.crt -a -f /run/dcos/pki/tls/private/cosmos.key
 ExecStart=/opt/mesosphere/bin/cosmos.sh
