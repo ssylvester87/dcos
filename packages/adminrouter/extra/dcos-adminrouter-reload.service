@@ -3,6 +3,5 @@ Description=Admin Router Reloader: Reload admin router to get new DNS
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/environment
 EnvironmentFile=/opt/mesosphere/environment
 ExecStart=-$PKG_PATH/nginx/sbin/nginx -s reload
