@@ -1,8 +1,10 @@
 import logging
+import hashlib
 import os
 import stat
 # temporary measure until we have time to switch to docker
 import subprocess
+from base64 import b64encode
 
 
 from kazoo.client import KazooClient
@@ -23,6 +25,13 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
+def calculate_digest(credentials):
+    username, password = credentials.split(':', 1)
+    credential = username.encode('utf-8') + b":" + password.encode('utf-8')
+    cred_hash = b64encode(hashlib.sha1(credential).digest()).strip()
+    return username + ":" + cred_hash.decode('utf-8')
+
+
 class TestBootstrap():
     def setup_class(self):
         self.tmpdir = os.path.abspath('tmp')
@@ -31,24 +40,23 @@ class TestBootstrap():
         self.iam_url = 'http://127.0.0.1:8101'
         self.ca_url = 'http://127.0.0.1:8888'
 
-        # TODO use a docker container instead
-        # clean out zookeeper to get of all ACLs
-        subprocess.check_call(["sudo", "systemctl", "stop", "zookeeper"])
-
-        subprocess.check_call(["sudo", "rm", "-rf", "/var/lib/zookeeper/data"])
-        subprocess.check_call(["sudo", "mkdir", "-p", "/var/lib/zookeeper/data"])
-        subprocess.check_call(["sudo", "chown", "zookeeper.zookeeper", "/var/lib/zookeeper/data"])
-
-        subprocess.check_call(["sudo", "rm", "-rf", "/var/lib/zookeeper/log"])
-        subprocess.check_call(["sudo", "mkdir", "-p", "/var/lib/zookeeper/log"])
-        subprocess.check_call(["sudo", "chown", "zookeeper.zookeeper", "/var/lib/zookeeper/log"])
-
-        subprocess.check_call(["sudo", "systemctl", "start", "zookeeper"])
-
         subprocess.call(["docker", "rm", "-f", "bouncer"])
         subprocess.call(["docker", "rm", "-f", "dcos-ca"])
+        subprocess.call(["docker", "rm", "-f", "zookeeper"])
 
+        self.super_creds = 'super:secret'
         self.zk_hosts = '127.0.0.1:2181'
+        super_digest = calculate_digest(self.super_creds)
+
+        subprocess.check_call([
+            'docker', 'run', '-d',
+            '--name', 'zookeeper',
+            '-p', '2181:2181',
+            '-p', '2888:2888',
+            '-p', '3888:3888',
+            '-e', 'JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=' + super_digest,
+            'jplock/zookeeper'
+        ])
 
         conn_retry_policy = KazooRetry(max_tries=-1, delay=0.1, max_delay=0.1)
         cmd_retry_policy = KazooRetry(max_tries=3, delay=0.3, backoff=1, max_delay=1, ignore_expire=False)
@@ -75,14 +83,12 @@ class TestBootstrap():
 
         subprocess.call(["docker", "rm", "-f", "dcos-ca"])
         subprocess.call(["docker", "rm", "-f", "bouncer"])
-        subprocess.check_call(["sudo", "systemctl", "stop", "zookeeper"])
+        subprocess.call(["docker", "rm", "-f", "zookeeper"])
 
     def test_generate_CA_key_certificate(self):
         key, crt = utils.generate_CA_key_certificate(1)
 
     def test_bootstrap(self):
-        super_creds = 'super:secret'
-
         master_user = 'dcos_master'
         master_pass1 = 'secret'
         master_pass2 = 'sectet2'
@@ -91,7 +97,7 @@ class TestBootstrap():
         agentpass1 = 'secret'
         agentpass2 = 'secret2'
 
-        b = bootstrap.Bootstrapper(self.zk_hosts, super_creds, self.iam_url, self.ca_url)
+        b = bootstrap.Bootstrapper(self.zk_hosts, self.super_creds, self.iam_url, self.ca_url)
 
         b.init_acls()
 
