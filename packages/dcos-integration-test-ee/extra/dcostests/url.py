@@ -61,6 +61,10 @@ class CAUrl(Url):
     _path_prefix = '/ca/api/v2'
 
 
+class SecretsUrl(Url):
+    _path_prefix = '/secrets/v1'
+
+
 class DDDTUrl(Url):
     _path_prefix = '/system/health/v1'
 
