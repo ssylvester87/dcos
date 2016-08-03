@@ -1,0 +1,21 @@
+{
+    "auth_keys": {
+        "key1": {
+            "key": "abcdefabcdefabcdefabcdef",
+            "type": "standard"
+        }
+    },
+    "signing": {
+        "default": {
+            "auth_key": "key1",
+            "crl_url": "http://localhost:8101/dupa",
+            "expiry": "8760h",
+            "ocsp_url": "http://localhost:8101/maryna",
+            "usages": [
+                "signing",
+                "key encipherment",
+                "server auth"
+            ]
+        }
+    }
+}

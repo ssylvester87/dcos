@@ -7,9 +7,6 @@ export SQLSURVIVOR_CTR_MOUNT=/pkg/src/sqlsurvivor/
 mkdir -pv /pkg/src/github.com/mesosphere/
 mv /pkg/src/dcos-ca /pkg/src/github.com/mesosphere/
 cd /pkg/src/github.com/mesosphere/dcos-ca
-for i in {1..5}; do apt-get update && break || sleep 2; done
-./helper_scripts/patch_zookeeper_bindings.sh
-./helper_scripts/install-zkvfs-deps.sh
 ./helper_scripts/build-zkvfs.sh
 ./helper_scripts/build-dcos-ca.sh
 

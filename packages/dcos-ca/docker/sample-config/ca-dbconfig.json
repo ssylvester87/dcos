@@ -1,0 +1,5 @@
+{
+    "data_source": "/opt/ca-config/certstore_development.db",
+    "driver": "sqlite3",
+    "migration_schemas": "/go/src/github.com/mesosphere/dcos-ca/certdb/migrations/sqlite3/"
+}

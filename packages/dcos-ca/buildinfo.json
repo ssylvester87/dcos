@@ -1,5 +1,5 @@
 {
-  "docker": "golang:1.6",
+  "docker": "dcos-builder-dcos-ca",
   "requires": ["openssl"],
   "sources" :{
       "sqlsurvivor": {

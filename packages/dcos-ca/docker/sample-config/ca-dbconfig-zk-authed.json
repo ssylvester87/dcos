@@ -1,0 +1,5 @@
+{
+    "data_source": "file:user:pass@@@ZK_ADDR@@:2181/foobar?vfs=zk-trace",
+    "driver": "sqlite3",
+    "migration_schemas": "/go/src/github.com/mesosphere/dcos-ca/certdb/migrations/sqlite3/"
+}
