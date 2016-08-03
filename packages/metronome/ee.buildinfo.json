@@ -1,0 +1,22 @@
+{
+  "docker": "dcos-builder",
+  "requires": ["java", "exhibitor"],
+  "sources": {
+    "metronome": {
+      "kind": "url_extract",
+      "url": "https://downloads.mesosphere.com/maven/dcos/metronome/0.1.6-SNAPSHOT/metronome-0.1.6-SNAPSHOT.tgz",
+      "sha1": "0307cc57db368f2fc269542a3b043bc6d3215c45"
+    },
+    "metronome-plugins": {
+      "kind": "url",
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC10/plugins.zip",
+      "sha1": "9b9d280660e1ef8b7b3caf43a0c77086c9fd1ded"
+    },
+    "metronome-plugin-conf": {
+      "kind": "url",
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC10/plugin-conf.json",
+      "sha1": "ad1af05322b6adff27f0c8fd0edbde763327be6f"
+    }
+  },
+  "username": "dcos_metronome"
+}

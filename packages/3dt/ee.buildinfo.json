@@ -1,0 +1,20 @@
+{
+  "docker": "golang:1.6",
+  "sources" : {
+    "3dt": {
+      "kind": "git",
+      "git": "git@github.com:dcos/3dt.git",
+      "ref": "2bed06726e0a2b6acce42f46e8ddf4e1ee6a40d0",
+      "ref_origin": "master"
+    },
+    "3dt-enterprise": {
+      "kind": "git",
+      "git": "git@github.com:mesosphere/3dt-enterprise.git",
+      "ref": "0d501d817b920b9b942aaa56790e893bbf7ca137",
+      "ref_origin": "master"
+    }
+  },
+  "username": "dcos_3dt",
+  "group": "systemd-journal",
+  "state_directory": true
+}

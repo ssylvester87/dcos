@@ -1,0 +1,12 @@
+{
+  "docker": "golang:1.6",
+  "sources" :{
+      "vault": {
+          "kind": "git",
+          "git": "git@github.com:mesosphere/vault.git",
+          "ref": "9622f8be1919817061c93e901d29642d0b585f3e",
+          "ref_origin": "v0.5.3-zkfix"
+      }
+  },
+  "username": "dcos_vault"
+}

@@ -14,11 +14,11 @@ log = logging.getLogger(__name__)
 
 
 def dcos_adminrouter(b, opts):
-    b.cluster_id('/var/lib/dcos/cluster-id')
+    b.cluster_id()
 
 
 def dcos_signal(b, opts):
-    b.cluster_id('/var/lib/dcos/cluster-id')
+    b.cluster_id()
 
 
 def dcos_oauth(b, opts):
@@ -70,7 +70,7 @@ def main():
 
 
 def parse_args():
-    if os.path.exists('/etc/mesosphere/roles/master'):
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
         zk_default = '127.0.0.1:2181'
 
     parser = argparse.ArgumentParser()

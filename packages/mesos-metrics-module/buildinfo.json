@@ -4,7 +4,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/dcos-stats.git",
-    "ref" : "6b2861f5cd68fe8b4679118732c06e2df0f2f6c2",
+    "ref" : "7fc13c4d28bea70e6ff78632495d23ecbc3a5111",
     "ref_origin": "master"
   }
 }

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+export GOPATH=/pkg:$GOPATH
+export SQLSURVIVOR_CTR_MOUNT=/pkg/src/sqlsurvivor/
+
+# Build source:
+mkdir -pv /pkg/src/github.com/mesosphere/
+mv /pkg/src/dcos-ca /pkg/src/github.com/mesosphere/
+cd /pkg/src/github.com/mesosphere/dcos-ca
+for i in {1..5}; do apt-get update && break || sleep 2; done
+./helper_scripts/patch_zookeeper_bindings.sh
+./helper_scripts/install-zkvfs-deps.sh
+./helper_scripts/build-zkvfs.sh
+./helper_scripts/build-dcos-ca.sh
+
+# Copy artifacts:
+mkdir -pv $PKG_PATH/bin/
+cp -v ./dcos-ca $PKG_PATH/bin/
+cp -v ./cfssljson $PKG_PATH/bin/
+
+# Config
+mkdir -pv $PKG_PATH/etc/dcos-ca/
+cp -v /pkg/extra/config.json $PKG_PATH/etc/dcos-ca/
+cp -v /pkg/extra/dbconfig.json $PKG_PATH/etc/dcos-ca/dbconfig.json.example
+cp -vR ./certdb/migrations/sqlite3/ $PKG_PATH/etc/dcos-ca/migrations/
+
+# Create the service file:
+SERVICE_DIR="$PKG_PATH/dcos.target.wants_master/"
+mkdir -p "$SERVICE_DIR"
+cp /pkg/extra/dcos-ca.service "$SERVICE_DIR"

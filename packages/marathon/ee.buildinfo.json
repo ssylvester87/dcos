@@ -4,18 +4,20 @@
   "sources": {
     "marathon": {
       "kind": "url_extract",
-      "url": "http://downloads.mesosphere.io/marathon/v1.1.1/marathon-1.1.1.tgz",
-      "sha1": "36823a2bd74d36932c97a682fb657a5f5e963516"
+      "url": "https://downloads.mesosphere.com/marathon/v1.2.0-RC6/marathon-1.2.0-RC6.tgz",
+      "sha1": "34e9aa13ea523e5bdacab492351b232e8a302eca"
     },
     "marathon-plugins": {
       "kind": "url",
-      "url": "http://downloads.mesosphere.io/marathon-plugins/marathon-dcos-plugins/1.0-RC5/plugins.zip",
-      "sha1": "ba114b719a06a171fa5362634b40b9e76cf4cad5"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC10/plugins.zip",
+      "sha1": "9b9d280660e1ef8b7b3caf43a0c77086c9fd1ded"
     },
     "marathon-plugin-conf": {
       "kind": "url",
-      "url": "http://downloads.mesosphere.io/marathon-plugins/marathon-dcos-plugins/1.0-RC5/plugin-conf.json",
-      "sha1": "95f94967bc22c1815a3aca2bf9d1182d3b153e1a"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC10/plugin-conf.json",
+      "sha1": "ad1af05322b6adff27f0c8fd0edbde763327be6f"
     }
-  }
+  },
+  "username": "dcos_marathon",
+  "state_directory": true
 }

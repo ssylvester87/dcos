@@ -1,12 +1,37 @@
 {
-  "requires": ["python", "python-jwt", "python-kazoo", "python-passlib", "python-retrying", "six"],
+  "requires": [
+    "python",
+    "python-future",
+    "python-isodate",
+    "python-jwkest",
+    "python-jwt",
+    "python-kazoo",
+    "python-passlib",
+    "python-pycryptodomex",
+    "python-retrying",
+    "python-pyyaml",
+    "python-cython",
+    "python-cryptography",
+    "six",
+    "libxml2",
+    "libxslt",
+    "xmlsec1",
+    "libffi",
+    "libtool-ltdl"
+  ],
   "docker": "dcos-builder",
   "sources": {
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "449a7c88567371d23de54b2ff6ab7c07bc1c4f63",
-      "ref_origin": "dcos/1.7"
+      "ref": "cb6efd5a4731b702e2eee3a40a3dbd34a360ea6c",
+      "ref_origin": "dcos/1.8"
+    },
+    "python3-saml": {
+      "kind": "git",
+      "git": "git@github.com:onelogin/python3-saml.git",
+      "ref": "e815da34a874b44e0c16ead57937885ba80be3be",
+      "ref_origin": "master"
     },
     "gunicorn": {
       "kind": "url_extract",
@@ -20,23 +45,65 @@
     },
     "falcon": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/source/f/falcon/falcon-0.3.0.tar.gz",
-      "sha1": "62171220709b9da7a4ec87d56ae80c3219e5b4ba"
+      "url": "https://pypi.python.org/packages/e1/c0/b2f27ef31553b52c7e068c33d9c835e4176b4c9529748bbcc72dd263cfcf/falcon-1.0.0.tar.gz",
+      "sha1": "778eec7fba3a53b52e88e1816274ea9f2922518e"
     },
     "python-mimeparse": {
       "kind": "url_extract",
       "url": "https://pypi.python.org/packages/source/p/python-mimeparse/python-mimeparse-0.1.4.tar.gz",
       "sha1": "bebc26249214c66f8c65e904e8eede8453eb4840"
     },
+    "oic": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/b4/da/df1672e3c6fceea394fd5be8e6f8a6934191a75a4623aa46ba5f820d3816/oic-0.8.4.0.tar.gz",
+      "sha1": "7a4e12f9ee8f3d1c2cf4d9235d08f7a8a19b21ca"
+    },
+    "pycryptodome": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/source/p/pycryptodome/pycryptodome-3.4.tar.gz",
+      "sha1": "83472713d5fbde17ac886229691dda022ed57e51"
+    },
     "ldap3": {
       "kind": "url",
-      "url": "https://pypi.python.org/packages/py2.py3/l/ldap3/ldap3-1.0.3-py2.py3-none-any.whl",
-      "sha1": "60e2e9827da717152e3f5196d98f687a4529548e"
+      "url": "https://pypi.python.org/packages/13/6b/16047100bc14188c37308c4388a6a7bd3057fcec4491bf8cef8bbbe13aa0/ldap3-1.3.1-py2.py3-none-any.whl",
+      "sha1": "9e5f1227a8bd64069b6c7669e58bb06ffc1b2bac"
     },
     "pyasn1": {
       "kind": "url",
       "url": "https://pypi.python.org/packages/3.5/p/pyasn1/pyasn1-0.1.9-py2.py3-none-any.whl",
       "sha1": "d838c67c619e8d2f955149424dfc8940dea0a9cb"
+    },
+    "lxml": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/11/1b/fe6904151b37a0d6da6e60c13583945f8ce3eae8ebd0ec763ce546358947/lxml-3.6.0.tar.gz",
+      "sha1": "62c6cf15dba26fc9f0d40c75621f07e03e1bc4f5"
+    },
+    "xmlsec": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/aa/21/f322ca9ad60e1dcae0041568c2833220a5535e2163a49c5cae46ffdc0bdd/xmlsec-0.6.0.tar.gz",
+      "sha1": "3b2bb0456002a94eb1fc81b8fed45f23ad7f9ec8"
+    },
+    "isodate": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/f4/5b/fe03d46ced80639b7be9285492dc8ce069b841c0cebe5baacdd9b090b164/isodate-0.5.4.tar.gz",
+      "sha1": "40ccf07a8e46284a79cfc4d41e151f71ae63f535"
+    },
+    "pycparser": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/6d/31/666614af3db0acf377876d48688c5d334b6e493b96d21aa7d332169bee50/pycparser-2.14.tar.gz",
+      "sha1": "922162bad4aa8503988035506c1c65bbf8690ba4"
+    },
+    "cffi": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/b6/98/11feff87072e2e640fb8320712b781eccdef05d588618915236b32289d5a/cffi-1.6.0.tar.gz",
+      "sha1": "3161ff5d1e791e86f95de258c93371dff9941c4d"
+    },
+    "idna": {
+      "kind": "url",
+      "url": "https://pypi.python.org/packages/71/02/dee75fc3e6f7455bf69221164f94586ee13552c5f33c8002335667a3d122/idna-2.1-py2.py3-none-any.whl",
+      "sha1": "ef95a0f1627b85fbfb74eaba4fbb82f0c1b9d6d6"
     }
-  }
+  },
+  "username": "dcos_bouncer",
+  "state_directory": true
 }

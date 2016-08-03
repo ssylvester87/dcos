@@ -1,0 +1,5 @@
+#!/bin/bash
+source /opt/mesosphere/environment.export
+export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.4/site-packages"
+mkdir -p "$LIB_INSTALL_DIR"
+cp /pkg/extra/dcos_auth_python.py $LIB_INSTALL_DIR

@@ -3,9 +3,7 @@
   {
     "file": "/opt/mesosphere/lib/libmetrics-module.so",
     "modules": [{
-        "name": "com_mesosphere_MetricsIsolatorModule"
-    }, {
-        "name": "com_mesosphere_MetricsResourceEstimatorModule",
+        "name": "com_mesosphere_MetricsIsolatorModule",
         "parameters": [
             {"key": "container_limit_amount_kbytes", "value": "10240"},
             {"key": "container_limit_period_secs", "value": "60"},
@@ -17,13 +15,6 @@
             {"key": "output_collector_chunking", "value": "true"},
             {"key": "output_collector_chunk_size_datapoints", "value": "100"},
             {"key": "output_collector_chunk_timeout_seconds", "value": "10"},
-            {"key": "output_statsd_enabled", "value": "true"},
-            {"key": "output_statsd_host", "value": "metrics.marathon.mesos"},
-            {"key": "output_statsd_host_refresh_seconds", "value": "60"},
-            {"key": "output_statsd_port", "value": "8125"},
-            {"key": "output_statsd_annotation_mode", "value": "key_prefix"},
-            {"key": "output_statsd_chunking", "value": "true"},
-            {"key": "output_statsd_chunk_size_bytes", "value": "512"},
             {"key": "state_path_dir",
              "value": "/var/run/mesos/isolators/com_mesosphere_MetricsIsolatorModule/"}
         ]

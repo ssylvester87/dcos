@@ -1,0 +1,19 @@
+{
+  "docker": "golang:1.6",
+  "requires": ["openssl"],
+  "sources" :{
+      "sqlsurvivor": {
+          "kind": "git",
+          "git": "git@github.com:mesosphere/sqlsurvivor.git",
+          "ref": "a01235b1a453f072143baf58daedc1ca2673e6a2",
+          "ref_origin": "master"
+      },
+      "dcos-ca": {
+          "kind": "git",
+          "git": "git@github.com:mesosphere/dcos-ca.git",
+          "ref": "3ab7c3dc1a1ad6aff152b245e6df0532917962b0",
+          "ref_origin": "master"
+      }
+  },
+  "username": "dcos_ca"
+}

@@ -1,4 +1,73 @@
 package:
+  - path: /etc/adminrouter-extras.env
+    content: |
+      ADMINROUTER_ACTIVATE_AUTH_MODULE=true
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      DEFAULT_SCHEME=https://
+{% case "false" %}
+      DEFAULT_SCHEME=http://
+{% endswitch %}
+  - path: /etc_master/adminrouter-redirect-http-https.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      server {
+         listen 80;
+         return 302 https://$host$request_uri;
+      }
+{% case "false" %}
+      # No HTTP -> HTTPS redirect as of `adminrouter_enforce_https` setting
+{% endswitch %}
+  - path: /etc_master/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 443 ssl http2 default_server;
+{% case "false" %}
+      listen 80 default_server;
+      listen 443 ssl http2 default_server;
+{% endswitch %}
+  - path: /etc_slave/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 61002 ssl http2 default_server;
+{% case "false" %}
+      listen 61001 default_server;
+      listen 61002 ssl http2 default_server;
+{% endswitch %}
+  - path: /etc_slave_public/adminrouter-listen.conf
+    content: |
+{% switch adminrouter_enforce_https %}
+{% case "true" %}
+      listen 61002 ssl http2 default_server;
+{% case "false" %}
+      listen 61001 default_server;
+      listen 61002 ssl http2 default_server;
+{% endswitch %}
+  - path: /etc/mesos-dns-extras.env
+    content: |
+      MESOS_DNS_CONFIG=/opt/mesosphere/etc/mesos-dns-enterprise.json
+  - path: /etc/mesos-dns-enterprise.json
+    content: |
+      {
+        "zk": "zk://127.0.0.1:2181/mesos",
+        "refreshSeconds": 30,
+        "ttl": 60,
+        "domain": "mesos",
+        "port": 61053,
+        {{ mesos_dns_resolvers_str }},
+        "timeout": 5,
+        "listener": "0.0.0.0",
+        "email": "root.mesos-dns.mesos",
+        "IPSources": {{ mesos_dns_ip_sources }},
+        "HTTPListener": "127.0.0.1",
+        "MesosHTTPSOn": true,
+        "CACertFile": "/run/dcos/pki/CA/certs/ca.crt",
+        "mesosAuthentication": "iam",
+        "IAMConfigFile": "/run/dcos/etc/mesos-dns/iam.json"
+      }
   - path: /etc/bouncer-config.json
     content: |
       {
@@ -15,12 +84,246 @@ package:
         "GUNICORN_BIND_ADDRESS": "127.0.0.1:8101",
         "GUNICORN_WORKER_TIMEOUT_SECONDS": 10
       }
+  - path: /etc/dcos-secrets.env
+    content: |
+      SECRETS_BOOTSTRAP={{ bootstrap_secrets }}
+  - path: /etc_master/cosmos
+    content: |
+      TLS_ENABLED=true
+      TLS_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      TLS_CERT_FILE=/run/dcos/pki/tls/certs/cosmos.crt
+      TLS_KEY_FILE=/run/dcos/pki/tls/private/cosmos.key
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
   - path: /etc/dcos-signal-extra.json
     content: |
       {
-        "customer_key": "{{ customer_key }}"
+        "customer_key": "{{ customer_key }}",
+        "diagnostics_urls": [
+          "https://leader.mesos/system/health/v1/report"
+        ],
+        "cosmos_urls": [
+          "https://leader.mesos/package/list"
+        ],
+        "mesos_urls": [
+          "https://leader.mesos/mesos/frameworks",
+          "https://leader.mesos/mesos/metrics/snapshot"
+        ],
+{% switch security %}
+{% case "disabled" %}
+        "ca_cert_path": "",
+{% case "permissive" %}
+        "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
+{% case "strict" %}
+        "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
+{% endswitch %}
       }
+  - path: /etc_master/networking_api.env
+    content: |
+{% switch ssl_enabled %}
+{% case "false" %}
+{% case "true" %}
+      MESOS_STATE_SSL_ENABLED=true
+      ERLANG_DISTRIBUTION=inet_tls
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
+      CLIENT_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
+      CLIENT_VERIFY=verify_peer
+      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
+      SERVER_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
+      SERVER_VERIFY=verify_peer
+      SERVER_FAIL_IF_NO_PEER_CERT=true
+{% endswitch %}
+{% switch firewall_enabled %}
+{% case "true" %}
+  - path: /etc/mesos/master_firewall.json
+    content: |
+      {
+        "disabled_endpoints" : {
+          "paths" : [
+              "/slaves",
+              "/profiler/start",
+              "/profiler/stop",
+              "/registrar(1)/registry",
+              "/api/v1",
+              "/api/v1/scheduler",
+              "/maintenance/schedule",
+              "/maintenance/status",
+              "/machine/down",
+              "/machine/up"
+          ]
+        }
+      }
+{% case "false" %}
+{% endswitch %}
+  - path: /etc/mesos-master-extras
+    content: |
+{% switch mesos_authenticate_http %}
+{% case "true" %}
+      MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
+      MESOS_AUTHENTICATE_HTTP_READWRITE={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READONLY={{ mesos_authenticate_http }}
+{% case "false" %}
+{% endswitch %}
+{% switch firewall_enabled %}
+{% case "true" %}
+      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/master_firewall.json
+{% case "false" %}
+{% endswitch %}
+      MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
+      # Always load authenticator, allow authentication.
+      MESOS_AUTHENTICATORS={{ mesos_classic_authenticator }}
+      # Conditionally require authentication (reject unauthenticated).
+      MESOS_AUTHENTICATE_FRAMEWORKS={{ mesos_authenticate_frameworks }}
+      MESOS_AUTHENTICATE_AGENTS={{ mesos_authenticate_agents }}
+      SSL_ENABLED={{ ssl_enabled }}
+      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      SSL_VERIFY_CERT=false
+      SSL_REQUIRE_CERT=false
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-master.crt
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-master.key
+{% switch firewall_enabled %}
+{% case "true" %}
+  - path: /etc/mesos/slave_firewall.json
+    content: |
+      {
+        "disabled_endpoints": {
+          "paths": [
+            "/profiler/start",
+            "/profiler/stop",
+            "/api/v1",
+            "/api/v1/executor"
+          ]
+        }
+      }
+{% case "false" %}
+{% endswitch %}
+  - path: /etc_slave/mesos/slave_principal.json
+    content: |
+      { "principal": "dcos_mesos_agent" }
+  - path: /etc_slave_public/mesos/slave_principal.json
+    content: |
+      { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
     content: |
-      MESOS_ISOLATION={{ mesos_isolation_modules }}
-      MESOS_RESOURCE_ESTIMATOR={{ mesos_resource_estimator_module }}
+      MESOS_ISOLATION={{ mesos_isolation }}
+      MESOS_HOOKS={{ mesos_hooks }}
+      SSL_ENABLED={{ ssl_enabled }}
+      # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
+      SSL_SUPPORT_DOWNGRADE=true
+      SSL_VERIFY_CERT=false
+      SSL_REQUIRE_CERT=false
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
+{% switch mesos_authenticate_http %}
+{% case "true" %}
+      MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
+      MESOS_AUTHENTICATE_HTTP_READWRITE={{ mesos_authenticate_http }}
+      MESOS_AUTHENTICATE_HTTP_READONLY={{ mesos_authenticate_http }}
+{% case "false" %}
+{% endswitch %}
+{% switch firewall_enabled %}
+{% case "true" %}
+      MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/slave_firewall.json
+{% case "false" %}
+{% endswitch %}
+      MESOS_AUTHORIZER={{ mesos_agent_authorizer }}
+{% switch agent_authn_enabled %}
+{% case "true" %}
+      MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
+      MESOS_CREDENTIAL=file:///opt/mesosphere/etc/mesos/slave_principal.json
+      DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/mesos/agent_service_account.json
+{% case "false" %}
+{% endswitch %}
+  - path: /etc_master/marathon-extras
+    content: |
+      DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/marathon/service_account.json
+      MARATHON_EXTRA_ARGS={{ marathon_extra_args }}
+      MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
+      MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+      MESOS_USER={{ default_task_user }}
+      PLUGIN_ACS_URL=https://127.0.0.1
+      PLUGIN_FRAMEWORK_TYPE=marathon
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
+      SSL_ENABLED={{ ssl_enabled }}
+      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
+      SSL_KEYSTORE_PATH=/run/dcos/pki/tls/private/marathon.jks
+      SSL_REQUIRE_CERT=false
+      SSL_VERIFY_CERT=false
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
+  - path: /etc_master/metronome-extras
+    content: |
+      DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/metronome/service_account.json
+      MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
+      MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+      METRONOME_MESOS_USER={{ default_task_user }}
+      METRONOME_MESOS_AUTHENTICATION_PRINCIPAL=dcos_metronome
+      METRONOME_MESOS_AUTHENTICATION_SECRET_FILE=/run/dcos/etc/metronome/service_account.json
+      METRONOME_MESOS_LEADER_UI_URL=https://leader.mesos:5050
+      METRONOME_PLAY_SERVER_HTTP_PORT=disabled
+      METRONOME_PLAY_SERVER_HTTPS_KEYSTORE_PATH=/run/dcos/pki/tls/private/metronome.jks
+      METRONOME_PLAY_SERVER_HTTPS_KEYSTORE_TYPE=JKS
+      METRONOME_PLAY_SERVER_HTTPS_PORT=9443
+      METRONOME_PLUGIN_CONF=/opt/mesosphere/active/metronome/usr/plugins/plugin-conf.json
+      METRONOME_PLUGIN_DIR=/opt/mesosphere/active/metronome/usr/plugins/lib
+      PLUGIN_ACS_URL=https://127.0.0.1
+      PLUGIN_FRAMEWORK_TYPE=metronome
+      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      SSL_CERT_FILE=/run/dcos/pki/tls/certs/metronome.crt
+      SSL_ENABLED={{ ssl_enabled }}
+      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      SSL_KEY_FILE=/run/dcos/pki/tls/private/metronome.key
+      SSL_REQUIRE_CERT=false
+      SSL_VERIFY_CERT=false
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
+{% switch zk_acls_enabled %}
+{% case "false" %}
+{% case "true" %}
+  - path: /etc_master/zk_super_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_super_credentials }}
+  - path: /etc_master/zk_master_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_master_credentials }}
+  - path: /etc_master/zk_agent_digest
+    permissions: "0600"
+    content: |
+      {{ zk_agent_digest }}
+  - path: /etc_slave/zk_agent_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_agent_credentials }}
+  - path: /etc_slave_public/zk_agent_credentials
+    permissions: "0600"
+    content: |
+      {{ zk_agent_credentials }}
+{% switch exhibitor_storage_backend %}
+{% case "agent_only_group_no_exhibitor" %}
+{% case "aws_s3" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "shared_filesystem" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "static" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "zookeeper" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% case "azure" %}
+  - path: /etc/exhibitor-extras
+    content: |
+      {{ zk_super_digest_jvmflags }}
+{% endswitch %}
+{% endswitch %}

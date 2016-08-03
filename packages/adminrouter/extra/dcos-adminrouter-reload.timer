@@ -1,0 +1,6 @@
+[Unit]
+Description=Admin Router Reloader Timer: Periodically reload admin router nginx config to pickup new dns
+
+[Timer]
+OnBootSec=5sec
+OnUnitActiveSec=30s

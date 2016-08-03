@@ -1,18 +1,35 @@
-import getpass
 import logging
+import hashlib
 import os
-import pwd
-import random
-import string
+import stat
+# temporary measure until we have time to switch to docker
 import subprocess
+from base64 import b64encode
 
-from kazoo.client import KazooClient, KazooRetry
+
+from kazoo.client import KazooClient
+from kazoo.client import KazooRetry
+# from kazoo.security import Permissions, ANYONE_ID_UNSAFE
+from kazoo.security import make_digest_acl_credential
+from requests.packages.urllib3.util import Retry
+from requests.adapters import HTTPAdapter
+from requests import Session
+
 
 from dcos_internal_utils import bootstrap
+from dcos_internal_utils import utils
+
 
 logging.basicConfig(format='[%(levelname)s] %(message)s', level='INFO')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def calculate_digest(credentials):
+    username, password = credentials.split(':', 1)
+    credential = username.encode('utf-8') + b":" + password.encode('utf-8')
+    cred_hash = b64encode(hashlib.sha1(credential).digest()).strip()
+    return username + ":" + cred_hash.decode('utf-8')
 
 
 class TestBootstrap():
@@ -20,54 +37,210 @@ class TestBootstrap():
         self.tmpdir = os.path.abspath('tmp')
         os.makedirs(self.tmpdir, exist_ok=True)
 
-        self.zk_container_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        subprocess.check_call(['docker', 'run', '-d', '-p', '2181:2181', '-p',
-                               '2888:2888', '-p', '3888:3888', '--name', self.zk_container_name, 'jplock/zookeeper'])
+        self.iam_url = 'http://127.0.0.1:8101'
+        self.ca_url = 'http://127.0.0.1:8888'
+
+        subprocess.call(["docker", "rm", "-f", "bouncer"])
+        subprocess.call(["docker", "rm", "-f", "dcos-ca"])
+        subprocess.call(["docker", "rm", "-f", "zookeeper"])
+
+        self.super_creds = 'super:secret'
         self.zk_hosts = '127.0.0.1:2181'
+        super_digest = calculate_digest(self.super_creds)
+
+        subprocess.check_call([
+            'docker', 'run', '-d',
+            '--name', 'zookeeper',
+            '-p', '2181:2181',
+            '-p', '2888:2888',
+            '-p', '3888:3888',
+            '-e', 'JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=' + super_digest,
+            'jplock/zookeeper'
+        ])
 
         conn_retry_policy = KazooRetry(max_tries=-1, delay=0.1, max_delay=0.1)
         cmd_retry_policy = KazooRetry(max_tries=3, delay=0.3, backoff=1, max_delay=1, ignore_expire=False)
         zk = KazooClient(hosts=self.zk_hosts, connection_retry=conn_retry_policy, command_retry=cmd_retry_policy)
         zk.start()
+        zk.add_auth('digest', 'super:secret')
 
         children = zk.get_children('/')
         for child in children:
             if child == 'zookeeper':
                 continue
             zk.delete('/' + child, recursive=True)
+        self.super_zk = zk
 
+        zk = KazooClient(hosts=self.zk_hosts, connection_retry=conn_retry_policy, command_retry=cmd_retry_policy)
+        zk.start()
         self.zk = zk
 
     def teardown_class(self):
         self.zk.stop()
         self.zk.close()
-        subprocess.check_call(['docker', 'rm', '-f', self.zk_container_name])
+        self.super_zk.stop()
+        self.super_zk.close()
 
-    def _test_consensus(self, methodname, monkeypatch):
-        orig_getpwnam = pwd.getpwnam
+        subprocess.call(["docker", "rm", "-f", "dcos-ca"])
+        subprocess.call(["docker", "rm", "-f", "bouncer"])
+        subprocess.call(["docker", "rm", "-f", "zookeeper"])
 
-        def mock_getpwnam(user):
-            return orig_getpwnam(getpass.getuser())
-        monkeypatch.setattr(pwd, 'getpwnam', mock_getpwnam)
+    def test_generate_CA_key_certificate(self):
+        key, crt = utils.generate_CA_key_certificate(1)
 
-        b = bootstrap.Bootstrapper(self.zk_hosts)
+    def test_bootstrap(self):
+        master_user = 'dcos_master'
+        master_pass1 = 'secret'
+        master_pass2 = 'sectet2'
 
-        path = self.tmpdir + '/cluster-id'
+        agentuser = 'dcos_agent'
+        agentpass1 = 'secret'
+        agentpass2 = 'secret2'
+
+        b = bootstrap.Bootstrapper(self.zk_hosts, self.super_creds, self.iam_url, self.ca_url)
+
+        b.init_acls()
+
+        # TODO https://mesosphere.atlassian.net/browse/DCOS-8189
+        # acls, st = self.zk.get_acls('/')
+        # assert len(acls) == 1
+        # assert acls[0].perms == Permissions.CREATE | Permissions.READ
+        # assert acls[0].id == ANYONE_ID_UNSAFE
+
+        b.init_acls()
+
+        master_creds = master_user + ':' + master_pass1
+        secrets1 = b.create_master_secrets(master_creds)
+        self.check_master_secrets(secrets1)
+
+        # repeat with a different password to make sure
+        # acls are updated after the node exists
+        master_creds = master_user + ':' + master_pass2
+        secrets2 = b.create_master_secrets(master_creds)
+
+        assert secrets1 == secrets2
+
+        agent_digest = make_digest_acl_credential(agentuser, agentpass1)
+        secrets1 = b.create_agent_secrets(agent_digest)
+
+        assert set(b.agent_services) == set(secrets1['services'].keys())
+
+        # repeat with a different password to make sure
+        # acls are updated after the node exists
+        agent_digest = make_digest_acl_credential(agentuser, agentpass2)
+        secrets2 = b.create_agent_secrets(agent_digest)
+
+        assert secrets1 == secrets2
+
+        b.mesos_acls()
+        b.marathon_acls()
+        b.cosmos_acls()
+        b.bouncer_acls()
+        b.dcos_ca_acls()
+        b.dcos_secrets_acls()
+        b.dcos_vault_default_acls()
 
         try:
-            os.remove(path)
+            os.remove(self.tmpdir + '/cluster-id')
         except FileNotFoundError:
             pass
 
-        method = getattr(b, methodname)
-
-        id1 = method(path)
-        os.remove(path)
-        id2 = method(path)
+        id1 = b.cluster_id(path=self.tmpdir + '/cluster-id')
+        # repeat to test reading from file
+        id2 = b.cluster_id(path=self.tmpdir + '/cluster-id')
         assert id1 == id2
 
-    def test_bootstrap(self, monkeypatch):
-        self._test_consensus('cluster_id', monkeypatch)
+        bouncer_zk_user = b.secrets['zk']['dcos_bouncer']['username']
+        bouncer_zk_pass = b.secrets['zk']['dcos_bouncer']['password']
+        subprocess.check_call([
+            "docker", "run", "-d", "--name=bouncer", "--net=host",
+            "-v", "/home/albert/repos/bouncer:/usr/local/src/bouncer",
+            "-e", "DATASTORE_ZK_USER=" + bouncer_zk_user,
+            "-e", "DATASTORE_ZK_SECRET=" + bouncer_zk_pass,
+            "mesosphere/bouncer-devkit:latest",
+            "tools/run-gunicorn-testconfig.sh", "--ZK"
+            ])
 
-    def test_generate_oauth_secret(self, monkeypatch):
-        self._test_consensus('generate_oauth_secret', monkeypatch)
+        s = Session()
+        retry = Retry(total=10, backoff_factor=0.1, status_forcelist=[500])
+        s.mount('http://', HTTPAdapter(max_retries=retry))
+        r = s.get(self.iam_url)
+        assert r.status_code == 404
+
+        b.create_service_account('dcos_adminrouter')
+        # test exist_ok=True
+        b.create_service_account('dcos_adminrouter')
+
+        b.create_service_account('dcos_agent')
+        b.create_service_account('dcos_foo', zk_secret=False)
+
+        b.write_bouncer_env(self.tmpdir + '/bouncer.env')
+        b.write_vault_default_env(self.tmpdir + '/dcos-vault_default.env')
+        b.write_secrets_env(self.tmpdir + '/dcos-secrets.env')
+        b.write_mesos_master_env(self.tmpdir + '/mesos-master.env')
+
+        b.write_service_auth_token('dcos_adminrouter', self.tmpdir + '/adminrouter.env', exp=0)
+
+        ca_fn = self.tmpdir + '/ca.crt'
+        b.write_CA_certificate(filename=ca_fn)
+        b.write_CA_key(self.tmpdir + '/ca.key')
+
+        subprocess.check_call([
+            "docker", "run", "-d", "--name=dcos-ca", "--net=host",
+            "-v", "/home/albert/repos/gopath/src/github.com/mesosphere/dcos-ca:/dcos-ca:ro",
+            "-v", self.tmpdir + "/ca.crt:/opt/ca-config/ca.crt:ro",
+            "-v", self.tmpdir + "/ca.key:/opt/ca-config/ca.key:ro",
+            "mesosphere/dcos-ca-devkit:full",
+            "/dcos-ca/dcos-ca",
+            "-loglevel", "0",
+            "serve",
+            "-address=0.0.0.0", "-port=8888",
+            "-ca", "/opt/ca-config/ca.crt",
+            "-ca-key", "/opt/ca-config/ca.key",
+            "-config", "/opt/ca-config/ca-config-noauth.json",
+            "-db-config", "/opt/ca-config/ca-dbconfig.json"
+            ])
+
+        r = s.get(self.ca_url)
+        assert r.status_code == 404
+
+        key_fn = self.tmpdir + '/svc1.key'
+        crt_fn = self.tmpdir + '/svc1.crt'
+        b.write_key_certificate('common name', key_fn, crt_fn, extra_san=['foo'])
+        assert os.stat(key_fn)[stat.ST_MODE] == 0o100600
+
+        key_fn = self.tmpdir + '/svc2.key'
+        crt_fn = self.tmpdir + '/svc2.crt'
+        b.write_key_certificate('common name', key_fn, crt_fn, extra_san=['foo'], key_mode=0o644)
+        assert os.stat(key_fn)[stat.ST_MODE] == 0o100644
+
+        b.write_marathon_env(key_fn, crt_fn, ca_fn, self.tmpdir + '/marathon.env')
+        b.write_metronome_env(key_fn, crt_fn, ca_fn, self.tmpdir + '/metronome.env')
+        b.write_cosmos_env(key_fn, crt_fn, ca_fn, self.tmpdir + '/cosmos.env')
+
+        b.create_agent_service_accounts()
+
+        # test agent mode
+        b.secrets = {}
+        b.write_CA_certificate(filename=(self.tmpdir + '/ca2.crt'))
+
+        b.write_jwks_public_keys(self.tmpdir + '/jwks.pub')
+
+    def check_master_secrets(self, secrets):
+        assert 'zk' in secrets
+        zk = secrets['zk']
+        assert 'dcos_mesos_master' in zk
+        assert 'dcos_marathon' in zk
+        assert 'dcos_cosmos' in zk
+        assert 'dcos_bouncer' in zk
+        assert 'dcos_ca' in zk
+        assert 'dcos_secrets' in zk
+        assert 'dcos_vault_default' in zk
+        assert 'services' in secrets
+        services = secrets['services']
+        assert 'dcos_adminrouter' in services
+        assert 'dcos_history_service' in services
+        assert 'dcos_marathon' in services
+        assert 'dcos_minuteman_master' in services
+        assert 'dcos_navstar_master' in services
+        assert 'dcos_mesos_dns' in services

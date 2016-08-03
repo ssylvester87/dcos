@@ -1,0 +1,114 @@
+{
+  "libraries": [
+    {
+      "file": "/opt/mesosphere/lib/mesos/libdcos_security.so",
+      "modules": [
+        {
+          "name": "com_mesosphere_dcos_http_Authenticator",
+          "parameters": [
+            {
+              "key": "host",
+              "value": "agent"
+            },
+            {
+              "key": "iam",
+              "value": "master.mesos:443"
+            },
+            {
+              "key": "scheme",
+              "value": "https"
+            }
+          ]
+        },
+        {
+          "name": "com_mesosphere_dcos_Authorizer",
+          "parameters": [
+            {
+              "key": "host",
+              "value": "agent"
+            },
+            {
+              "key": "iam",
+              "value": "master.mesos:443"
+            },
+            {
+              "key": "scheme",
+              "value": "https"
+            },
+            {
+              "key": "cache_timeout ",
+              "value": "5secs"
+            },
+            {
+              "key": "bouncer_credential",
+              "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+            }
+          ]
+        },
+        {
+          "name": "com_mesosphere_dcos_SecretsIsolator",
+          "parameters": [
+
+            {
+              "key": "store_url",
+              "value": "https://master.mesos/secrets/v1"
+            },
+            {
+              "key": "service_account_credential",
+              "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+            },
+            {
+              "key": "special_secret_protobuf_label",
+              "value": "DCOS_SECRETS_DIRECTIVE"
+            },
+            {
+              "key": "special_secret_space_label",
+              "value": "MARATHON_APP_ID"
+            },
+            {
+              "key": "shell_timeout",
+              "value": "5secs"
+            },
+            {
+              "key": "network_timeout",
+              "value": "5secs"
+            }
+          ]
+        },
+        {
+          "name": "com_mesosphere_dcos_SecretsHook",
+          "parameters": [
+
+            {
+              "key": "store_url",
+              "value": "https://master.mesos/secrets/v1"
+            },
+            {
+              "key": "service_account_credential",
+              "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+            },
+            {
+              "key": "special_secret_protobuf_label",
+              "value": "DCOS_SECRETS_DIRECTIVE"
+            },
+            {
+              "key": "special_secret_space_label",
+              "value": "MARATHON_APP_ID"
+            },
+            {
+              "key": "shell_timeout",
+              "value": "5secs"
+            },
+            {
+              "key": "network_timeout",
+              "value": "5secs"
+            }
+          ]
+        },
+        {
+          "name": "com_mesosphere_dcos_ClassicRPCAuthenticatee"
+        }
+      ]
+    }
+  ]
+}
