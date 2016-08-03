@@ -14,7 +14,6 @@ mkdir -p $(dirname "$metronome_service")
 cat <<EOF > "$metronome_service"
 [Unit]
 Description=Jobs Service: DC/OS Metronome
-After=dcos-mesos-master.service
 
 [Service]
 User=dcos_metronome

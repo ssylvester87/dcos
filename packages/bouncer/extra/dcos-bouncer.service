@@ -1,6 +1,5 @@
 [Unit]
 Description=Identity and Access Management: DCOS Identity and Access Management Service/API
-After=dcos-gen-resolvconf.service
 
 [Service]
 Type=simple
