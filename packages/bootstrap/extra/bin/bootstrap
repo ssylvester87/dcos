@@ -264,7 +264,7 @@ def dcos_adminrouter_agent(b, opts):
 
 
 def dcos_spartan(b, opts):
-    if os.path.exists('/etc/mesosphere/roles/master'):
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
         return dcos_spartan_master(b, opts)
     else:
         return dcos_spartan_agent(b, opts)
@@ -298,7 +298,7 @@ def dcos_erlang_service(servicename, b, opts):
             if not os.path.exists(file):
                 open(file, 'a').close()
                 shutil.chown(file, user='dcos_networking_api')
-    if os.path.exists('/etc/mesosphere/roles/master'):
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
         log.info('%s master bootstrap', servicename)
         return dcos_erlang_service_master(servicename, b, opts)
     else:
@@ -530,7 +530,7 @@ def main():
 
 
 def parse_args():
-    if os.path.exists('/etc/mesosphere/roles/master'):
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
         zk_default = '127.0.0.1:2181'
         iam_default = 'http://127.0.0.1:8101'
         ca_default = 'http://127.0.0.1:8888'
