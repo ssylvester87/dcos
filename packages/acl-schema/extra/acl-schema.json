@@ -15,7 +15,6 @@
           "items": [
             { "rid": "mesos", "displayName": "Mesos Masters" },
             { "rid": "slave", "displayName": "Mesos Agents" },
-            { "rid": "package", "displayName": "Universe"},
             { "rid": "networking", "displayName": "Networks" },
             { "rid": "historyservice", "displayName": "Dashboard History" },
             { "rid": "system-health", "displayName": "Component Health" },
@@ -29,10 +28,15 @@
           "groupName": "Service",
           "actions": ["full"],
           "items": [
-            { "rid": "marathon", "displayName": "Marathon" },
-            { "rid": "metronome", "displayName": "Metronome" },
+            { "rid": "marathon", "displayName": "Services (Marathon)" },
+            { "rid": "metronome", "displayName": "Jobs (Metronome)" },
             { "rid": "*", "displayName": "Custom" }
           ]
+        },
+        {
+          "rid": "package",
+          "displayName": "Universe",
+          "actions": ["full"]
         }
       ]
     },
@@ -141,12 +145,13 @@
                   "rid": "path",
                   "displayName": "Endpoint",
                   "groupName": "Endpoint",
+                  "actions": ["read"],
                   "items": [
-                    {
-                      "rid": "*",
-                      "displayName": "Path",
-                      "actions": ["read"]
-                    }
+                    { "rid": "/metrics/snapshot" },
+                    { "rid": "/containers" },
+                    { "rid": "/monitor/statistics" },
+                    { "rid": "/files/debug" },
+                    { "rid": "/logging/toggle" }
                   ]
                 }
               ]
@@ -177,12 +182,11 @@
                   "rid": "path",
                   "displayName": "Endpoint",
                   "groupName": "Endpoint",
+                  "actions": ["read"],
                   "items": [
-                    {
-                      "rid": "*",
-                      "displayName": "Path",
-                      "actions": ["read"]
-                    }
+                    { "rid": "/metrics/snapshot" },
+                    { "rid": "/files/debug" },
+                    { "rid": "/logging/toggle" }
                   ]
                 }
               ]
@@ -379,7 +383,7 @@
       "items": [
         {
           "rid": "marathon",
-          "displayName": "Marathon",
+          "displayName": "Services (Marathon)",
           "groupName": "Marathon Instance",
           "items": [
             {
@@ -427,12 +431,12 @@
         },
         {
           "rid": "metronome",
-          "displayName": "Metronome",
+          "displayName": "Jobs (Metronome)",
           "groupName": "Metronome Instance",
           "items": [
             {
               "rid": "metronome",
-              "displayName": "Metronome",
+              "displayName": "Jobs (Metronome)",
               "groupName": "API",
               "items": [
                 {
