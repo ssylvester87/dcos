@@ -298,8 +298,6 @@ def dcos_erlang_service(servicename, b, opts):
             if not os.path.exists(file):
                 open(file, 'a').close()
                 shutil.chown(file, user='dcos_networking_api')
-        shutil.chown('/opt/mesosphere/active/networking_api/networking_api', user='dcos_networking_api')
-        shutil.chown('/opt/mesosphere/active/networking_api/networking_api/log', user='dcos_networking_api')
     if os.path.exists('/etc/mesosphere/roles/master'):
         log.info('%s master bootstrap', servicename)
         return dcos_erlang_service_master(servicename, b, opts)
