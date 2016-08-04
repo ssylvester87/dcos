@@ -48,7 +48,7 @@
         {
           "rid": "agent",
           "displayName": "Agent",
-          "groupName": "Object",
+          "groupName": "Interface",
           "items": [
             {
               "rid": "framework",
@@ -161,7 +161,7 @@
         {
           "rid": "master",
           "displayName": "Master",
-          "groupName": "Object",
+          "groupName": "Interface",
           "items": [
             {
               "rid": "flags",
@@ -406,7 +406,7 @@
                 {
                   "rid": "admin",
                   "displayName": "Operator",
-                  "groupName": "Object",
+                  "groupName": "Interface",
                   "items": [
                      {
                        "rid": "config",
