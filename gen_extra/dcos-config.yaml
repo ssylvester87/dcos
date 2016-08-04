@@ -90,7 +90,10 @@ package:
       }
   - path: /etc/dcos-secrets.env
     content: |
+      TLS_ENABLED=true
       SECRETS_BOOTSTRAP={{ bootstrap_secrets }}
+      TLS_CERT_FILE=/run/dcos/pki/tls/certs/dcos-secrets.crt
+      TLS_KEY_FILE=/run/dcos/pki/tls/private/dcos-secrets.key
   - path: /etc_master/cosmos
     content: |
       TLS_ENABLED=true
