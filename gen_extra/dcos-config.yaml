@@ -13,6 +13,8 @@ package:
          # adminrouter_master_enforce_https == "all"
          return 307 https://$host$request_uri;
       }
+{% case "none" %}
+{% case "only_root_path" %}
 {% endswitch %}
   - path: /etc_master/adminrouter-listen.conf
     content: |
