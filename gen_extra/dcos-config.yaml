@@ -2,49 +2,53 @@ package:
   - path: /etc/adminrouter-extras.env
     content: |
       ADMINROUTER_ACTIVATE_AUTH_MODULE=true
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
-      DEFAULT_SCHEME=https://
-{% case "false" %}
-      DEFAULT_SCHEME=http://
-{% endswitch %}
+      DEFAULT_SCHEME={{ adminrouter_master_default_scheme }}
   - path: /etc_master/adminrouter-redirect-http-https.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
+{% switch adminrouter_master_enforce_https %}
+{% case "all" %}
       server {
          listen 80;
-         return 302 https://$host$request_uri;
+         # Redirecting all HTTP requests to HTTPS as of
+         # adminrouter_master_enforce_https == "all"
+         return 307 https://$host$request_uri;
       }
-{% case "false" %}
-      # No HTTP -> HTTPS redirect as of `adminrouter_enforce_https` setting
+{% case "none" %}
+{% case "only_root_path" %}
 {% endswitch %}
   - path: /etc_master/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 443 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_master_enforce_https %}
+{% case "all" %}
+      # Not serving HTTP as of adminrouter_master_enforce_https == "all"
+{% case "only_root_path" %}
       listen 80 default_server;
-      listen 443 ssl http2 default_server;
+      location = / {
+          if ($scheme = http) {
+              return 307 https://$host$request_uri;
+          }
+      }
+{% case "none" %}
+      listen 80 default_server;
 {% endswitch %}
   - path: /etc_slave/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 61002 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_agent_enforce_https %}
+{% case "all" %}
+     # Not serving HTTP as of adminrouter_agent_enforce_https == "all"
+{% case "none" %}
       listen 61001 default_server;
-      listen 61002 ssl http2 default_server;
 {% endswitch %}
   - path: /etc_slave_public/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 61002 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_agent_enforce_https %}
+{% case "all" %}
+     # Not serving HTTP as of adminrouter_agent_enforce_https == "all"
+{% case "none" %}
       listen 61001 default_server;
-      listen 61002 ssl http2 default_server;
 {% endswitch %}
   - path: /etc/mesos-dns-extras.env
     content: |
