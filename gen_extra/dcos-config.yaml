@@ -29,7 +29,7 @@ package:
       listen 443 ssl http2 default_server;
       location = / {
           if ($scheme = http) {
-              return 302 https://$host$request_uri;
+              return 307 https://$host$request_uri;
           }
       }
 {% case "disabled" %}

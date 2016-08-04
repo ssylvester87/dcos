@@ -38,7 +38,7 @@ class TestHttpHttpsConfig:
     )
     def test_root_path_http_https_redirect(self):
         r = requests.get(Url('/', scheme='http'), allow_redirects=False)
-        assert r.status_code == 302
+        assert r.status_code == 307
         assert r.headers['location'].startswith('https')
 
         r = requests.get(Url('/', scheme='http'))
