@@ -331,3 +331,19 @@ package:
       {{ zk_super_digest_jvmflags }}
 {% endswitch %}
 {% endswitch %}
+  - path: /etc/bootstrap-config.json
+    content: |
+      {
+        "security": "{{ security }}",
+        "ssl_enabled": {{ ssl_enabled }},
+        "ssl_support_downgrade": {{ ssl_support_downgrade }},
+        "adminrouter_enforce_https": {{ adminrouter_enforce_https }},
+        "firewall_enabled": {{ firewall_enabled }},
+        "mesos_authenticate_http": {{ mesos_authenticate_http }},
+        "mesos_authz_enforced": {{ mesos_authz_enforced }},
+        "mesos_authenticate_frameworks": {{ mesos_authenticate_frameworks }},
+        "mesos_authenticate_agents": {{ mesos_authenticate_agents }},
+        "agent_authn_enabled": {{ agent_authn_enabled }},
+        "marathon_extra_args": "{{ marathon_extra_args }}",
+        "zk_acls_enabled": {{ zk_acls_enabled }}
+      }
