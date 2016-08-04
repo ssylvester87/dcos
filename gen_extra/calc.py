@@ -35,15 +35,28 @@ def calculate_ssl_support_downgrade(security):
         return 'true'
 
 
-def calculate_adminrouter_enforce_https(security):
-    if security == 'strict':
-        return 'true'
+def calculate_adminrouter_master_enforce_https(security):
+    return {
+        'strict': 'all',
+        'permissive': 'only_root_path',
+        'disabled': 'none'
+        }[security]
 
-    elif security == 'permissive':
-        return 'false'
 
-    elif security == 'disabled':
-        return 'false'
+def calculate_adminrouter_agent_enforce_https(security):
+    return {
+        'strict': 'all',
+        'permissive': 'none',
+        'disabled': 'none'
+        }[security]
+
+
+def calculate_adminrouter_master_default_scheme(security):
+    return {
+        'strict': 'https://',
+        'permissive': 'http://',
+        'disabled': 'http://'
+        }[security]
 
 
 def calculate_firewall_enabled(security):
@@ -254,7 +267,9 @@ entry = {
         'zk_super_digest_jvmflags': calculate_zk_super_digest_jvmflags,
         'zk_agent_digest': calculate_zk_agent_digest,
         'adminrouter_auth_enabled': 'true',
-        'adminrouter_enforce_https': calculate_adminrouter_enforce_https,
+        'adminrouter_master_enforce_https': calculate_adminrouter_master_enforce_https,
+        'adminrouter_agent_enforce_https': calculate_adminrouter_agent_enforce_https,
+        'adminrouter_master_default_scheme': calculate_adminrouter_master_default_scheme,
         'bootstrap_secrets': 'true',
         'ui_auth_providers': 'true',
         'ui_secrets': 'true',
