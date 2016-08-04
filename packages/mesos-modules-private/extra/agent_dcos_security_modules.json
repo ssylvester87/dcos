@@ -58,10 +58,6 @@
               "value": "MARATHON_APP_ID"
             },
             {
-              "key": "shell_timeout",
-              "value": "5secs"
-            },
-            {
               "key": "network_timeout",
               "value": "5secs"
             }
@@ -86,10 +82,6 @@
             {
               "key": "special_secret_space_label",
               "value": "MARATHON_APP_ID"
-            },
-            {
-              "key": "shell_timeout",
-              "value": "5secs"
             },
             {
               "key": "network_timeout",
