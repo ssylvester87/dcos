@@ -68,12 +68,13 @@ def calculate_mesos_authenticate_http(security):
         return 'false'
 
 
+# TODO(adam): DCOS-9027: Enable authz in permissive mode with default permissive ACLs.
 def calculate_mesos_authz_enforced(security):
     if security == 'strict':
         return 'true'
 
     elif security == 'permissive':
-        return 'true'
+        return 'false'
 
     elif security == 'disabled':
         return 'false'
