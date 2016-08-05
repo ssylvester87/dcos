@@ -41,9 +41,17 @@ def dcos_secrets(b, opts):
     b.init_acls()
     b.create_master_secrets(opts.zk_master_creds)
     b.dcos_secrets_acls()
+
     path = '/run/dcos/etc/dcos-secrets.env'
     b.write_secrets_env(path)
     shutil.chown(path, user='dcos_secrets')
+
+    keypath = '/run/dcos/pki/tls/private/dcos-secrets.key'
+    crtpath = '/run/dcos/pki/tls/certs/dcos-secrets.crt'
+    b.write_key_certificate('Secrets', keypath, crtpath, master=True)
+    shutil.chown(keypath, user='dcos_secrets')
+    shutil.chown(crtpath, user='dcos_secrets')
+
     try:
         os.makedirs('/var/lib/dcos/secrets')
     except FileExistsError:
