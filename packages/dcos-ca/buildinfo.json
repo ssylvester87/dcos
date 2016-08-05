@@ -1,5 +1,5 @@
 {
-  "docker": "dcos-builder-dcos-ca",
+  "docker": "dcos/dcos-builder:dcos-ca_dockerdir-latest",
   "requires": ["openssl"],
   "sources" :{
       "sqlsurvivor": {
