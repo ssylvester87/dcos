@@ -5,7 +5,7 @@
     {
       "rid": "adminrouter",
       "displayName": "Admin Router",
-      "groupName": "API",
+      "groupName": "Interface",
       "items": [
         {
           "rid": "ops",
@@ -25,11 +25,11 @@
         {
           "rid": "service",
           "displayName": "Services",
-          "groupName": "Service",
+          "groupName": "Interface (cont.)",
           "actions": ["full"],
           "items": [
-            { "rid": "marathon", "displayName": "Services (Marathon)" },
-            { "rid": "metronome", "displayName": "Jobs (Metronome)" },
+            { "rid": "marathon", "displayName": "Marathon (Services)" },
+            { "rid": "metronome", "displayName": "Metronome (Jobs)" },
             { "rid": "*", "displayName": "Custom" }
           ]
         },
@@ -379,17 +379,17 @@
     {
       "rid": "service",
       "displayName": "Services",
-      "groupName": "Service",
+      "groupName": "Enforcer (cont.)",
       "items": [
         {
           "rid": "marathon",
-          "displayName": "Services (Marathon)",
+          "displayName": "Marathon (Services)",
           "groupName": "Marathon Instance",
           "items": [
             {
               "rid": "marathon",
               "displayName": "marathon",
-              "groupName": "API",
+              "groupName": "Interface",
               "items": [
                 {
                   "rid": "services",
@@ -431,13 +431,13 @@
         },
         {
           "rid": "metronome",
-          "displayName": "Jobs (Metronome)",
+          "displayName": "Metronome (Jobs)",
           "groupName": "Metronome Instance",
           "items": [
             {
               "rid": "metronome",
-              "displayName": "Jobs (Metronome)",
-              "groupName": "API",
+              "displayName": "Metronome (Jobs)",
+              "groupName": "Interface",
               "items": [
                 {
                   "rid": "jobs",
