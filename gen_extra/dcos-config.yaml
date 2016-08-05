@@ -2,49 +2,53 @@ package:
   - path: /etc/adminrouter-extras.env
     content: |
       ADMINROUTER_ACTIVATE_AUTH_MODULE=true
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
-      DEFAULT_SCHEME=https://
-{% case "false" %}
-      DEFAULT_SCHEME=http://
-{% endswitch %}
+      DEFAULT_SCHEME={{ adminrouter_master_default_scheme }}
   - path: /etc_master/adminrouter-redirect-http-https.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
+{% switch adminrouter_master_enforce_https %}
+{% case "all" %}
       server {
          listen 80;
-         return 302 https://$host$request_uri;
+         # Redirecting all HTTP requests to HTTPS as of
+         # adminrouter_master_enforce_https == "all"
+         return 307 https://$host$request_uri;
       }
-{% case "false" %}
-      # No HTTP -> HTTPS redirect as of `adminrouter_enforce_https` setting
+{% case "none" %}
+{% case "only_root_path" %}
 {% endswitch %}
   - path: /etc_master/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 443 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_master_enforce_https %}
+{% case "all" %}
+      # Not serving HTTP as of adminrouter_master_enforce_https == "all"
+{% case "only_root_path" %}
       listen 80 default_server;
-      listen 443 ssl http2 default_server;
+      location = / {
+          if ($scheme = http) {
+              return 307 https://$host$request_uri;
+          }
+      }
+{% case "none" %}
+      listen 80 default_server;
 {% endswitch %}
   - path: /etc_slave/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 61002 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_agent_enforce_https %}
+{% case "all" %}
+     # Not serving HTTP as of adminrouter_agent_enforce_https == "all"
+{% case "none" %}
       listen 61001 default_server;
-      listen 61002 ssl http2 default_server;
 {% endswitch %}
   - path: /etc_slave_public/adminrouter-listen.conf
     content: |
-{% switch adminrouter_enforce_https %}
-{% case "true" %}
       listen 61002 ssl http2 default_server;
-{% case "false" %}
+{% switch adminrouter_agent_enforce_https %}
+{% case "all" %}
+     # Not serving HTTP as of adminrouter_agent_enforce_https == "all"
+{% case "none" %}
       listen 61001 default_server;
-      listen 61002 ssl http2 default_server;
 {% endswitch %}
   - path: /etc/mesos-dns-extras.env
     content: |
@@ -209,14 +213,14 @@ package:
     content: |
       MESOS_ISOLATION={{ mesos_isolation }}
       MESOS_HOOKS={{ mesos_hooks }}
-      SSL_ENABLED={{ ssl_enabled }}
+      LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
       # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
-      SSL_SUPPORT_DOWNGRADE=true
-      SSL_VERIFY_CERT=false
-      SSL_REQUIRE_CERT=false
-      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
-      SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
-      SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
+      LIBPROCESS_SSL_SUPPORT_DOWNGRADE=true
+      LIBPROCESS_SSL_VERIFY_CERT=false
+      LIBPROCESS_SSL_REQUIRE_CERT=false
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
+      LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
 {% switch mesos_authenticate_http %}
 {% case "true" %}
       MESOS_HTTP_AUTHENTICATORS={{ mesos_http_authenticators }}
@@ -240,21 +244,21 @@ package:
   - path: /etc_master/marathon-extras
     content: |
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/marathon/service_account.json
-      MARATHON_EXTRA_ARGS={{ marathon_extra_args }}
       MESOS_AUTHENTICATEE=com_mesosphere_dcos_ClassicRPCAuthenticatee
       MESOS_MODULES=file:///opt/mesosphere/etc/mesos-scheduler-modules/dcos_authenticatee_module.json
       MESOS_USER={{ default_task_user }}
       PLUGIN_ACS_URL=https://127.0.0.1
       PLUGIN_FRAMEWORK_TYPE=marathon
-      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
-      SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
-      SSL_ENABLED={{ ssl_enabled }}
-      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
-      SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
+      LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
+      LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      LIBPROCESS_SSL_VERIFY_CERT=false
+      LIBPROCESS_SSL_REQUIRE_CERT=false
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
+      LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
       SSL_KEYSTORE_PATH=/run/dcos/pki/tls/private/marathon.jks
-      SSL_REQUIRE_CERT=false
-      SSL_VERIFY_CERT=false
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
+      MARATHON_EXTRA_ARGS={{ marathon_extra_args }}
   - path: /etc_master/metronome-extras
     content: |
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/metronome/service_account.json
@@ -272,13 +276,13 @@ package:
       METRONOME_PLUGIN_DIR=/opt/mesosphere/active/metronome/usr/plugins/lib
       PLUGIN_ACS_URL=https://127.0.0.1
       PLUGIN_FRAMEWORK_TYPE=metronome
-      SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
-      SSL_CERT_FILE=/run/dcos/pki/tls/certs/metronome.crt
-      SSL_ENABLED={{ ssl_enabled }}
-      SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
-      SSL_KEY_FILE=/run/dcos/pki/tls/private/metronome.key
-      SSL_REQUIRE_CERT=false
-      SSL_VERIFY_CERT=false
+      LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
+      LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
+      LIBPROCESS_SSL_VERIFY_CERT=false
+      LIBPROCESS_SSL_REQUIRE_CERT=false
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/metronome.crt
+      LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/metronome.key
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
 {% switch zk_acls_enabled %}
 {% case "false" %}
@@ -327,3 +331,21 @@ package:
       {{ zk_super_digest_jvmflags }}
 {% endswitch %}
 {% endswitch %}
+  - path: /etc/bootstrap-config.json
+    content: |
+      {
+        "security": "{{ security }}",
+        "ssl_enabled": {{ ssl_enabled }},
+        "ssl_support_downgrade": {{ ssl_support_downgrade }},
+        "adminrouter_master_enforce_https": {{ adminrouter_master_enforce_https }},
+        "adminrouter_agent_enforce_https": {{ adminrouter_agent_enforce_https }},
+        "adminrouter_master_default_scheme": {{ adminrouter_master_default_scheme }},
+        "firewall_enabled": {{ firewall_enabled }},
+        "mesos_authenticate_http": {{ mesos_authenticate_http }},
+        "mesos_authz_enforced": {{ mesos_authz_enforced }},
+        "mesos_authenticate_frameworks": {{ mesos_authenticate_frameworks }},
+        "mesos_authenticate_agents": {{ mesos_authenticate_agents }},
+        "agent_authn_enabled": {{ agent_authn_enabled }},
+        "marathon_extra_args": "{{ marathon_extra_args }}",
+        "zk_acls_enabled": {{ zk_acls_enabled }}
+      }
