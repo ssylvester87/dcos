@@ -9,8 +9,8 @@
     },
     "metronome-plugins": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC10/plugins.zip",
-      "sha1": "9b9d280660e1ef8b7b3caf43a0c77086c9fd1ded"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC11/plugins.zip",
+      "sha1": "b4b3f3fae3200f394c9414e2dc4ded228130b7a5"
     },
     "metronome-plugin-conf": {
       "kind": "url",
