@@ -20,7 +20,6 @@
     "libffi",
     "libtool-ltdl"
   ],
-  "docker": "dcos-builder",
   "sources": {
     "bouncer": {
       "kind": "git",

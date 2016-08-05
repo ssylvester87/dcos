@@ -1,5 +1,4 @@
 {
-  "docker": "dcos-builder",
   "single_source" : {
     "kind": "url_extract",
     "url": "http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz",

@@ -1,6 +1,5 @@
 {
   "requires": ["mesos", "curl", "openssl"],
-  "docker": "dcos-builder",
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",

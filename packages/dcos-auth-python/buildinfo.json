@@ -1,4 +1,3 @@
 {
-  "requires": ["python", "python-jwt", "python-requests"],
-  "docker": "dcos-builder"
+  "requires": ["python", "python-jwt", "python-requests"]
 }
