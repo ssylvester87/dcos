@@ -12,7 +12,7 @@ if [[ "${SECRETS_BOOTSTRAP}" == "true" ]]; then
 fi
 
 if [[ "${TLS_ENABLED}" == "true" ]]; then
-    EXTRA_FLAGS+=" --key ${TLS_KEY_FILE} --cert ${TLS_CERT_FILE}"
+    EXTRA_FLAGS+=" --key ${TLS_KEY_FILE} --cert ${TLS_CERT_FILE} --CA ${TLS_CA_FILE}"
 fi
 
 # TODO need to do $PKG_PATH here and envsubst in build
