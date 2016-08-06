@@ -94,6 +94,7 @@ package:
       SECRETS_BOOTSTRAP={{ bootstrap_secrets }}
       TLS_CERT_FILE=/run/dcos/pki/tls/certs/dcos-secrets.crt
       TLS_KEY_FILE=/run/dcos/pki/tls/private/dcos-secrets.key
+      TLS_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
   - path: /etc_master/cosmos
     content: |
       TLS_ENABLED=true
