@@ -23,7 +23,6 @@ for package in \
     pycparser \
     cffi \
     falcon \
-    gunicorn \
     python-mimeparse \
     oic \
     pycryptodome \
