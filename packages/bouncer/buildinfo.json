@@ -12,6 +12,7 @@
     "python-pyyaml",
     "python-cython",
     "python-cryptography",
+    "python-gunicorn",
     "six",
     "libxml2",
     "libxslt",
@@ -32,11 +33,6 @@
       "git": "git@github.com:onelogin/python3-saml.git",
       "ref": "e815da34a874b44e0c16ead57937885ba80be3be",
       "ref_origin": "master"
-    },
-    "gunicorn": {
-      "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/source/g/gunicorn/gunicorn-19.4.1.tar.gz",
-      "sha1": "e81f363cdddb09a1a269d9f984815ea2962b05c1"
     },
     "jsonschema": {
       "kind": "url",
