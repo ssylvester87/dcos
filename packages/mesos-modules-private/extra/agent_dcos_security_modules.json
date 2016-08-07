@@ -28,24 +28,12 @@
               "value": "https://master.mesos:443"
             },
             {
-              "key": "network_timeout",
+              "key": "cache_timeout",
               "value": "5secs"
             },
             {
               "key": "service_account_credential",
               "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
-            },
-            {
-              "key": "prefix",
-              "value": "dcos:mesos"
-            },
-            {
-              "key": "users",
-              "value": "/acs/api/v1/users"
-            },
-            {
-              "key": "permissions",
-              "value": "permissions"
             }
           ]
         },
