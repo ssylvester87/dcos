@@ -6,7 +6,7 @@ mkdir -p "$LIB_INSTALL_DIR"
 
 echo "pip version: $(pip --version)"
 echo "Install packages from wheel files."
-for package in jsonschema ldap3 pyasn1 idna; do
+for package in jsonschema pyasn1 idna; do
   pip install --no-deps --no-index --target="$LIB_INSTALL_DIR" /pkg/src/$package/*.whl
 done
 
@@ -28,7 +28,8 @@ for package in \
     pycryptodome \
     lxml \
     xmlsec \
-    python3-saml
+    python3-saml \
+    ldap3
 do
   pip install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/$package
 done
