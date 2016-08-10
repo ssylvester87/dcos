@@ -31,13 +31,12 @@ def get_mesos_endpoints(mesos_url):
 
 @pytest.mark.security
 @pytest.mark.xfail(
-    not pytest.config.getoption('expect_strict_security'),
-    reason='strict security unexpected: Mesos authN/authZ is expected to fail',
+    dcos.config['security'] == 'disabled',
+    reason='Mesos authN is disabled in security-disabled mode and is expected to fail.',
     strict=True
     )
 def test_mesos_endpoint_authn(superuser):
-    """Test that Mesos endpoints behave as expected with respect to
-    authentication and authorization"""
+    """Test that Mesos endpoints behave as expected with respect to authentication"""
 
     def get_unauthenticated(url):
         ''' Performs an unauthenticated `GET` of `path` '''

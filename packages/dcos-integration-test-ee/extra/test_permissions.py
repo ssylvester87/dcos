@@ -307,10 +307,9 @@ class TestAdminRouterACLs:
         assert r.status_code == 200
 
     def test_adminrouter_ops_slave(self, peter, superuser):
-
         # Obtain a valid agent ID.
         r = requests.get(
-            Url('/mesos/master/slaves'),
+            Url('/mesos/master/state'),
             headers=superuser.authheader
             )
         agent_ids = sorted(x['id'] for x in r.json()['slaves'])

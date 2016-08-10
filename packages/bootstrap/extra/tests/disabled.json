@@ -1,0 +1,16 @@
+{
+  "security": "disabled",
+  "ssl_enabled": false,
+  "ssl_support_downgrade": true,
+  "adminrouter_enforce_https": false,
+  "firewall_enabled": false,
+  "mesos_authenticate_http": false,
+  "mesos_authz_enforced": false,
+  "mesos_authenticate_frameworks": false,
+  "mesos_authenticate_agents": false,
+  "framework_authn_enabled": false,
+  "agent_authn_enabled": false,
+  "marathon_extra_args": "",
+  "zk_acls_enabled": false,
+  "marathon_https_enabled": false
+}

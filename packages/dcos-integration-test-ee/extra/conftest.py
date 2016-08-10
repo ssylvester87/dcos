@@ -19,22 +19,14 @@ from dcostests import AuthedUser, dcos, IAMUrl, SuperUser, Url
 log = logging.getLogger(__name__)
 
 
-def pytest_addoption(parser):
-    parser.addoption(
-        '--expect-strict-security',
-        action='store_true',
-        dest='expect_strict_security',
-        help='Expect the cluster to be in strict security mode.',
-        )
-
-
 @pytest.fixture(scope="session", autouse=True)
 def https_enabled():
     """This fixture allows upstream integration tests
     to have CA bundle available
     """
     dcos_addr = os.environ['DCOS_DNS_ADDRESS']
-    os.environ['DCOS_DNS_ADDRESS'] = dcos_addr.replace('http', 'https')
+    if dcos.config['ssl_enabled']:
+        os.environ['DCOS_DNS_ADDRESS'] = dcos_addr.replace('http', 'https')
     return dcos
 
 

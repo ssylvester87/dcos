@@ -8,17 +8,6 @@ mv /pkg/src/vault /pkg/src/github.com/hashicorp/
 cd /pkg/src/github.com/hashicorp/vault
 CGO_ENABLED=0 go build --ldflags '-extldflags " -static"' -o $PKG_PATH/bin/vault github.com/hashicorp/vault
 
-cp /pkg/extra/vault.sh  $PKG_PATH/bin/vault.sh
-chmod +x $PKG_PATH/bin/vault.sh
-
-# give the Vault executable access to the mlock syscall
-# see: https://www.vaultproject.io/docs/config/index.html#disable_mlock
-setcap cap_ipc_lock=+ep $PKG_PATH/bin/vault
-
-vault_config="$PKG_PATH/etc/vault/config.hcl"
-mkdir -p $(dirname "$vault_config")
-cp /pkg/extra/config.hcl "$vault_config"
-
 vault_service="$PKG_PATH/dcos.target.wants_master/dcos-vault.service"
 mkdir -p $(dirname "$vault_service")
 

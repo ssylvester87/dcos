@@ -29,7 +29,6 @@ Environment=ERL_FLAGS=-kernel inet_dist_listen_min 62500 -kernel inet_dist_liste
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=/opt/mesosphere/etc/networking_api.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-networking_api
-ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/networking_api.crt -a -f /run/dcos/pki/tls/private/networking_api.key
 ExecStart=${PKG_PATH}/networking_api/bin/networking-api-env foreground
 Environment=HOME=/opt/mesosphere
 EOF

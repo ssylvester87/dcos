@@ -7,6 +7,7 @@
 
 import atexit
 import functools
+import json
 import logging
 import os
 import socket
@@ -91,11 +92,21 @@ class _DCOS:
         self._wait_for_DCOS()
 
     def configure(self):
+        self._get_bootstrap_config()
         self._get_hostname()
         self._get_su_credentials()
         self._get_hosts()
         self._get_provider()
-        self._make_ca_crt_file()
+        if self.config['ssl_enabled']:
+            self._make_ca_crt_file()
+
+    def _get_bootstrap_config(self):
+        with open('/opt/mesosphere/etc/bootstrap-config.json', 'rb') as f:
+            self.config = json.loads(f.read().decode('ascii'))
+        if self.config['ssl_enabled']:
+            self.scheme = 'https://'
+        else:
+            self.scheme = 'http://'
 
     def _get_hosts(self):
         self.masters = sorted(os.environ['MASTER_HOSTS'].split(','))
@@ -201,7 +212,9 @@ class _DCOS:
                     retry_on_result=lambda ret: ret is False,
                     retry_on_exception=lambda x: False)
     def _wait_for_slaves_to_join(self):
-        r = self.get('/mesos/master/slaves')
+        # using state instead of slaves because of
+        # Mesos endpoint firewall in strict mode
+        r = self.get('/mesos/master/state')
         if r.status_code != 200:
             msg = "Mesos master returned status code {} != 200 "
             msg += "continuing to wait..."
@@ -241,7 +254,10 @@ class _DCOS:
     def _wait_for_srouter_slaves_endpoints(self):
         # Get currently known agents. This request is served straight from
         # Mesos (no AdminRouter-based caching is involved).
-        r = self.get('/mesos/master/slaves')
+        logging.info('Fetching agents from Mesos')
+        # using state instead of slaves because of
+        # Mesos endpoint firewall in strict mode
+        r = self.get('/mesos/master/state')
         assert r.status_code == 200
 
         data = r.json()
@@ -254,6 +270,7 @@ class _DCOS:
             # returns a 404. Retry in this case, until this endpoint
             # is confirmed to work for all known agents.
             uri = '/slave/{}/slave%281%29/state.json'.format(slave_id)
+            logging.info('Fetching agent state from {}'.format(uri))
             r = self.get(uri)
             if r.status_code == 404:
                 return False
@@ -277,14 +294,14 @@ class _DCOS:
                     retry_on_result=lambda ret: ret is False,
                     retry_on_exception=lambda x: False)
     def _login(self):
-        r = requests.post('https://{}/acs/api/v1/auth/login'.format(self.hostname),
+        r = requests.post('{}{}/acs/api/v1/auth/login'.format(self.scheme, self.hostname),
                           json={'uid': self.su_uid, 'password': self.su_password})
         r.raise_for_status()
         data = r.json()
         self.authheader = {'Authorization': 'token=%s' % data['token']}
 
     def get(self, path="", params=None, **kwargs):
-        return requests.get("https://" + self.hostname + path, params=params, headers=self.authheader, **kwargs)
+        return requests.get(self.scheme + self.hostname + path, params=params, headers=self.authheader, **kwargs)
 
     def _wait_for_DCOS(self):
         self._login()

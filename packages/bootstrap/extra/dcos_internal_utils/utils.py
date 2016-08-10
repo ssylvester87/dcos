@@ -164,13 +164,17 @@ def generate_CA_key_certificate(valid_days=3650):
     return privkey_pem.decode('ascii'), crt_pem.decode('ascii')
 
 
+def detect_ip():
+    cmd = ['/opt/mesosphere/bin/detect_ip']
+    machine_ip = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('ascii').strip()
+    gen.calc.validate_ipv4_addresses([machine_ip])
+    return machine_ip
+
+
 def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
 
-    machine_ip = subprocess.check_output(
-        ['/opt/mesosphere/bin/detect_ip'],
-        stderr=subprocess.DEVNULL).decode('ascii').strip()
-    gen.calc.validate_ipv4_addresses([machine_ip])
+    machine_ip = detect_ip()
 
     san = [
         x509.DNSName(machine_ip),

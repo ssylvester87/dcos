@@ -4,7 +4,7 @@
     "dcos-signal-enterprise": {
       "kind": "git",
       "git": "git@github.com:mesosphere/dcos-signal-enterprise.git",
-      "ref": "59eda3fcbeb3a04fa27873bf809d06d63dce95f3",
+      "ref": "b5b81ae34cc53d86c3861ee6a0f7c100598aac00",
       "ref_origin": "master"
     },
     "dcos-signal": {

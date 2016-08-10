@@ -2,7 +2,11 @@
 set -xe
 TLS_ENABLED=${TLS_ENABLED:-false}
 
-SECRETS_ADVERTISE_ADDR=https://$($MESOS_IP_DISCOVERY_COMMAND)/secrets/v1
+if [[ "${TLS_ENABLED}" == "true" ]]; then
+    SECRETS_ADVERTISE_ADDR=https://$($MESOS_IP_DISCOVERY_COMMAND)/secrets/v1
+else
+    SECRETS_ADVERTISE_ADDR=http://$($MESOS_IP_DISCOVERY_COMMAND)/secrets/v1
+fi
 
 EXTRA_FLAGS=
 

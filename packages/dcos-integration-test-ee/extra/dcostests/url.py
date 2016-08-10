@@ -4,7 +4,6 @@
 
 from urllib.parse import urlunsplit
 
-import pytest
 
 from dcostests import dcos
 
@@ -23,8 +22,9 @@ class Url:
         assert not path or path.startswith('/')
         self.path = '%s%s' % (self._path_prefix, path)
 
-        # In lockdown mode, override default scheme with HTTPS.
-        if pytest.config.getoption('expect_strict_security'):
+        if dcos.config['security'] == 'disabled':
+            self._default_scheme = 'http'
+        else:
             self._default_scheme = 'https'
 
         self.scheme = scheme if scheme else self._default_scheme

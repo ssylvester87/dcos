@@ -8,6 +8,7 @@ Restart=always
 StartLimitInterval=0
 RestartSec=5
 EnvironmentFile=/opt/mesosphere/environment
+EnvironmentFile=/opt/mesosphere/etc/dcos-vault.env
 EnvironmentFile=-/run/dcos/etc/dcos-vault_default.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-vault_default
-ExecStart=/opt/mesosphere/bin/vault.sh
+ExecStart=/opt/mesosphere/bin/vault server -config=/run/dcos/etc/vault.hcl -log-level=trace
