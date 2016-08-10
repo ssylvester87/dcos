@@ -1,5 +1,5 @@
 #!/bin/bash
-# Note: dcos-image must be installed to access ccm-deploy-test
+# Note: dcos-image must be pip installed to access ccm-deploy-test
 set -euo pipefail
 set -x
 export TEST_ADD_ENV_DCOS_LOGIN_UNAME=testadmin
@@ -19,4 +19,6 @@ superuser_username: testadmin
 superuser_password_hash: $password_hash
 EOF
 
+# pip installed command to run tests
+# source in dcos/dcos calls: test_util.test_installer_ccm:main
 ccm-deploy-test
