@@ -1,3 +1,5 @@
+import gen.calc
+
 import hashlib
 from base64 import b64encode
 
@@ -280,7 +282,7 @@ entry = {
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
         'mesos_enterprise_isolation': ','.join(
-            mesos_isolation + [
+            gen.calc.mesos_isolation + [
                 'com_mesosphere_MetricsIsolatorModule',
                 'com_mesosphere_dcos_SecretsIsolator'
             ]),
