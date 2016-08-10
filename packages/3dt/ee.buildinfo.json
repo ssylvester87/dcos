@@ -4,7 +4,7 @@
     "3dt": {
       "kind": "git",
       "git": "git@github.com:dcos/3dt.git",
-      "ref": "2bed06726e0a2b6acce42f46e8ddf4e1ee6a40d0",
+      "ref": "1081f24cc1774405c09693b1e9b79b0c580afcca",
       "ref_origin": "master"
     },
     "3dt-enterprise": {
