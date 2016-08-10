@@ -215,7 +215,7 @@ package:
       { "principal": "dcos_mesos_agent_public" }
   - path: /etc/mesos-slave-common-extras
     content: |
-      MESOS_ISOLATION={{ mesos_isolation }}
+      MESOS_ISOLATION={{ mesos_enterprise_isolation }}
       MESOS_HOOKS={{ mesos_hooks }}
       LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
       # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
