@@ -282,7 +282,7 @@ entry = {
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
         'mesos_enterprise_isolation': ','.join(
-            gen.calc.entry.mesos_isolation + [
+            gen.calc.entry.must.mesos_isolation + [
                 'com_mesosphere_MetricsIsolatorModule',
                 'com_mesosphere_dcos_SecretsIsolator'
             ]),
