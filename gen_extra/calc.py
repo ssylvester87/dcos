@@ -215,10 +215,11 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
 
 
 def calculate_mesos_enterprise_isolation(mesos_isolation):
-    return ','.join(mesos_isolation + [
+    return ','.join([
+        mesos_isolation,
         'com_mesosphere_MetricsIsolatorModule',
         'com_mesosphere_dcos_SecretsIsolator'
-        ])
+    ])
 
 
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
