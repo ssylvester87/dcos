@@ -1,8 +1,6 @@
 import hashlib
 from base64 import b64encode
 
-import gen.calc
-
 
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "'customer_key' must be a string."
@@ -216,6 +214,13 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
+def calculate_mesos_enterprise_isolation(mesos_isolation):
+    return ','.join(mesos_isolation + [
+        'com_mesosphere_MetricsIsolatorModule',
+        'com_mesosphere_dcos_SecretsIsolator'
+        ])
+
+
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
@@ -281,11 +286,7 @@ entry = {
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
-        'mesos_enterprise_isolation': ','.join(
-            gen.calc.entry.must.mesos_isolation + [
-                'com_mesosphere_MetricsIsolatorModule',
-                'com_mesosphere_dcos_SecretsIsolator'
-            ]),
+        'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
