@@ -13,6 +13,11 @@ def validate_security(security):
     assert security in ['strict', 'permissive', 'disabled'], "Must be either 'strict', 'permissive' or 'disabled'"
 
 
+def validate_dcos_audit_logging(dcos_audit_logging):
+    can_be = ['true', 'false']
+    assert dcos_audit_logging in can_be, 'Must be one of {}. Got {}.'.format(can_be, dcos_audit_logging)
+
+
 def calculate_ssl_enabled(security):
     if security == 'strict':
         return 'true'
@@ -242,10 +247,12 @@ entry = {
         validate_zk_super_credentials,
         validate_zk_master_credentials,
         validate_zk_agent_credentials,
-        validate_security
+        validate_security,
+        validate_dcos_audit_logging
     ],
     'default': {
         'security': 'permissive',
+        'dcos_audit_logging': 'true',
         'superuser_username': '',
         'superuser_password_hash': '',
         'zk_super_credentials': 'super:secret',
