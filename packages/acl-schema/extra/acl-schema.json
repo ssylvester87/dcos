@@ -5,7 +5,7 @@
     {
       "rid": "adminrouter",
       "displayName": "Admin Router",
-      "groupName": "API",
+      "groupName": "Interface",
       "items": [
         {
           "rid": "ops",
@@ -15,7 +15,6 @@
           "items": [
             { "rid": "mesos", "displayName": "Mesos Masters" },
             { "rid": "slave", "displayName": "Mesos Agents" },
-            { "rid": "package", "displayName": "Universe"},
             { "rid": "networking", "displayName": "Networks" },
             { "rid": "historyservice", "displayName": "Dashboard History" },
             { "rid": "system-health", "displayName": "Component Health" },
@@ -26,13 +25,18 @@
         {
           "rid": "service",
           "displayName": "Services",
-          "groupName": "Service",
+          "groupName": "Interface (cont.)",
           "actions": ["full"],
           "items": [
-            { "rid": "marathon", "displayName": "Marathon" },
-            { "rid": "metronome", "displayName": "Metronome" },
+            { "rid": "marathon", "displayName": "Marathon (Services)" },
+            { "rid": "metronome", "displayName": "Metronome (Jobs)" },
             { "rid": "*", "displayName": "Custom" }
           ]
+        },
+        {
+          "rid": "package",
+          "displayName": "Universe",
+          "actions": ["full"]
         }
       ]
     },
@@ -44,7 +48,7 @@
         {
           "rid": "agent",
           "displayName": "Agent",
-          "groupName": "Object",
+          "groupName": "Interface",
           "items": [
             {
               "rid": "framework",
@@ -141,12 +145,13 @@
                   "rid": "path",
                   "displayName": "Endpoint",
                   "groupName": "Endpoint",
+                  "actions": ["read"],
                   "items": [
-                    {
-                      "rid": "*",
-                      "displayName": "Path",
-                      "actions": ["read"]
-                    }
+                    { "rid": "/metrics/snapshot" },
+                    { "rid": "/containers" },
+                    { "rid": "/monitor/statistics" },
+                    { "rid": "/files/debug" },
+                    { "rid": "/logging/toggle" }
                   ]
                 }
               ]
@@ -156,7 +161,7 @@
         {
           "rid": "master",
           "displayName": "Master",
-          "groupName": "Object",
+          "groupName": "Interface",
           "items": [
             {
               "rid": "flags",
@@ -177,12 +182,11 @@
                   "rid": "path",
                   "displayName": "Endpoint",
                   "groupName": "Endpoint",
+                  "actions": ["read"],
                   "items": [
-                    {
-                      "rid": "*",
-                      "displayName": "Path",
-                      "actions": ["read"]
-                    }
+                    { "rid": "/metrics/snapshot" },
+                    { "rid": "/files/debug" },
+                    { "rid": "/logging/toggle" }
                   ]
                 }
               ]
@@ -375,17 +379,17 @@
     {
       "rid": "service",
       "displayName": "Services",
-      "groupName": "Service",
+      "groupName": "Enforcer (cont.)",
       "items": [
         {
           "rid": "marathon",
-          "displayName": "Marathon",
+          "displayName": "Marathon (Services)",
           "groupName": "Marathon Instance",
           "items": [
             {
               "rid": "marathon",
               "displayName": "marathon",
-              "groupName": "API",
+              "groupName": "Interface",
               "items": [
                 {
                   "rid": "services",
@@ -402,7 +406,7 @@
                 {
                   "rid": "admin",
                   "displayName": "Operator",
-                  "groupName": "Object",
+                  "groupName": "Interface",
                   "items": [
                      {
                        "rid": "config",
@@ -427,13 +431,13 @@
         },
         {
           "rid": "metronome",
-          "displayName": "Metronome",
+          "displayName": "Metronome (Jobs)",
           "groupName": "Metronome Instance",
           "items": [
             {
               "rid": "metronome",
-              "displayName": "Metronome",
-              "groupName": "API",
+              "displayName": "Metronome (Jobs)",
+              "groupName": "Interface",
               "items": [
                 {
                   "rid": "jobs",

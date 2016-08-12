@@ -102,6 +102,8 @@ def test_ee_signal_service(cluster):
         'gen-resolvconf-timer',
         'minuteman-service',
         'navstar-service',
+        'pkgpanda-api-service',
+        'pkgpanda-api-socket',
         'signal-timer',
         'spartan-service',
         'spartan-watchdog-service',
