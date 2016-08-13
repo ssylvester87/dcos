@@ -11,7 +11,7 @@
               "value": "master"
             }, {
               "key": "iam",
-              "value": "127.0.0.1:8101"
+              "value": "http://127.0.0.1:8101"
             }
           ]
         },
@@ -24,10 +24,10 @@
             },
             {
               "key": "iam",
-              "value": "127.0.0.1:8101"
+              "value": "http://127.0.0.1:8101"
             },
             {
-              "key": "cache_timeout ",
+              "key": "cache_timeout",
               "value": "5secs"
             }
           ]
