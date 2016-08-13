@@ -12,7 +12,6 @@ pushd "/pkg/src/nginx"
   --with-ipv6 \
   --with-file-aio \
   --with-luajit \
-  --with-http_v2_module \
   --with-http_gunzip_module \
   --with-http_gzip_static_module \
   --without-mail_pop3_module \

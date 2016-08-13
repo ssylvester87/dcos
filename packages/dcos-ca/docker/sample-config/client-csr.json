@@ -1,0 +1,16 @@
+{
+    "CN": "ca.pl",
+    "key": {
+        "algo": "ecdsa",
+        "size": 256
+    },
+    "names": [
+        {
+            "C": "PL",
+            "L": "Krakow",
+            "O": "Dom",
+            "OU": "Lozko",
+            "ST": "Lesser Poland"
+        }
+    ]
+}

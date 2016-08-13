@@ -1,6 +1,5 @@
 {
   "requires": ["mesos", "boost-libs"],
-  "docker": "dcos-builder",
   "single_source": {
     "kind": "url_extract",
     "url": "http://apache.mirrors.pair.com/avro/avro-1.8.0/cpp/avro-cpp-1.8.0.tar.gz",
