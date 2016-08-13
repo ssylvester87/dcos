@@ -101,6 +101,8 @@ class Bootstrapper(object):
             '/cosmos': ANYONE_ALL,
             '/dcos': ANYONE_READ,
             '/dcos/vault': ANYONE_READ,
+            '/zookeeper': ANYONE_READ,
+            '/zookeeper/quotas': ANYONE_READ,
         }
         for path in sorted(paths):
             log.info('Initializing ACLs for znode {}'.format(path))
