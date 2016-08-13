@@ -133,9 +133,6 @@ def dcos_mesos_agent(b, opts):
     crtpath = '/run/dcos/pki/tls/certs/scheduler.crt'
     b.write_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
 
-    svc_acc_creds_fn = '/run/dcos/etc/mesos/scheduler_service_account.json'
-    b.write_service_account_credentials('dcos_scheduler', svc_acc_creds_fn, b64=True)
-
 
 def dcos_mesos_agent_public(b, opts):
     b.read_agent_secrets()
