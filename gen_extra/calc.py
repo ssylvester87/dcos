@@ -241,6 +241,13 @@ def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_provide
         % (ui_organization, ui_networking, ui_secrets, ui_auth_providers)
 
 
+def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
+    hooks = 'com_mesosphere_dcos_SecretsHook'
+    if dcos_remove_dockercfg_enable == 'true':
+        hooks += ", com_mesosphere_dcos_RemoverHook"
+    return hooks
+
+
 entry = {
     'validate': [
         validate_customer_key,
@@ -297,7 +304,7 @@ entry = {
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
-        'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
+        'mesos_hooks': calculate_mesos_enterprise_hooks,
         'mesos_isolation': ','.join(
             __default_isolation_modules + [
                 'com_mesosphere_MetricsIsolatorModule',
