@@ -54,8 +54,7 @@ class Bootstrapper(object):
             'dcos_3dt_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
-            'dcos_spartan_agent',
-            'dcos_scheduler'
+            'dcos_spartan_agent'
         ]
 
     def close(self):
@@ -101,6 +100,8 @@ class Bootstrapper(object):
             '/cosmos': ANYONE_ALL,
             '/dcos': ANYONE_READ,
             '/dcos/vault': ANYONE_READ,
+            '/zookeeper': ANYONE_READ,
+            '/zookeeper/quotas': ANYONE_READ,
         }
         for path in sorted(paths):
             log.info('Initializing ACLs for znode {}'.format(path))
@@ -184,7 +185,7 @@ class Bootstrapper(object):
         for account in service_account_zk_creds:
             zk_creds[account] = {'scheme': 'digest', 'username': account, 'password': utils.random_string(64)}
 
-        service_accounts = [
+        master_service_accounts = [
             'dcos_adminrouter',
             'dcos_history_service',
             'dcos_marathon',
@@ -200,7 +201,7 @@ class Bootstrapper(object):
 
         service_account_creds = {}
 
-        for account in service_accounts:
+        for account in master_service_accounts:
             service_account_creds[account] = {
                 'scheme': 'RS256',
                 'uid': account,
@@ -235,19 +236,7 @@ class Bootstrapper(object):
 
         service_account_creds = {}
 
-        service_accounts = [
-            'dcos_agent',
-            'dcos_mesos_agent',
-            'dcos_mesos_agent_public',
-            'dcos_3dt_agent',
-            'dcos_minuteman_agent',
-            'dcos_navstar_agent',
-            'dcos_spartan_agent',
-            'dcos_adminrouter_agent',
-            'dcos_scheduler'
-        ]
-
-        for account in service_accounts:
+        for account in self.agent_services:
             service_account_creds[account] = {
                 'scheme': 'RS256',
                 'uid': account,

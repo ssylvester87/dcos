@@ -13,6 +13,11 @@ def validate_security(security):
     assert security in ['strict', 'permissive', 'disabled'], "Must be either 'strict', 'permissive' or 'disabled'"
 
 
+def validate_dcos_audit_logging(dcos_audit_logging):
+    can_be = ['true', 'false']
+    assert dcos_audit_logging in can_be, 'Must be one of {}. Got {}.'.format(can_be, dcos_audit_logging)
+
+
 def calculate_ssl_enabled(security):
     if security == 'strict':
         return 'true'
@@ -214,16 +219,12 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-# TODO(adam): Inherit this from dcos/dcos once we pull in the necessary upstream.
-__default_isolation_modules = [
-    'cgroups/cpu',
-    'cgroups/mem',
-    'disk/du',
-    'filesystem/linux',
-    'docker/volume',
-    'network/cni',
-    'docker/runtime'
-]
+def calculate_mesos_enterprise_isolation(mesos_isolation):
+    return ','.join([
+        mesos_isolation,
+        'com_mesosphere_MetricsIsolatorModule',
+        'com_mesosphere_dcos_SecretsIsolator'
+    ])
 
 
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
@@ -236,16 +237,25 @@ def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_provide
         % (ui_organization, ui_networking, ui_secrets, ui_auth_providers)
 
 
+def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
+    hooks = 'com_mesosphere_dcos_SecretsHook'
+    if dcos_remove_dockercfg_enable == 'true':
+        hooks += ", com_mesosphere_dcos_RemoverHook"
+    return hooks
+
+
 entry = {
     'validate': [
         validate_customer_key,
         validate_zk_super_credentials,
         validate_zk_master_credentials,
         validate_zk_agent_credentials,
-        validate_security
+        validate_security,
+        validate_dcos_audit_logging
     ],
     'default': {
         'security': 'permissive',
+        'dcos_audit_logging': 'true',
         'superuser_username': '',
         'superuser_password_hash': '',
         'zk_super_credentials': 'super:secret',
@@ -290,12 +300,8 @@ entry = {
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
-        'mesos_hooks': 'com_mesosphere_dcos_SecretsHook',
-        'mesos_isolation': ','.join(
-            __default_isolation_modules + [
-                'com_mesosphere_MetricsIsolatorModule',
-                'com_mesosphere_dcos_SecretsIsolator'
-            ]),
+        'mesos_hooks': calculate_mesos_enterprise_hooks,
+        'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,

@@ -12,11 +12,7 @@
             },
             {
               "key": "iam",
-              "value": "master.mesos:443"
-            },
-            {
-              "key": "scheme",
-              "value": "https"
+              "value": "https://master.mesos:443"
             }
           ]
         },
@@ -29,18 +25,14 @@
             },
             {
               "key": "iam",
-              "value": "master.mesos:443"
+              "value": "https://master.mesos:443"
             },
             {
-              "key": "scheme",
-              "value": "https"
-            },
-            {
-              "key": "cache_timeout ",
+              "key": "cache_timeout",
               "value": "5secs"
             },
             {
-              "key": "bouncer_credential",
+              "key": "service_account_credential",
               "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
             }
           ]
@@ -64,10 +56,6 @@
             {
               "key": "special_secret_space_label",
               "value": "MARATHON_APP_ID"
-            },
-            {
-              "key": "shell_timeout",
-              "value": "5secs"
             },
             {
               "key": "network_timeout",
@@ -94,10 +82,6 @@
             {
               "key": "special_secret_space_label",
               "value": "MARATHON_APP_ID"
-            },
-            {
-              "key": "shell_timeout",
-              "value": "5secs"
             },
             {
               "key": "network_timeout",
