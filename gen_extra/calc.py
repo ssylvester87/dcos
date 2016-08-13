@@ -219,16 +219,12 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-# TODO(adam): Inherit this from dcos/dcos once we pull in the necessary upstream.
-__default_isolation_modules = [
-    'cgroups/cpu',
-    'cgroups/mem',
-    'disk/du',
-    'filesystem/linux',
-    'docker/volume',
-    'network/cni',
-    'docker/runtime'
-]
+def calculate_mesos_enterprise_isolation(mesos_isolation):
+    return ','.join([
+        mesos_isolation,
+        'com_mesosphere_MetricsIsolatorModule',
+        'com_mesosphere_dcos_SecretsIsolator'
+    ])
 
 
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
@@ -305,11 +301,7 @@ entry = {
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
         'mesos_hooks': calculate_mesos_enterprise_hooks,
-        'mesos_isolation': ','.join(
-            __default_isolation_modules + [
-                'com_mesosphere_MetricsIsolatorModule',
-                'com_mesosphere_dcos_SecretsIsolator'
-            ]),
+        'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
