@@ -948,6 +948,48 @@ package:
               },
               {
                 "name": "com_mesosphere_dcos_ClassicRPCAuthenticatee"
+              },
+              {
+                "name":"com_mesosphere_dcos_SSLExecutorHook",
+                "parameters":[
+                   {
+                      "key":"ca_file",
+                      "value":"/run/dcos/pki/CA/certs/ca.crt"
+                   },
+                   {
+                      "key":"cert_file",
+                      "value":"/run/dcos/pki/tls/certs/scheduler.crt"
+                   },
+                   {
+                      "key":"key_file",
+                      "value":"/run/dcos/pki/tls/private/scheduler.key"
+                   },
+                   {
+                      "key":"sandbox_subfolder",
+                      "value":".ssl"
+                   }
+                ]
+              },
+              {
+                "name":"com_mesosphere_dcos_SSLExecutorIsolator",
+                "parameters":[
+                   {
+                      "key":"ca_file",
+                      "value":"/run/dcos/pki/CA/certs/ca.crt"
+                   },
+                   {
+                      "key":"cert_file",
+                      "value":"/run/dcos/pki/tls/certs/scheduler.crt"
+                   },
+                   {
+                      "key":"key_file",
+                      "value":"/run/dcos/pki/tls/private/scheduler.key"
+                   },
+                   {
+                      "key":"sandbox_subfolder",
+                      "value":".ssl"
+                   }
+                ]
               }
             ]
           }
