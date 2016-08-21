@@ -271,6 +271,7 @@ def calculate_mesos_enterprise_isolation(mesos_isolation):
     return ','.join([
         mesos_isolation,
         'com_mesosphere_MetricsIsolatorModule',
+        'com_mesosphere_dcos_SSLExecutorIsolator',
         'com_mesosphere_dcos_SecretsIsolator'
     ])
 
@@ -293,8 +294,9 @@ def calculate_exhibitor_admin_password_enabled(exhibitor_admin_password):
 
 def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
     hooks = 'com_mesosphere_dcos_SecretsHook'
+    hooks += ',com_mesosphere_dcos_SSLExecutorHook'
     if dcos_remove_dockercfg_enable == 'true':
-        hooks += ", com_mesosphere_dcos_RemoverHook"
+        hooks += ",com_mesosphere_dcos_RemoverHook"
     return hooks
 
 
