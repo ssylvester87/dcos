@@ -34,6 +34,10 @@
             {
               "key": "service_account_credential",
               "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+            },
+            {
+              "key": "dcos_space_label",
+              "value": "MARATHON_APP_ID"
             }
           ]
         },
