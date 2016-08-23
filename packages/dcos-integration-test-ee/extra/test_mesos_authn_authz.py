@@ -164,7 +164,6 @@ class TestMesosAuthz:
             for authorized in [False, True]:
                 request(urls[process] + path, authorized)
 
-
     @pytest.mark.parametrize(("path", "endpoint_info"), [
         ('/state', {
             'filtered_field': 'flags',
@@ -217,7 +216,6 @@ class TestMesosAuthz:
                 request(urls[target] + path,
                         authorized=authorized,
                         filtered_field=endpoint_info['filtered_field'])
-
 
     def test_mesos_weights_endpoint_authz(self, superuser, peter):
         """Test that Mesos weights-related endpoints perform authorization
@@ -281,7 +279,6 @@ class TestMesosAuthz:
         # default value of 1.0 here.
         set_weight(1.0, authorized=True)
         check_weight(1.0, authorized=True)
-
 
     def test_mesos_reservation_volume_endpoints_authz(self, superuser, peter):
         """Test that Mesos reservation and volume endpoints perform authorization
@@ -373,7 +370,6 @@ class TestMesosAuthz:
         post('/unreserve', False, reservation_data, superuser.uid)
         post('/unreserve', True, reservation_data, superuser.uid)
 
-
     @pytest.mark.parametrize(("target", "url"), [
         ('master', str(Url('', host=dcos.masters[0], port=5050))),
         ('slave', str(Url('', host=dcos.agents[0], port=5051)))
@@ -410,7 +406,6 @@ class TestMesosAuthz:
 
         for authorized in [True, False]:
             get(path, authorized, target, url)
-
 
     def test_mesos_quota_endpoint_authz(self, superuser, peter):
         """Test that Mesos master's '/quota' endpoint performs authorization correctly"""
