@@ -11,6 +11,12 @@ from dcostests.marathon import MarathonApp, sleep_app_definition
 log = logging.getLogger(__name__)
 
 
+pytestmark = [
+    pytest.mark.security,
+    pytest.mark.usefixtures("iam_verify_and_reset")
+]
+
+
 def get_mesos_endpoints(mesos_url):
     assert not mesos_url.endswith('/')
     data = requests.get(mesos_url + '/help?format=json').json()
@@ -37,7 +43,6 @@ def run_task(superuser):
     app.wait(check_health=False, headers=superuser.authheader)
 
 
-@pytest.mark.security
 @pytest.mark.xfail(
     dcos.config['security'] == 'disabled',
     reason='Mesos authN is disabled in security-disabled mode and is expected to fail.',
@@ -112,13 +117,11 @@ def test_mesos_endpoint_authn(superuser):
             request(url=(endpoint['path']), do_authed=do_authed, master=False)
 
 
-@pytest.mark.security
 @pytest.mark.xfail(
     dcos.config['security'] == 'disabled',
     reason='Mesos authZ is disabled in security-disabled mode.',
     strict=False
 )
-@pytest.mark.usefixtures("iam_verify_and_reset")
 class TestMesosAuthz:
     @pytest.mark.parametrize(("path", "endpoint_info"), [
         ("/logging/toggle", {"process": ["master", "agent"]}),
