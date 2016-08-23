@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "15b5131517287eebcf9a856ce23d87fb3ece6b51",
-    "ref_origin": "alexander/marathon-app-id-2-dcos-space"
+    "ref" : "faad8dabd646afdb6756ad202467d3d16caee375",
+    "ref_origin": "master"
   }
 }
