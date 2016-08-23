@@ -37,7 +37,7 @@
             },
             {
               "key": "dcos_space_label",
-              "value": "MARATHON_APP_ID"
+              "value": "DCOS_SPACE"
             }
           ]
         },
@@ -59,7 +59,7 @@
             },
             {
               "key": "special_secret_space_label",
-              "value": "MARATHON_APP_ID"
+              "value": "DCOS_SPACE"
             },
             {
               "key": "network_timeout",
@@ -85,7 +85,7 @@
             },
             {
               "key": "special_secret_space_label",
-              "value": "MARATHON_APP_ID"
+              "value": "DCOS_SPACE"
             },
             {
               "key": "network_timeout",

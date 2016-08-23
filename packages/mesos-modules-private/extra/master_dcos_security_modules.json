@@ -32,7 +32,7 @@
             },
             {
               "key": "dcos_space_label",
-              "value": "MARATHON_APP_ID"
+              "value": "DCOS_SPACE"
             }
           ]
         },
