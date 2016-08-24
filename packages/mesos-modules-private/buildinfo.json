@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "b9007422d2c94cbda88bbf60d9bc257000652cbd",
+    "ref" : "faad8dabd646afdb6756ad202467d3d16caee375",
     "ref_origin": "alexander/env-params"
   }
 }
