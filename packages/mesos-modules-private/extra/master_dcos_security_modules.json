@@ -29,6 +29,10 @@
             {
               "key": "cache_timeout",
               "value": "5secs"
+            },
+            {
+              "key": "dcos_space_label",
+              "value": "DCOS_SPACE"
             }
           ]
         },
