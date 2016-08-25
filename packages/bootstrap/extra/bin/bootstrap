@@ -126,7 +126,7 @@ def dcos_mesos_agent(b, opts):
     b.write_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
 
     svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
-    b.write_service_account_credentials('dcos_mesos_agent', svc_acc_creds_fn, b64=True)
+    b.write_service_account_credentials('dcos_mesos_agent', svc_acc_creds_fn)
 
     # TODO orchestration API should handle this in the future
     keypath = '/run/dcos/pki/tls/private/scheduler.key'
@@ -143,7 +143,7 @@ def dcos_mesos_agent_public(b, opts):
     b.write_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
 
     svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
-    b.write_service_account_credentials('dcos_mesos_agent_public', svc_acc_creds_fn, b64=True)
+    b.write_service_account_credentials('dcos_mesos_agent_public', svc_acc_creds_fn)
 
 
 def dcos_marathon(b, opts):
@@ -172,7 +172,7 @@ def dcos_marathon(b, opts):
 
     b.create_service_account('dcos_marathon')
     svc_acc_creds_fn = '/run/dcos/etc/marathon/service_account.json'
-    b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn, b64=True)
+    b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
 
 
@@ -203,7 +203,7 @@ def dcos_metronome(b, opts):
 
     b.create_service_account('dcos_metronome')
     svc_acc_creds_fn = '/run/dcos/etc/metronome/service_account.json'
-    b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn, b64=True)
+    b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_metronome')
 
     shutil.chown('/run/dcos/etc/metronome', user='dcos_metronome')
