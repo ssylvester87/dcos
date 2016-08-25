@@ -1,4 +1,3 @@
-import base64
 import json
 import logging
 import os
@@ -269,14 +268,8 @@ class Bootstrapper(object):
         }
         return self.secrets
 
-    def write_service_account_credentials(self, uid, filename, b64=False):
+    def write_service_account_credentials(self, uid, filename):
         creds = self.secrets['services'][uid].copy()
-
-        # TODO doesn't support HS256 right now
-        if b64:
-            private_key = bytes(creds['private_key'], 'ascii')
-            private_key = base64.b64encode(private_key)
-            creds['private_key'] = private_key.decode('ascii')
 
         # hacks for mesos-dns
         creds['secret'] = creds['private_key']
