@@ -276,6 +276,17 @@ class _DCOS:
             assert "id" in data
             assert data["id"] == slave_id
 
+    @retrying.retry(wait_fixed=2000,
+                    retry_on_result=lambda r: r is False,
+                    retry_on_exception=lambda _: False)
+    def _wait_for_metronome(self):
+        r = self.get('/service/metronome/v1/jobs')
+        # Metronome may respond with 500 or 504 during startup, see DCOS-9120.
+        if r.status_code in (500, 504):
+            logging.info("Continue waiting for Metronome")
+            return False
+        assert r.status_code == 200
+
     @retrying.retry(wait_fixed=1000,
                     retry_on_result=lambda ret: ret is False,
                     retry_on_exception=lambda x: False)
@@ -296,6 +307,7 @@ class _DCOS:
         self._wait_for_slaves_to_join()
         self._wait_for_DCOS_history_up()
         self._wait_for_srouter_slaves_endpoints()
+        self._wait_for_metronome()
 
 # Instantiate singleton.
 dcos = _DCOS()
