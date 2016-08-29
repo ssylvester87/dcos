@@ -6,6 +6,7 @@ pushd build
 # configure module build with cmake
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
+  -DTESTS_ENABLED=False \
   -DCMAKE_INSTALL_PREFIX=$PKG_PATH \
   -Dmesos_INCLUDE_DIR=/opt/mesosphere/include \
   -Ddefault_BIN_DIR=/opt/mesosphere/bin \
