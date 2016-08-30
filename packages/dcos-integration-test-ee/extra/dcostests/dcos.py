@@ -62,20 +62,6 @@ class _DCOS:
         '/system/health/v1'
         ]
 
-    ops_endpoints_xfail_secrets = [
-        '/acs/api/v1/users/',
-        '/dcos-history-service/',
-        '/exhibitor',
-        '/mesos',
-        '/mesos_dns/v1/config',
-        '/metadata',
-        '/networking/api/v1/vips',
-        '/pkgpanda/active.buildinfo.full.json',
-        pytest.mark.xfail(reason='DCOS-7854')('/secrets/v1/store'),
-        '/ca/api/v2/certificates',
-        '/system/health/v1'
-        ]
-
     initial_resource_ids = [
         "dcos:adminrouter:ops:metadata",
         "dcos:adminrouter:ops:historyservice",
