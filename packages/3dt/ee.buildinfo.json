@@ -4,13 +4,13 @@
     "3dt": {
       "kind": "git",
       "git": "git@github.com:dcos/3dt.git",
-      "ref": "1081f24cc1774405c09693b1e9b79b0c580afcca",
+      "ref": "272d0148dde975297377ac6f7427cffa0870f804",
       "ref_origin": "master"
     },
     "3dt-enterprise": {
       "kind": "git",
       "git": "git@github.com:mesosphere/3dt-enterprise.git",
-      "ref": "0d501d817b920b9b942aaa56790e893bbf7ca137",
+      "ref": "c676c1e90e008c2de5f1a011ae914d86e05cf2df",
       "ref_origin": "master"
     }
   },
