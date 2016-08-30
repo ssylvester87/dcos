@@ -16,6 +16,17 @@ Mesosphere Enterprise DC/OS derived from [Open DC/OS](https://github.com/dcos/dc
 # Testing locally
 `tox`
 
+# Building Remotely (in Team City)
+Master builds:
+```
+https://downloads.mesosphere.com/dcos-enterprise/testing/master/dcos_generate_config.ee.sh
+```
+
+PR Builds:
+```
+https://downloads.mesosphere.com/dcos-enterprise/testing/pull/<PULL_NUMBER>/dcos_generate_config.ee.sh
+```
+
 # Building locally
 
 1. Create a dcos-release.config.yaml as specified in https://github.com/dcos/dcos#setup-a-build-environment
