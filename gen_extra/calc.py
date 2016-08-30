@@ -91,6 +91,17 @@ def calculate_mesos_authz_enforced(security):
         return 'false'
 
 
+def calculate_mesos_elevate_unknown_users(security):
+    if security == 'strict':
+        return 'false'
+
+    elif security == 'permissive':
+        return 'true'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def calculate_mesos_authorizer(mesos_authz_enforced):
     if mesos_authz_enforced == 'true':
         return 'com_mesosphere_dcos_Authorizer'
@@ -334,6 +345,7 @@ entry = {
     'default': {
         'bouncer_expiration_auth_token_days': '5',
         'security': 'permissive',
+        'dcos_anonymous': 'dcos_anonymous',
         'dcos_audit_logging': 'true',
         'exhibitor_admin_password': '',
         'superuser_username': '',
@@ -383,6 +395,7 @@ entry = {
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
+        'mesos_elevate_unknown_users': calculate_mesos_elevate_unknown_users,
         'mesos_hooks': calculate_mesos_enterprise_hooks,
         'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
         'firewall_enabled': calculate_firewall_enabled,

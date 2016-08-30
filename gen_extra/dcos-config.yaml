@@ -594,6 +594,11 @@ package:
       MESOS_FIREWALL_RULES=/opt/mesosphere/etc/mesos/master_firewall.json
 {% case "false" %}
 {% endswitch %}
+{% switch mesos_elevate_unknown_users %}
+{% case "true" %}
+      DCOS_ANONYMOUS_PRINCIPAL={{ dcos_anonymous }}
+{% case "false" %}
+{% endswitch %}
       MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
       MESOS_AUTHENTICATORS={{ mesos_classic_authenticator }}
       # Conditionally require authentication (reject unauthenticated).
@@ -662,6 +667,11 @@ package:
 {% case "false" %}
 {% endswitch %}
       DCOS_AUDIT_LOG={{ dcos_audit_logging }}
+{% switch mesos_elevate_unknown_users %}
+{% case "true" %}
+      DCOS_ANONYMOUS_PRINCIPAL={{ dcos_anonymous }}
+{% case "false" %}
+{% endswitch %}
   - path: /etc_master/marathon-extras
     content: |
       MESOS_USER={{ default_task_user }}
