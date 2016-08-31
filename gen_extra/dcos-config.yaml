@@ -107,7 +107,7 @@ package:
       {
         "customer_key": "{{ customer_key }}",
         "diagnostics_urls": [
-          "https://leader.mesos/system/health/v1/report"
+          "https://leader.mesos/system/health/v1/report?cache=0"
         ],
         "cosmos_urls": [
           "https://leader.mesos/package/list"
@@ -242,6 +242,7 @@ package:
       SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
       SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-master.crt
       SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-master.key
+      DCOS_AUDIT_LOG={{ dcos_audit_logging }}
 {% switch firewall_enabled %}
 {% case "true" %}
   - path: /etc/mesos/slave_firewall.json
@@ -296,6 +297,7 @@ package:
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/mesos/agent_service_account.json
 {% case "false" %}
 {% endswitch %}
+      DCOS_AUDIT_LOG={{ dcos_audit_logging }}
   - path: /etc_master/marathon-extras
     content: |
       DCOS_SERVICE_ACCOUNT_CREDENTIAL=file:///run/dcos/etc/marathon/service_account.json
