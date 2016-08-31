@@ -77,6 +77,8 @@ def test_ee_signal_service(cluster):
     # Insert all the diagnostics data programmatically
     master_units = [
         'adminrouter-service',
+        'adminrouter-reload-service',
+        'adminrouter-reload-timer',
         'bouncer-service',
         'ca-service',
         'cosmos-service',
@@ -93,8 +95,6 @@ def test_ee_signal_service(cluster):
         'signal-service',
         'vault-service']
     all_node_units = [
-        'adminrouter-reload-service',
-        'adminrouter-reload-timer',
         '3dt-service',
         '3dt-socket',
         'epmd-service',
@@ -114,6 +114,8 @@ def test_ee_signal_service(cluster):
         'mesos-slave-public-service']
     all_slave_units = [
         'adminrouter-agent-service',
+        'adminrouter-agent-reload-service',
+        'adminrouter-agent-reload-timer',
         'logrotate-agent-service',
         'logrotate-agent-timer',
         'rexray-service']

@@ -107,7 +107,7 @@ package:
       {
         "customer_key": "{{ customer_key }}",
         "diagnostics_urls": [
-          "https://leader.mesos/system/health/v1/report"
+          "https://leader.mesos/system/health/v1/report?cache=0"
         ],
         "cosmos_urls": [
           "https://leader.mesos/package/list"

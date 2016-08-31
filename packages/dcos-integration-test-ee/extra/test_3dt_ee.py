@@ -41,6 +41,9 @@ def make_3dt_request(host, endpoint, superuser):
     assert isinstance(host, Node)
     assert endpoint.startswith('/')
 
+    # Let's see if that works before implementing it properly:
+    endpoint = endpoint + '?cache=0'
+
     url = DDDTUrl(endpoint, host=host.ip, port=host.port)
     response = requests.get(url, headers=superuser.authheader)
 
