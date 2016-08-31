@@ -1,21 +1,14 @@
 import hashlib
 from base64 import b64encode
 
+from gen.calc import validate_one_of, validate_true_false
+
 
 def validate_customer_key(customer_key):
     assert isinstance(customer_key, str), "'customer_key' must be a string."
     if customer_key == "Cloud Template Missing Parameter" or customer_key == "CUSTOMER KEY NOT SET":
         return
     assert len(customer_key) == 36, "'customer_key' must be 36 characters long with hyphens"
-
-
-def validate_security(security):
-    assert security in ['strict', 'permissive', 'disabled'], "Must be either 'strict', 'permissive' or 'disabled'"
-
-
-def validate_dcos_audit_logging(dcos_audit_logging):
-    can_be = ['true', 'false']
-    assert dcos_audit_logging in can_be, 'Must be one of {}. Got {}.'.format(can_be, dcos_audit_logging)
 
 
 def calculate_ssl_enabled(security):
@@ -250,8 +243,8 @@ entry = {
         validate_zk_super_credentials,
         validate_zk_master_credentials,
         validate_zk_agent_credentials,
-        validate_security,
-        validate_dcos_audit_logging
+        lambda security: validate_one_of(security, ['strict', 'permissive', 'disabled']),
+        lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
     ],
     'default': {
         'security': 'permissive',
