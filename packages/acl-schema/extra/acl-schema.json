@@ -470,7 +470,7 @@
             {
               "rid": "*",
               "displayName": "Secret Path",
-              "actions": ["create", "read", "update", "delete", "list"]
+              "actions": ["create", "read", "update", "delete"]
             }
           ]
         }
