@@ -138,13 +138,15 @@ def test_if_secrets_get_secret(superuser):
 
 def test_if_secrets_list_secret(superuser):
     r = requests.get(
-        SecretsUrl('/secret/default/anewpath?list=true'),
+        SecretsUrl('/secret/default/?list=true'),
         headers=superuser.authheader
     )
     assert r.status_code == 200
 
     data = r.json()
     assert data['array']
+    assert isinstance(data['array'], list)
+    assert len(data['array']) > 0
 
 
 def test_if_secrets_put_secret_exists(superuser):
