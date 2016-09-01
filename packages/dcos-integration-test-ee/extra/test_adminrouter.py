@@ -141,6 +141,19 @@ class TestResourceAvailability:
         assert '<html' in r.text
         assert 'Exhibitor for ZooKeeper' in r.text
 
+    def test_ca_cert_retrieval(self):
+        # Expect CA cert to be accessible w/o authentication.
+        r = requests.get(Url('/ca/dcos-ca.crt'))
+        assert r.status_code == 200
+        assert 'BEGIN CERTIFICATE' in r.text
+        assert r.headers['Content-Type'] == 'application/x-x509-ca-cert'
+
+    def test_jks_ca_cert_retrieval(self):
+        # No authentication required.
+        r = requests.get(Url('/ca/cacerts.jks'))
+        assert r.status_code == 200
+        assert r.headers['Content-Type'] == 'application/x-java-keystore'
+
 
 def test_agents_endpoint_unknown_agent():
 
