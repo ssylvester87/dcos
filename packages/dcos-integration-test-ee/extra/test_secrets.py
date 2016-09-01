@@ -136,6 +136,17 @@ def test_if_secrets_get_secret(superuser):
     assert data['value'] == 'anewsecret'
 
 
+def test_if_secrets_list_secret(superuser):
+    r = requests.get(
+        SecretsUrl('/secret/default/anewpath?list=true'),
+        headers=superuser.authheader
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data['array']
+
+
 def test_if_secrets_put_secret_exists(superuser):
     data = {
         "value": "anewsecret"
