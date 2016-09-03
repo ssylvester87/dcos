@@ -97,8 +97,8 @@ class MarathonApp:
 
             if not ignore_failed_tasks:
                 assert 'lastTaskFailure' not in data['app'], (
-                        'Application deployment failed, reason: %s' %
-                        data['app']['lastTaskFailure']['message']
+                    'Application deployment failed, reason: %s' %
+                    data['app']['lastTaskFailure']['message']
                     )
 
             if (

@@ -9,7 +9,7 @@ import logging
 import pytest
 import requests
 
-from dcostests import Url, IAMUrl, CAUrl, dcos
+from dcostests import CAUrl, dcos, IAMUrl, Url
 from dcostests.marathon import MarathonApp, sleep_app_definition
 
 
@@ -60,7 +60,7 @@ class TestAdminRouterOpsEndpoints:
         "iam_verify_and_reset",
         "with_peter_in_superuser_group"
         )
-    @pytest.mark.parametrize("endpoint",  dcos.ops_endpoints)
+    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints)
     def test_superuser_acl_through_superuser_group(self, endpoint, peter):
 
         url = str(Url(endpoint))
@@ -74,7 +74,7 @@ class TestAdminRouterOpsEndpoints:
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestAdminRouterAuthenticatedUsersEndpoints:
 
-    @pytest.mark.parametrize("endpoint",  dcos.authenticated_users_endpoints)
+    @pytest.mark.parametrize("endpoint", dcos.authenticated_users_endpoints)
     def test_two_auth_states(self, endpoint, peter):
 
         # Test anonymous auth state.
@@ -197,7 +197,7 @@ class TestAdminRouterACLs:
                 "names": [{"C": "US", "ST": "foo", "L": "bar", "O": "byzz"}],
                 "CN": "www.example.com"
                 }
-             }
+            }
         r = requests.post(url, json=data, headers=peter.authheader)
         assert r.status_code == 200
 

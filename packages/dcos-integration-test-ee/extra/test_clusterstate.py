@@ -10,7 +10,7 @@ import json
 import kazoo.client
 import requests
 
-from dcostests import Url, dcos
+from dcostests import dcos, Url
 
 
 def test_if_all_mesos_agents_have_registered(superuser):

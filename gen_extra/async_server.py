@@ -1,5 +1,6 @@
-import dcos_installer.backend
 from aiohttp import web
+
+import dcos_installer.backend
 
 
 def hash_password(request):

@@ -3,7 +3,7 @@ import logging
 import pytest
 import requests
 
-from dcostests import Url, dcos
+from dcostests import dcos, Url
 
 
 log = logging.getLogger(__name__)
