@@ -3,8 +3,9 @@ Test Enterprise DC/OS Signal Service
 """
 import json
 import os
-import pytest
 import subprocess
+
+import pytest
 
 from dcostests import dcos
 
@@ -125,7 +126,7 @@ def test_ee_signal_service(cluster):
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_node_units:
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(
-            cluster.agents+cluster.masters)
+            cluster.agents + cluster.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in slave_units:
         total_key = "health-unit-dcos-{}-total".format(unit)

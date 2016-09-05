@@ -14,7 +14,7 @@ def set_service_auth_token():
     with open(IAM_CONFIG_PATH, 'r') as fh:
         conf = json.load(fh)
 
-    jwt_payload = {'uid': conf['uid'], 'exp': datetime.utcnow()+timedelta(seconds=300)}
+    jwt_payload = {'uid': conf['uid'], 'exp': datetime.utcnow() + timedelta(seconds=300)}
     login_token = jwt.encode(jwt_payload, conf['private_key'], algorithm='RS256').decode()
     login_payload = json.dumps({'uid': conf['uid'], 'token': login_token})
     global AUTH_TOKEN
@@ -28,4 +28,4 @@ def set_service_auth_token():
 def get_auth_headers():
     if not AUTH_TOKEN or datetime.utcnow() > TOKEN_REFRESH_TIME:
         set_service_auth_token()
-    return {'Authorization': 'token='+AUTH_TOKEN}
+    return {'Authorization': 'token=' + AUTH_TOKEN}

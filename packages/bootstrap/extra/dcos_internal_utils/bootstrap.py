@@ -2,16 +2,16 @@ import json
 import logging
 import os
 import shutil
+import stat
 import subprocess
 import uuid
-import stat
 
 
 import kazoo.exceptions
 from kazoo.client import KazooClient
 from kazoo.retry import KazooRetry
-from kazoo.security import ACL, Permissions, ANYONE_ID_UNSAFE
-from kazoo.security import make_digest_acl, make_acl
+from kazoo.security import ACL, ANYONE_ID_UNSAFE, Permissions
+from kazoo.security import make_acl, make_digest_acl
 
 
 from dcos_internal_utils import ca
@@ -634,10 +634,15 @@ class Bootstrapper(object):
         _write_file(filename, env, 0o600)
         return token
 
-    def write_key_certificate(self, cn, key_filename, crt_filename, service_account=None,
-                              master=False, marathon=False, extra_san=[], key_mode=0o600):
+    def create_key_certificate(self, cn, key_filename, crt_filename,
+                               service_account=None, master=False,
+                               marathon=False, extra_san=[],
+                               key_mode=0o600):
         log.info('Generating CSR for key {}'.format(key_filename))
-        privkey_pem, csr_pem = utils.generate_key_CSR(cn, master=master, marathon=marathon, extra_san=extra_san)
+        privkey_pem, csr_pem = utils.generate_key_CSR(cn,
+                                                      master=master,
+                                                      marathon=marathon,
+                                                      extra_san=extra_san)
 
         headers = {}
         if service_account:
@@ -645,11 +650,48 @@ class Bootstrapper(object):
             headers = {'Authorization': 'token=' + token}
         cacli = ca.CAClient(self.ca_url, headers, self.CA_certificate_filename)
 
-        log.info('Signing CSR at {} with service account {}'.format(self.ca_url, service_account))
+        msg_fmt = 'Signing CSR at {} with service account {}'
+        log.info(msg_fmt.format(self.ca_url, service_account))
         crt = cacli.sign(csr_pem)
 
         _write_file(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
         _write_file(crt_filename, bytes(crt, 'ascii'), 0o644)
+
+    def _key_cert_is_valid(self, key_filename, crt_filename):
+        try:
+            with open(crt_filename) as fh:
+                crt = fh.read()
+        except FileNotFoundError:
+            log.warn('Certificate was not found')
+            return False
+        if '--BEGIN CERTIFICATE--' not in crt:
+            log.warn('Certificate is invalid')
+            return False
+        # Certificate validity (expiration, issuing CA, etc.) is not checked.
+        # An administrator wishing to rotate a certificate should remove the
+        # old certificate and key and restart the service.
+        try:
+            with open(key_filename) as fh:
+                key = fh.read()
+        except FileNotFoundError:
+            log.warn('Private key was not found')
+            return False
+        if '--BEGIN PRIVATE KEY--' not in key:
+            log.warn('Private key is invalid')
+            return False
+
+        return True
+
+    def ensure_key_certificate(
+            self, cn, key_filename, crt_filename, service_account=None,
+            master=False, marathon=False, extra_san=[], key_mode=0o600):
+        if not self._key_cert_is_valid(key_filename, crt_filename):
+            log.info('Generating certificate {}'.format(crt_filename))
+            self.create_key_certificate(cn, key_filename, crt_filename,
+                                        service_account, master, marathon,
+                                        extra_san, key_mode)
+        else:
+            log.debug('Certificate {} already exists'.format(crt_filename))
 
     def write_jwks_public_keys(self, filename):
         iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)

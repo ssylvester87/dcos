@@ -7,16 +7,16 @@ import random
 import string
 import subprocess
 import uuid
+from socket import gethostbyaddr, herror
 
 
 import cryptography.hazmat.backends
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from jwt.utils import base64url_decode, bytes_to_number
-from socket import gethostbyaddr, herror
 
 log = logging.getLogger(__name__)
 
@@ -163,8 +163,8 @@ def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=[]):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
 
     machine_ip = subprocess.check_output(
-            ['/opt/mesosphere/bin/detect_ip'],
-            stderr=subprocess.DEVNULL).decode('ascii').strip()
+        ['/opt/mesosphere/bin/detect_ip'],
+        stderr=subprocess.DEVNULL).decode('ascii').strip()
 
     san = [
         x509.DNSName(machine_ip),

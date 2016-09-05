@@ -48,7 +48,7 @@ def dcos_secrets(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/dcos-secrets.key'
     crtpath = '/run/dcos/pki/tls/certs/dcos-secrets.crt'
-    b.write_key_certificate('Secrets', keypath, crtpath, master=True)
+    b.ensure_key_certificate('Secrets', keypath, crtpath, master=True)
     shutil.chown(keypath, user='dcos_secrets')
     shutil.chown(crtpath, user='dcos_secrets')
 
@@ -108,7 +108,10 @@ def dcos_mesos_master(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/mesos-master.key'
     crtpath = '/run/dcos/pki/tls/certs/mesos-master.crt'
-    b.write_key_certificate('Mesos Master', keypath, crtpath, master=True)
+    b.ensure_key_certificate('Mesos Master',
+                             keypath,
+                             crtpath,
+                             master=True)
 
     # agent secrets are needed for it to contact the master
     b.create_agent_secrets(opts.zk_agent_digest)
@@ -123,7 +126,10 @@ def dcos_mesos_agent(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/mesos-slave.key'
     crtpath = '/run/dcos/pki/tls/certs/mesos-slave.crt'
-    b.write_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
+    b.ensure_key_certificate('Mesos Agent',
+                             keypath,
+                             crtpath,
+                             service_account='dcos_agent')
 
     svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
     b.write_service_account_credentials('dcos_mesos_agent', svc_acc_creds_fn)
@@ -131,7 +137,11 @@ def dcos_mesos_agent(b, opts):
     # TODO orchestration API should handle this in the future
     keypath = '/run/dcos/pki/tls/private/scheduler.key'
     crtpath = '/run/dcos/pki/tls/certs/scheduler.crt'
-    b.write_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
+    b.ensure_key_certificate('Mesos Schedulers',
+                             keypath,
+                             crtpath,
+                             service_account='dcos_agent',
+                             key_mode=0o644)
 
 
 def dcos_mesos_agent_public(b, opts):
@@ -140,7 +150,10 @@ def dcos_mesos_agent_public(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/mesos-slave.key'
     crtpath = '/run/dcos/pki/tls/certs/mesos-slave.crt'
-    b.write_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
+    b.ensure_key_certificate('Mesos Public Agent',
+                             keypath,
+                             crtpath,
+                             service_account='dcos_agent')
 
     svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
     b.write_service_account_credentials('dcos_mesos_agent_public', svc_acc_creds_fn)
@@ -153,7 +166,11 @@ def dcos_marathon(b, opts):
 
     key = '/run/dcos/pki/tls/private/marathon.key'
     crt = '/run/dcos/pki/tls/certs/marathon.crt'
-    b.write_key_certificate('Marathon', key, crt, master=True, marathon=True)
+    b.ensure_key_certificate('Marathon',
+                             key,
+                             crt,
+                             master=True,
+                             marathon=True)
     shutil.chown(key, user='dcos_marathon')
     shutil.chown(crt, user='dcos_marathon')
 
@@ -184,7 +201,7 @@ def dcos_metronome(b, opts):
 
     key = '/run/dcos/pki/tls/private/metronome.key'
     crt = '/run/dcos/pki/tls/certs/metronome.crt'
-    b.write_key_certificate('Metronome', key, crt, master=True)
+    b.ensure_key_certificate('Metronome', key, crt, master=True)
     shutil.chown(key, user='dcos_metronome')
     shutil.chown(crt, user='dcos_metronome')
 
@@ -244,7 +261,11 @@ def dcos_adminrouter(b, opts):
     if external_lb:
         extra_san.append(external_lb)
 
-    b.write_key_certificate('AdminRouter', keypath, crtpath, master=True, extra_san=extra_san)
+    b.ensure_key_certificate('AdminRouter',
+                             keypath,
+                             crtpath,
+                             master=True,
+                             extra_san=extra_san)
 
     b.write_jwks_public_keys('/run/dcos/etc/jwks.pub')
 
@@ -258,7 +279,10 @@ def dcos_adminrouter_agent(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/adminrouter-agent.key'
     crtpath = '/run/dcos/pki/tls/certs/adminrouter-agent.crt'
-    b.write_key_certificate('Adminrouter Agent', keypath, crtpath, service_account='dcos_agent')
+    b.ensure_key_certificate('Adminrouter Agent',
+                             keypath,
+                             crtpath,
+                             service_account='dcos_agent')
 
     b.write_jwks_public_keys('/run/dcos/etc/jwks.pub')
 
@@ -283,7 +307,7 @@ def dcos_spartan_master(b, opts):
 
     key = '/run/dcos/pki/tls/private/spartan.key'
     crt = '/run/dcos/pki/tls/certs/spartan.crt'
-    b.write_key_certificate('Spartan Master', key, crt, master=True)
+    b.ensure_key_certificate('Spartan Master', key, crt, master=True)
 
 
 def dcos_spartan_agent(b, opts):
@@ -293,7 +317,10 @@ def dcos_spartan_agent(b, opts):
 
     keypath = '/run/dcos/pki/tls/private/spartan.key'
     crtpath = '/run/dcos/pki/tls/certs/spartan.crt'
-    b.write_key_certificate('Spartan Agent', keypath, crtpath, service_account='dcos_agent')
+    b.ensure_key_certificate('Spartan Agent',
+                             keypath,
+                             crtpath,
+                             service_account='dcos_agent')
 
 
 def dcos_erlang_service(servicename, b, opts):
@@ -326,7 +353,7 @@ def dcos_erlang_service_master(servicename, b, opts):
     friendly_name = servicename[0].upper() + servicename[1:]
     key = '/run/dcos/pki/tls/private/{}.key'.format(servicename)
     crt = '/run/dcos/pki/tls/certs/{}.crt'.format(servicename)
-    b.write_key_certificate(friendly_name, key, crt)
+    b.ensure_key_certificate(friendly_name, key, crt)
     if servicename == 'networking_api':
         shutil.chown(key, user=user)
         shutil.chown(crt, user=user)
@@ -350,7 +377,10 @@ def dcos_erlang_service_agent(servicename, b, opts):
     friendly_name = servicename[0].upper() + servicename[1:]
     key = '/run/dcos/pki/tls/private/{}.key'.format(servicename)
     crt = '/run/dcos/pki/tls/certs/{}.crt'.format(servicename)
-    b.write_key_certificate(friendly_name, key, crt, service_account='dcos_agent')
+    b.ensure_key_certificate(friendly_name,
+                             key,
+                             crt,
+                             service_account='dcos_agent')
     if servicename == 'networking_api':
         shutil.chown(key, user=user)
         shutil.chown(crt, user=user)
@@ -368,7 +398,7 @@ def dcos_cosmos(b, opts):
 
     key = '/run/dcos/pki/tls/private/cosmos.key'
     crt = '/run/dcos/pki/tls/certs/cosmos.crt'
-    b.write_key_certificate('Cosmos', key, crt, master=True)
+    b.ensure_key_certificate('Cosmos', key, crt, master=True)
     shutil.chown(key, user='dcos_cosmos')
     shutil.chown(crt, user='dcos_cosmos')
 

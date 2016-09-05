@@ -1,5 +1,5 @@
-import logging
 import hashlib
+import logging
 import os
 import stat
 # temporary measure until we have time to switch to docker
@@ -11,9 +11,9 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooRetry
 # from kazoo.security import Permissions, ANYONE_ID_UNSAFE
 from kazoo.security import make_digest_acl_credential
-from requests.packages.urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 from requests import Session
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util import Retry
 
 
 from dcos_internal_utils import bootstrap
@@ -206,12 +206,19 @@ class TestBootstrap():
 
         key_fn = self.tmpdir + '/svc1.key'
         crt_fn = self.tmpdir + '/svc1.crt'
-        b.write_key_certificate('common name', key_fn, crt_fn, extra_san=['foo'])
+        b.ensure_key_certificate('common name',
+                                 key_fn,
+                                 crt_fn,
+                                 extra_san=['foo'])
         assert os.stat(key_fn)[stat.ST_MODE] == 0o100600
 
         key_fn = self.tmpdir + '/svc2.key'
         crt_fn = self.tmpdir + '/svc2.crt'
-        b.write_key_certificate('common name', key_fn, crt_fn, extra_san=['foo'], key_mode=0o644)
+        b.ensure_key_certificate('common name',
+                                 key_fn,
+                                 crt_fn,
+                                 extra_san=['foo'],
+                                 key_mode=0o644)
         assert os.stat(key_fn)[stat.ST_MODE] == 0o100644
 
         b.write_marathon_env(key_fn, crt_fn, ca_fn, self.tmpdir + '/marathon.env')
@@ -244,3 +251,42 @@ class TestBootstrap():
         assert 'dcos_minuteman_master' in services
         assert 'dcos_navstar_master' in services
         assert 'dcos_mesos_dns' in services
+
+    def test_if_certificates_are_not_overwritten(self, tmpdir):
+        super_creds = 'super:secret'
+
+        crtfile = tmpdir.join("tmp.crt")
+        keyfile = tmpdir.join("tmp.key")
+
+        assert not crtfile.check()
+        assert not keyfile.check()
+
+        b = bootstrap.Bootstrapper(self.zk_hosts, super_creds, self.iam_url,
+                                   self.ca_url)
+
+        b.ensure_key_certificate('some cert for testing if stuff is not '
+                                 'overwritten',
+                                 str(crtfile),
+                                 str(keyfile),
+                                 )
+
+        assert crtfile.check()
+        assert keyfile.check()
+
+        crt_digest = hashlib.sha256(crtfile.read()).hexdigest()
+        key_digest = hashlib.sha256(keyfile.read()).hexdigest()
+
+        b.ensure_key_certificate('some other cert for testing if stuff is '
+                                 'not overwritten',
+                                 str(crtfile),
+                                 str(keyfile),
+                                 )
+
+        assert crtfile.check()
+        assert keyfile.check()
+
+        new_crt_digest = hashlib.sha256(crtfile.read()).hexdigest()
+        new_key_digest = hashlib.sha256(keyfile.read()).hexdigest()
+
+        assert new_crt_digest == crt_digest
+        assert new_key_digest == key_digest

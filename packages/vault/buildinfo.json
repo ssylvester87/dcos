@@ -4,7 +4,7 @@
       "vault": {
           "kind": "git",
           "git": "git@github.com:mesosphere/vault.git",
-          "ref": "9622f8be1919817061c93e901d29642d0b585f3e",
+          "ref": "1abf1b6d71c2ed990697c3f134345afc1260b176",
           "ref_origin": "v0.5.3-zkfix"
       }
   },
