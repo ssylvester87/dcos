@@ -8,7 +8,7 @@ import logging
 import pytest
 import requests
 
-from dcostests import Url, IAMUrl, dcos
+from dcostests import dcos, IAMUrl, Url
 
 
 log = logging.getLogger(__name__)

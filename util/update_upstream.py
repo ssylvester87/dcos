@@ -50,7 +50,7 @@ def integrate_upstream(sha):
     commit_message = "Integrate: {sha} from dcos/dcos".format(sha=sha)
 
     execute(["git", "checkout", "-b", integration_branch])
-    execute(["git", "reset",  "--hard", "origin/master"])
+    execute(["git", "reset", "--hard", "origin/master"])
 
     update_upstream_json(sha)
 

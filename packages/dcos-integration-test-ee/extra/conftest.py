@@ -9,11 +9,11 @@ import json
 import logging
 import os
 
-import requests
 import pytest
+import requests
 from jwt.utils import base64url_decode, base64url_encode
 
-from dcostests import dcos, Url, IAMUrl, AuthedUser, SuperUser
+from dcostests import AuthedUser, dcos, IAMUrl, SuperUser, Url
 
 
 log = logging.getLogger(__name__)

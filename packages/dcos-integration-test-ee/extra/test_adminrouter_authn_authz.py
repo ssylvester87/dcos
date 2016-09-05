@@ -10,7 +10,7 @@ import logging
 import pytest
 import requests
 
-from dcostests import Url, IAMUrl, dcos
+from dcostests import dcos, IAMUrl, Url
 
 
 log = logging.getLogger(__name__)
@@ -85,8 +85,8 @@ class TestCookieAuth:
 
     def test_access_with_auth_cookie(self, superuser, peter):
 
-        wucookie = {'dcos-acs-auth-cookie':  peter.authcookie}
-        sucookie = {'dcos-acs-auth-cookie':  superuser.authcookie}
+        wucookie = {'dcos-acs-auth-cookie': peter.authcookie}
+        sucookie = {'dcos-acs-auth-cookie': superuser.authcookie}
 
         # Super user has access.
         r = requests.get(IAMUrl('/users'), cookies=sucookie)

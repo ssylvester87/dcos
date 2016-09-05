@@ -4,13 +4,13 @@ storage:
     bucket: downloads.mesosphere.io
     object_prefix: dcos-enterprise
     download_url: https://downloads.mesosphere.com/dcos-enterprise/
-    access_key_id: $AWS_ACCESS_KEY_ID
-    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    access_key_id: $AWS_PROD_ACCESS_KEY_ID
+    secret_access_key: $AWS_PROD_SECRET_ACCESS_KEY
     region_name: us-east-1
   azure:
     kind: azure_block_blob
-    account_name: $AZURE_STORAGE_ACCOUNT
-    account_key: $AZURE_STORAGE_ACCESS_KEY
+    account_name: $AZURE_PROD_STORAGE_ACCOUNT
+    account_key: $AZURE_PROD_STORAGE_ACCESS_KEY
     container: dcos-enterprise
     download_url: https://az837203.vo.msecnd.net/dcos-enterprise/
 testing:

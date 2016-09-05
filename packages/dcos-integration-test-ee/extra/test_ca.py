@@ -9,8 +9,8 @@ Tests should not modify cluster state.
 
 import logging
 
-import requests
 import pytest
+import requests
 
 
 from dcostests import CAUrl
@@ -40,7 +40,7 @@ def test_if_CA_can_list_issued_certs(superuser):
             "names": [{"C": "US", "ST": "foo", "L": "bar", "O": "byzz"}],
             "CN": "www.example.com"
             }
-         }
+        }
     r = requests.post(
         CAUrl('/newcert'),
         json=data,

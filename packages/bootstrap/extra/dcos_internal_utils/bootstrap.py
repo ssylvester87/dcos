@@ -2,16 +2,16 @@ import json
 import logging
 import os
 import shutil
+import stat
 import subprocess
 import uuid
-import stat
 
 
 import kazoo.exceptions
 from kazoo.client import KazooClient
 from kazoo.retry import KazooRetry
-from kazoo.security import ACL, Permissions, ANYONE_ID_UNSAFE
-from kazoo.security import make_digest_acl, make_acl
+from kazoo.security import ACL, ANYONE_ID_UNSAFE, Permissions
+from kazoo.security import make_acl, make_digest_acl
 
 
 from dcos_internal_utils import ca

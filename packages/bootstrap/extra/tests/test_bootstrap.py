@@ -11,9 +11,9 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooRetry
 # from kazoo.security import Permissions, ANYONE_ID_UNSAFE
 from kazoo.security import make_digest_acl_credential
-from requests.packages.urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 from requests import Session
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util import Retry
 
 
 from dcos_internal_utils import bootstrap

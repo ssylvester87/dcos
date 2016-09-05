@@ -13,7 +13,7 @@ import pytest
 import requests
 from jwt.utils import base64url_decode
 
-from dcostests import Url, IAMUrl, dcos
+from dcostests import dcos, IAMUrl, Url
 
 
 log = logging.getLogger(__name__)
@@ -271,7 +271,7 @@ class TestIAMUserGroupCRUD:
             'uid': uid,
             'token': jwt.encode(
                 {
-                    'exp': int(time.time()+5*60),
+                    'exp': int(time.time() + 5 * 60),
                     'uid': uid
                 },
                 sharedsecret,

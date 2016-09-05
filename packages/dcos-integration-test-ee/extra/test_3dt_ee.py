@@ -9,7 +9,7 @@ import pytest
 import requests
 import retrying
 
-from dcostests import DDDTUrl, dcos
+from dcostests import dcos, DDDTUrl
 
 
 PORT_3DT_MASTER = 443
