@@ -676,7 +676,7 @@ class Bootstrapper(object):
         except FileNotFoundError:
             log.warn('Private key was not found')
             return False
-        if '--BEGIN PRIVATE KEY--' not in key:
+        if 'PRIVATE KEY' not in key:
             log.warn('Private key is invalid')
             return False
 
