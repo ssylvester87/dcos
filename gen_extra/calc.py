@@ -237,6 +237,27 @@ def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
     return hooks
 
 
+def calculate_marathon_port(security):
+    if security in ('strict', 'permissive'):
+        return "8443"
+    assert security == 'disabled'
+    return "8080"
+
+
+def calculate_adminrouter_master_port(security):
+    if security in ('strict', 'permissive'):
+        return "443"
+    assert security == 'disabled'
+    return "80"
+
+
+def calculate_adminrouter_agent_port(security):
+    if security in ('strict', 'permissive'):
+        return "61002"
+    assert security == 'disabled'
+    return "61001"
+
+
 entry = {
     'validate': [
         validate_customer_key,
@@ -301,6 +322,9 @@ entry = {
         'default_task_user': calculate_default_task_user,
         'marathon_extra_args': calculate_marathon_extra_args,
         'zk_acls_enabled': calculate_zk_acls_enabled,
+        'marathon_port': calculate_marathon_port,
+        'adminrouter_master_port': calculate_adminrouter_master_port,
+        'adminrouter_agent_port': calculate_adminrouter_agent_port
     }
 }
 
