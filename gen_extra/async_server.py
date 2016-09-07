@@ -1,6 +1,5 @@
 from aiohttp import web
-
-import dcos_installer.backend
+from passlib.hash import sha512_crypt
 
 
 def hash_password(request):
@@ -16,7 +15,7 @@ def hash_password(request):
                 "message": "`password` must be set in POST"},
             status=400)
 
-    hashed_password = dcos_installer.backend.hash_password(post_data['password'])
+    hashed_password = sha512_crypt.encrypt(post_data['password'])
     return web.json_response({'hashed_password': hashed_password})
 
 
