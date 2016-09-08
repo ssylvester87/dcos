@@ -1,4 +1,5 @@
 import argparse
+import base64
 import json
 import logging
 import os
@@ -722,10 +723,24 @@ class Bootstrapper(object):
         return token
 
     def write_service_auth_token(self, uid, filename=None, exp=None):
+        """Create service authentication token for given `uid` and `exp`.
+
+        Create and return an environment variable declaration string
+        of the format
+
+            SERVICE_AUTH_TOKEN=<authtoken>\n
+
+        If `filename` is given, write the environment variable declaration
+        string to that file path.
+
+        Returns:
+            bytes: environment variable declaration
+        """
         token = self.service_auth_token(uid, exp)
         env = bytes('SERVICE_AUTH_TOKEN={}\n'.format(token), 'ascii')
-        _write_file(filename, env, 0o600)
-        return token
+        if filename is not None:
+            _write_file(filename, env, 0o600)
+        return env
 
     def create_key_certificate(self, cn, key_filename, crt_filename,
                                service_account=None, master=False,
@@ -1218,7 +1233,29 @@ def dcos_adminrouter(b, opts):
 
     b.write_jwks_public_keys(opts.rundir + '/etc/jwks.pub')
 
-    b.write_service_auth_token('dcos_adminrouter', opts.rundir + '/etc/adminrouter.env', exp=0)
+    # Generate SERVICE_AUTH_TOKEN=<authtoken> env var declaration.
+    # Strip trailing newline returned by  `write_service_auth_token()`.
+    service_auth_token_env_declaration = b.write_service_auth_token(
+        uid='dcos_adminrouter',
+        filename=None).decode('ascii').strip()
+
+    env_file_lines = [service_auth_token_env_declaration]
+
+    # Optionally generate EXHIBITOR_ADMIN_HTTPBASICAUTH_CREDS=<creds> declaration.
+    if opts.config['exhibitor_admin_password_enabled'] is True:
+        pw = opts.config['exhibitor_admin_password']
+
+        # Build HTTP Basic auth credential string.
+        exhibitor_admin_basic_auth_creds = base64.b64encode(
+            'admin:{}'.format(pw).encode('ascii')).decode('ascii')
+
+        env_file_lines.append(
+            'EXHIBITOR_ADMIN_HTTPBASICAUTH_CREDS={}'.format(
+                exhibitor_admin_basic_auth_creds))
+
+    env_file_contents_bytes = '\n'.join(env_file_lines).encode('ascii')
+    env_file_path = opts.rundir + '/etc/adminrouter.env'
+    _write_file(env_file_path, env_file_contents_bytes, 0o600)
 
 
 def dcos_adminrouter_agent(b, opts):
