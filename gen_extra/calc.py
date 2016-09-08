@@ -278,6 +278,12 @@ def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_provide
         % (ui_organization, ui_networking, ui_secrets, ui_auth_providers)
 
 
+def calculate_exhibitor_admin_password_enabled(exhibitor_admin_password):
+    if exhibitor_admin_password:
+        return 'true'
+    return 'false'
+
+
 def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
     hooks = 'com_mesosphere_dcos_SecretsHook'
     if dcos_remove_dockercfg_enable == 'true':
@@ -321,6 +327,7 @@ entry = {
         'bouncer_expiration_auth_token_days': '5',
         'security': 'permissive',
         'dcos_audit_logging': 'true',
+        'exhibitor_admin_password': '',
         'superuser_username': '',
         'superuser_password_hash': '',
         'superuser_credentials_given': calculate_superuser_credentials_given,
@@ -347,6 +354,7 @@ entry = {
         'adminrouter_master_enforce_https': calculate_adminrouter_master_enforce_https,
         'adminrouter_agent_enforce_https': calculate_adminrouter_agent_enforce_https,
         'adminrouter_master_default_scheme': calculate_adminrouter_master_default_scheme,
+        'exhibitor_admin_password_enabled': calculate_exhibitor_admin_password_enabled,
         'bootstrap_secrets': 'true',
         'ui_auth_providers': 'true',
         'ui_secrets': 'true',
