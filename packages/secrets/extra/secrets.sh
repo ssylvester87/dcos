@@ -2,7 +2,6 @@
 set -xe
 TLS_ENABLED=${TLS_ENABLED:-false}
 
-SECRETS_PORT=1337
 SECRETS_ADVERTISE_ADDR=https://$($MESOS_IP_DISCOVERY_COMMAND)/secrets/v1
 
 EXTRA_FLAGS=
@@ -16,4 +15,4 @@ if [[ "${TLS_ENABLED}" == "true" ]]; then
 fi
 
 # TODO need to do $PKG_PATH here and envsubst in build
-exec /opt/mesosphere/bin/secrets -d -port ${SECRETS_PORT} --advertise-addr ${SECRETS_ADVERTISE_ADDR} ${EXTRA_FLAGS}
+exec /opt/mesosphere/bin/secrets -d -listen-addr 127.0.0.1 -listen-port 1337 --advertise-addr ${SECRETS_ADVERTISE_ADDR} ${EXTRA_FLAGS}
