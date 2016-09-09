@@ -842,7 +842,12 @@ package:
                   },
                   {
                     "key": "iam",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://master.mesos"
+{% case "true" %}
                     "value": "https://master.mesos:443"
+{% endswitch %}
                   }
                 ]
               },
@@ -855,7 +860,12 @@ package:
                   },
                   {
                     "key": "iam",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://master.mesos"
+{% case "true" %}
                     "value": "https://master.mesos:443"
+{% endswitch %}
                   },
                   {
                     "key": "cache_timeout",
@@ -877,7 +887,12 @@ package:
 
                   {
                     "key": "store_url",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://master.mesos/secrets/v1"
+{% case "true" %}
                     "value": "https://master.mesos/secrets/v1"
+{% endswitch %}
                   },
                   {
                     "key": "service_account_credential",
@@ -903,7 +918,12 @@ package:
 
                   {
                     "key": "store_url",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://master.mesos/secrets/v1"
+{% case "true" %}
                     "value": "https://master.mesos/secrets/v1"
+{% endswitch %}
                   },
                   {
                     "key": "service_account_credential",
