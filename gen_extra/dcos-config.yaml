@@ -826,3 +826,107 @@ package:
 {% case "false" %}
       STATE_SUMMARY_URI=http://leader.mesos/mesos/state-summary
 {% endswitch %}
+  - path: /etc/mesos-slave-modules/agent_dcos_security_modules.json
+    content: |
+      {
+        "libraries": [
+          {
+            "file": "/opt/mesosphere/lib/mesos/libdcos_security.so",
+            "modules": [
+              {
+                "name": "com_mesosphere_dcos_http_Authenticator",
+                "parameters": [
+                  {
+                    "key": "host",
+                    "value": "agent"
+                  },
+                  {
+                    "key": "iam",
+                    "value": "https://master.mesos:443"
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_Authorizer",
+                "parameters": [
+                  {
+                    "key": "host",
+                    "value": "agent"
+                  },
+                  {
+                    "key": "iam",
+                    "value": "https://master.mesos:443"
+                  },
+                  {
+                    "key": "cache_timeout",
+                    "value": "5secs"
+                  },
+                  {
+                    "key": "service_account_credential",
+                    "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+                  },
+                  {
+                    "key": "dcos_space_label",
+                    "value": "DCOS_SPACE"
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_SecretsIsolator",
+                "parameters": [
+
+                  {
+                    "key": "store_url",
+                    "value": "https://master.mesos/secrets/v1"
+                  },
+                  {
+                    "key": "service_account_credential",
+                    "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+                  },
+                  {
+                    "key": "special_secret_protobuf_label",
+                    "value": "DCOS_SECRETS_DIRECTIVE"
+                  },
+                  {
+                    "key": "special_secret_space_label",
+                    "value": "DCOS_SPACE"
+                  },
+                  {
+                    "key": "network_timeout",
+                    "value": "5secs"
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_SecretsHook",
+                "parameters": [
+
+                  {
+                    "key": "store_url",
+                    "value": "https://master.mesos/secrets/v1"
+                  },
+                  {
+                    "key": "service_account_credential",
+                    "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+                  },
+                  {
+                    "key": "special_secret_protobuf_label",
+                    "value": "DCOS_SECRETS_DIRECTIVE"
+                  },
+                  {
+                    "key": "special_secret_space_label",
+                    "value": "DCOS_SPACE"
+                  },
+                  {
+                    "key": "network_timeout",
+                    "value": "5secs"
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_ClassicRPCAuthenticatee"
+              }
+            ]
+          }
+        ]
+      }
