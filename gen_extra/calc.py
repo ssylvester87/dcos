@@ -267,13 +267,15 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-def calculate_mesos_enterprise_isolation(mesos_isolation):
-    return ','.join([
+def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
+    isolation = ','.join([
         mesos_isolation,
         'com_mesosphere_MetricsIsolatorModule',
-        'com_mesosphere_dcos_SSLExecutorIsolator',
         'com_mesosphere_dcos_SecretsIsolator'
     ])
+    if ssl_enabled == 'true':
+        isolation += ',com_mesosphere_dcos_SSLExecutorIsolator'
+    return isolation
 
 
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
@@ -292,9 +294,10 @@ def calculate_exhibitor_admin_password_enabled(exhibitor_admin_password):
     return 'true'
 
 
-def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
+def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable, ssl_enabled):
     hooks = 'com_mesosphere_dcos_SecretsHook'
-    hooks += ',com_mesosphere_dcos_SSLExecutorHook'
+    if ssl_enabled == 'true':
+        hooks += ',com_mesosphere_dcos_SSLExecutorHook'
     if dcos_remove_dockercfg_enable == 'true':
         hooks += ",com_mesosphere_dcos_RemoverHook"
     return hooks
