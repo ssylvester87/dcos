@@ -99,7 +99,7 @@ def calculate_mesos_authorizer(mesos_authz_enforced):
         return 'local'
 
 
-def calculate_mesos_authenticate_frameworks(security):
+def calculate_framework_authentication_required(security):
     if security == 'strict':
         return 'true'
 
@@ -367,7 +367,7 @@ entry = {
         'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
         'mesos_authenticate_http': calculate_mesos_authenticate_http,
         'mesos_classic_authenticator': calculate_mesos_classic_authenticator,
-        'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
+        'framework_authentication_required': calculate_framework_authentication_required,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,
         'framework_authn_enabled': calculate_framework_authn_enabled,

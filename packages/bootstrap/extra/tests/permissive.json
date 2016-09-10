@@ -6,7 +6,7 @@
   "firewall_enabled": false,
   "mesos_authenticate_http": true,
   "mesos_authz_enforced": true,
-  "mesos_authenticate_frameworks": false,
+  "framework_authentication_required": false,
   "mesos_authenticate_agents": false,
   "framework_authn_enabled": true,
   "agent_authn_enabled": true,
