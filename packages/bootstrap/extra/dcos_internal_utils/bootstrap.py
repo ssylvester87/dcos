@@ -1127,7 +1127,7 @@ def dcos_marathon(b, opts):
         shutil.chown(opts.rundir + '/pki/tls/private/marathon.jks', user='dcos_marathon')
 
     # For framework authentication.
-    if opts.config['framework_authn_enabled']:
+    if opts.config['framework_authentication_enabled']:
         b.create_service_account('dcos_marathon')
         svc_acc_creds_fn = opts.rundir + '/etc/marathon/service_account.json'
         b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
@@ -1161,7 +1161,7 @@ def dcos_metronome(b, opts):
         shutil.chown(opts.rundir + '/pki/tls/private/metronome.jks', user='dcos_metronome')
 
     # For framework authentication.
-    if opts.config['framework_authn_enabled']:
+    if opts.config['framework_authentication_enabled']:
         b.create_service_account('dcos_metronome')
         svc_acc_creds_fn = opts.rundir + '/etc/metronome/service_account.json'
         b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)

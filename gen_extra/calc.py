@@ -121,7 +121,7 @@ def calculate_mesos_authenticate_agents(security):
         return 'false'
 
 
-def calculate_framework_authn_enabled(security):
+def calculate_framework_authentication_enabled(security):
     if security == 'strict':
         return 'true'
 
@@ -143,8 +143,8 @@ def calculate_agent_authn_enabled(security):
         return 'false'
 
 
-def calculate_mesos_classic_authenticator(framework_authn_enabled, agent_authn_enabled):
-    if framework_authn_enabled == 'true' or agent_authn_enabled == 'true':
+def calculate_mesos_classic_authenticator(framework_authentication_enabled, agent_authn_enabled):
+    if framework_authentication_enabled == 'true' or agent_authn_enabled == 'true':
         return 'com_mesosphere_dcos_ClassicRPCAuthenticator'
     else:
         return 'crammd5'
@@ -370,7 +370,7 @@ entry = {
         'framework_authentication_required': calculate_framework_authentication_required,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,
-        'framework_authn_enabled': calculate_framework_authn_enabled,
+        'framework_authentication_enabled': calculate_framework_authentication_enabled,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
