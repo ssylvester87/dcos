@@ -7,7 +7,7 @@
   "mesos_authenticate_http": false,
   "mesos_authz_enforced": false,
   "framework_authentication_required": false,
-  "mesos_authenticate_agents": false,
+  "agent_authentication_required": false,
   "framework_authentication_enabled": false,
   "agent_authn_enabled": false,
   "marathon_extra_args": "",

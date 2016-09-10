@@ -110,7 +110,7 @@ def calculate_framework_authentication_required(security):
         return 'false'
 
 
-def calculate_mesos_authenticate_agents(security):
+def calculate_agent_authentication_required(security):
     if security == 'strict':
         return 'true'
 
@@ -368,7 +368,7 @@ entry = {
         'mesos_authenticate_http': calculate_mesos_authenticate_http,
         'mesos_classic_authenticator': calculate_mesos_classic_authenticator,
         'framework_authentication_required': calculate_framework_authentication_required,
-        'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
+        'agent_authentication_required': calculate_agent_authentication_required,
         'agent_authn_enabled': calculate_agent_authn_enabled,
         'framework_authentication_enabled': calculate_framework_authentication_enabled,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,

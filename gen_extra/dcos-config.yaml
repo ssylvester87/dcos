@@ -596,7 +596,7 @@ package:
       MESOS_AUTHENTICATORS={{ mesos_classic_authenticator }}
       # Conditionally require authentication (reject unauthenticated).
       MESOS_AUTHENTICATE_FRAMEWORKS={{ framework_authentication_required }}
-      MESOS_AUTHENTICATE_AGENTS={{ mesos_authenticate_agents }}
+      MESOS_AUTHENTICATE_AGENTS={{ agent_authentication_required }}
       SSL_ENABLED={{ ssl_enabled }}
       SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       SSL_VERIFY_CERT=false
@@ -809,7 +809,7 @@ package:
         "mesos_authenticate_http": {{ mesos_authenticate_http }},
         "mesos_authz_enforced": {{ mesos_authz_enforced }},
         "framework_authentication_required": {{ framework_authentication_required }},
-        "mesos_authenticate_agents": {{ mesos_authenticate_agents }},
+        "agent_authentication_required": {{ agent_authentication_required }},
         "framework_authentication_enabled": {{ framework_authentication_enabled }},
         "agent_authn_enabled": {{ agent_authn_enabled }},
         "marathon_https_enabled": {{ marathon_https_enabled }},
