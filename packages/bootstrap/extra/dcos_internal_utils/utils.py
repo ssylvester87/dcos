@@ -7,6 +7,7 @@ import random
 import string
 import subprocess
 import uuid
+from collections import namedtuple
 from socket import gethostbyaddr, herror
 
 
@@ -18,10 +19,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from jwt.utils import base64url_decode, bytes_to_number
 
+import gen
+
 log = logging.getLogger(__name__)
 
 
 crypto_backend = cryptography.hazmat.backends.default_backend()
+
+SanEntry = namedtuple("SanEntry", ['type', 'val'])
 
 
 def read_file_line(filename):
@@ -159,12 +164,13 @@ def generate_CA_key_certificate(valid_days=3650):
     return privkey_pem.decode('ascii'), crt_pem.decode('ascii')
 
 
-def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=[]):
+def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
 
     machine_ip = subprocess.check_output(
         ['/opt/mesosphere/bin/detect_ip'],
         stderr=subprocess.DEVNULL).decode('ascii').strip()
+    gen.calc.validate_ipv4_addresses([machine_ip])
 
     san = [
         x509.DNSName(machine_ip),
@@ -191,8 +197,15 @@ def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=[]):
     except herror:
         pass
 
-    for s in extra_san:
-        san.append(x509.DNSName(s))
+    if extra_san is not None:
+        for s in extra_san:
+            if s.type == 'dns':
+                san.append(x509.DNSName(s.val))
+            elif s.type == 'ip':
+                san.append(x509.IPAddress(ipaddress.IPv4Address(s.val)))
+            else:
+                msg_fmt = "Unrecognized extra_san entry type: %s for %s"
+                raise AssertionError(msg_fmt.format(s.type, s.val))
 
     log.info('Subject Alternative Names: %s', san)
 

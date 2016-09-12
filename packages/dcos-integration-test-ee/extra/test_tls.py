@@ -26,23 +26,65 @@ pytestmark = [
     ]
 
 
-Netloc = namedtuple("Netloc", ["host", "port", "description"])
+SanEntry = namedtuple("SanEntry", ['type', 'val'])
+Netloc = namedtuple("Netloc", ["host", "port", "description", "expected_sans"])
 
 tls_netlocs = []
 
+common_san_entries = [SanEntry("ip", "127.0.0.1"),
+                      SanEntry("dns", "127.0.0.1"),
+                      SanEntry("dns", "localhost"),
+                      ]
+masters_san_entries = [SanEntry("dns", "master.mesos"),
+                       SanEntry("dns", "leader.mesos"),
+                       ]
+marathon_san_entries = [SanEntry("dns", "marathon.mesos"),
+                        ]
+
 for host in dcos.masters:
+    ar_san_entries = [SanEntry("dns", host),
+                      SanEntry("ip", host),
+                      ]
     tls_netlocs.extend([
-        Netloc(host, 5050, "Mesos (master)"),
-        Netloc(host, 8443, "Root Marathon (master)"),
-        Netloc(host, 9443, "Metronome (master)"),
-        Netloc(host, 7443, "Cosmos (master)"),
-        Netloc(host, 443, "Admin Router (master)"),
+        Netloc(host,
+               5050,
+               "Mesos (master)",
+               common_san_entries + masters_san_entries,
+               ),
+        Netloc(host,
+               8443,
+               "Root Marathon (master)",
+               common_san_entries + masters_san_entries + marathon_san_entries,
+               ),
+        Netloc(host,
+               9443,
+               "Metronome (master)",
+               common_san_entries + masters_san_entries,
+               ),
+        Netloc(host,
+               7443,
+               "Cosmos (master)",
+               common_san_entries + masters_san_entries,
+               ),
+        Netloc(host,
+               443,
+               "Admin Router (master)",
+               common_san_entries + masters_san_entries + ar_san_entries,
+               ),
         ])
 
 for host in dcos.agents:
     tls_netlocs.extend([
-        Netloc(host, 5051, "Mesos (agent)"),
-        Netloc(host, 61002, "Admin Router (agent)")
+        Netloc(host,
+               5051,
+               "Mesos (agent)",
+               common_san_entries,
+               ),
+        Netloc(host,
+               61002,
+               "Admin Router (agent)",
+               common_san_entries,
+               )
         ])
 
 # Prepare string representation for network locations,
@@ -106,11 +148,17 @@ def test_cert_dns_names(netloc):
     ext = cert.extensions.get_extension_for_oid(
         x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
     dns_names = ext.value.get_values_for_type(x509.DNSName)
+    ip_names = [str(x) for x in ext.value.get_values_for_type(x509.IPAddress)]
     assert len(dns_names) > 1
-    assert 'localhost' in dns_names
+    assert len(ip_names) > 1
     log.info("dns names: %s", dns_names)
-    # TODO(JP): how do we want to systematically test DNSName entries?
-    # TODO(JP): check IPAddress OID
+    log.info("ip names: %s", ip_names)
+    # TODO(prozlach): not sure how we can test DNSNames that contain i.e. lb
+    # addr
+    for expected_dns in (x.val for x in netloc.expected_sans if x.type == 'dns'):
+        assert expected_dns in dns_names
+    for expected_ip in (x.val for x in netloc.expected_sans if x.type == 'ip'):
+        assert expected_ip in ip_names
 
 
 @pytest.mark.parametrize("netloc", tls_netlocs, ids=tls_netloc_labels)

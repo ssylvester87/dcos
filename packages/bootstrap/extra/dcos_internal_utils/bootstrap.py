@@ -636,7 +636,7 @@ class Bootstrapper(object):
 
     def create_key_certificate(self, cn, key_filename, crt_filename,
                                service_account=None, master=False,
-                               marathon=False, extra_san=[],
+                               marathon=False, extra_san=None,
                                key_mode=0o600):
         log.info('Generating CSR for key {}'.format(key_filename))
         privkey_pem, csr_pem = utils.generate_key_CSR(cn,
@@ -684,7 +684,7 @@ class Bootstrapper(object):
 
     def ensure_key_certificate(
             self, cn, key_filename, crt_filename, service_account=None,
-            master=False, marathon=False, extra_san=[], key_mode=0o600):
+            master=False, marathon=False, extra_san=None, key_mode=0o600):
         if not self._key_cert_is_valid(key_filename, crt_filename):
             log.info('Generating certificate {}'.format(crt_filename))
             self.create_key_certificate(cn, key_filename, crt_filename,

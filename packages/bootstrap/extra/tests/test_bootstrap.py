@@ -209,7 +209,7 @@ class TestBootstrap():
         b.ensure_key_certificate('common name',
                                  key_fn,
                                  crt_fn,
-                                 extra_san=['foo'])
+                                 extra_san=[utils.SanEntry('dns', 'foo')])
         assert os.stat(key_fn)[stat.ST_MODE] == 0o100600
 
         key_fn = self.tmpdir + '/svc2.key'
@@ -217,7 +217,7 @@ class TestBootstrap():
         b.ensure_key_certificate('common name',
                                  key_fn,
                                  crt_fn,
-                                 extra_san=['foo'],
+                                 extra_san=[utils.SanEntry('dns', 'foo')],
                                  key_mode=0o644)
         assert os.stat(key_fn)[stat.ST_MODE] == 0o100644
 
