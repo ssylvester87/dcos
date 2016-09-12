@@ -16,8 +16,6 @@ mkdir -p $(dirname $service)
 cat <<EOF > $service
 [Unit]
 Description=Network Metrics Aggregator: DCOS Network Metrics Aggregation Service and API
-After=dcos-mesos-dns.service
-After=dcos-epmd.service
 BindsTo=dcos-epmd.service
 
 [Service]

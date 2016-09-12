@@ -26,6 +26,7 @@ EnvironmentFile=/opt/mesosphere/etc/metronome
 EnvironmentFile=-/opt/mesosphere/etc/metronome-extras
 EnvironmentFile=-/run/dcos/etc/metronome/service.env
 EnvironmentFile=-/run/dcos/etc/metronome/tls.env
+ExecStartPre=/bin/ping -c1 leader.mesos
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-metronome
 ExecStartPre=/bin/bash -c 'mkdir -p /run/dcos/etc/metronome'
 ExecStartPre=/bin/bash -c 'echo "METRONOME_LEADER_ELECTION_HOSTNAME=\$(\$MESOS_IP_DISCOVERY_COMMAND)" > /run/dcos/etc/metronome/service.env'

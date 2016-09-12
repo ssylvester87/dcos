@@ -1,6 +1,5 @@
 [Unit]
 Description=Signal: DCOS Telemetry and Tracking Service
-After=dcos-mesos-master.service
 [Service]
 PermissionsStartOnly=True
 Type=simple
