@@ -6,9 +6,11 @@ import logging
 import os
 import random
 import shutil
+import subprocess
 import sys
 
 
+import gen
 from dcos_internal_utils import bootstrap
 from dcos_internal_utils import exhibitor
 from dcos_internal_utils import utils
@@ -256,10 +258,18 @@ def dcos_adminrouter(b, opts):
     extra_san = []
     internal_lb = os.getenv('INTERNAL_MASTER_LB_DNSNAME')
     if internal_lb:
-        extra_san.append(internal_lb)
+        extra_san.append(utils.SanEntry('dns', internal_lb))
     external_lb = os.getenv('MASTER_LB_DNSNAME')
     if external_lb:
-        extra_san.append(external_lb)
+        extra_san.append(utils.SanEntry('dns', external_lb))
+    machine_pub_ip = subprocess.check_output(
+        ['/opt/mesosphere/bin/detect_ip_public'],
+        stderr=subprocess.DEVNULL).decode('ascii').strip()
+    gen.calc.validate_ipv4_addresses([machine_pub_ip])
+    # We add ip as both DNS and IP entry so that old/broken software that does
+    # not support IPAddress type SAN can still use it.
+    extra_san.append(utils.SanEntry('dns', machine_pub_ip))
+    extra_san.append(utils.SanEntry('ip', machine_pub_ip))
 
     b.ensure_key_certificate('AdminRouter',
                              keypath,
