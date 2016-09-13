@@ -59,7 +59,6 @@ class _DCOS:
         '/networking/api/v1/vips',
         '/pkgpanda/active.buildinfo.full.json',
         '/secrets/v1/store',
-        '/ca/api/v2/certificates',
         '/system/health/v1'
         ]
 

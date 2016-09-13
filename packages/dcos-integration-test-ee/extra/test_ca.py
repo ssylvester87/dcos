@@ -33,6 +33,7 @@ def test_if_CA_cert_was_loaded():
     assert 'BEGIN CERTIFICATE' in data['result']['certificate']
 
 
+@pytest.mark.skip(reason="Disabled till DCOS-8889 is addressed")
 def test_if_CA_can_list_issued_certs(superuser):
     data = {
         "request": {
