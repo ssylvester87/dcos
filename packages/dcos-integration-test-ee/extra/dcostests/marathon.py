@@ -1,7 +1,6 @@
 import collections
 import json
 import logging
-import uuid
 
 import pytest
 import requests
@@ -13,7 +12,7 @@ from dcostests import MarathonUrl
 log = logging.getLogger(__name__)
 
 
-def sleep_app_definition(uid=str(uuid.uuid4())):
+def sleep_app_definition(uid):
     return {
         'id': "/integration-test-sleep-app-%s" % uid,
         'cpus': 0.1,
