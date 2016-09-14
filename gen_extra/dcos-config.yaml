@@ -865,4 +865,5 @@ package:
     permissions: "0644"
     content: |
       admin: {{ exhibitor_admin_password }},admin
+{% case "false" %}
 {% endswitch %}
