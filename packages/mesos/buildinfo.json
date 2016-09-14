@@ -2,7 +2,7 @@
   "requires": ["openssl", "libevent", "curl"],
   "single_source" : {
     "kind": "git",
-    "git": "https://github.com/mesosphere/mesos-private",
+    "git": "https://github.com/mesosphere/mesos",
     "ref": "4dc74fbe54d193af17fd998d1fe8678ea84d482a",
     "ref_origin" : "till/fileisolator-workaround_PLUS_dcos101"
   },
