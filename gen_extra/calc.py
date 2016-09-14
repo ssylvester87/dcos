@@ -197,6 +197,23 @@ def validate_bouncer_expiration_auth_token_days(bouncer_expiration_auth_token_da
     assert float(bouncer_expiration_auth_token_days) > 0, "bouncer_expiration_auth_token_days must be greater than 0."
 
 
+def calculate_superuser_credentials_given(superuser_username, superuser_password_hash):
+    pair = (superuser_username, superuser_password_hash)
+
+    if all(pair):
+        return 'true'
+
+    if not any(pair):
+        return 'false'
+
+    # `calculate_` functions are not supposed to error out, but
+    # in this case here (multi-arg input) this check cannot
+    # currently be replaced by a `validate_` function.
+    raise AssertionError(
+        "'superuser_username' and 'superuser_password_hash' "
+        "must both be empty or both be non-emtpy")
+
+
 def calculate_digest(credentials):
     if empty(credentials):
         return ''
@@ -274,6 +291,7 @@ entry = {
         validate_zk_super_credentials,
         validate_zk_master_credentials,
         validate_zk_agent_credentials,
+        lambda auth_cookie_secure_flag: validate_true_false(auth_cookie_secure_flag),
         lambda security: validate_one_of(security, ['strict', 'permissive', 'disabled']),
         lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
     ],
@@ -283,6 +301,7 @@ entry = {
         'dcos_audit_logging': 'true',
         'superuser_username': '',
         'superuser_password_hash': '',
+        'superuser_credentials_given': calculate_superuser_credentials_given,
         'zk_super_credentials': 'super:secret',
         'zk_master_credentials': 'dcos-master:secret1',
         'zk_agent_credentials': 'dcos-agent:secret2',
