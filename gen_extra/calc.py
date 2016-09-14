@@ -279,9 +279,9 @@ def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_provide
 
 
 def calculate_exhibitor_admin_password_enabled(exhibitor_admin_password):
-    if exhibitor_admin_password:
-        return 'true'
-    return 'false'
+    if exhibitor_admin_password == '':
+        return 'false'
+    return 'true'
 
 
 def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
