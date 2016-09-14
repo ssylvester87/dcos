@@ -15,5 +15,4 @@ ExecStart=/opt/mesosphere/bin/dcos-ca \
     -address=127.0.0.1 -port=8888 \
     -ca /run/dcos/pki/CA/certs/ca.crt \
     -ca-key /run/dcos/pki/CA/private/ca.key \
-    -config /opt/mesosphere/etc/dcos-ca/config.json \
-    -db-config /run/dcos/etc/dcos-ca/dbconfig.json
+    -config /opt/mesosphere/etc/dcos-ca/config.json

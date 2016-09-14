@@ -156,6 +156,7 @@ class TestAdminRouterACLs:
         r = requests.get(url, headers=peter.authheader)
         assert r.status_code == 200
 
+    @pytest.mark.skip(reason="Disabled untill DCOS-8889 is addressed")
     def test_adminrouter_ops_ca_ro(self, peter, superuser):
 
         url = CAUrl('/certificates')
