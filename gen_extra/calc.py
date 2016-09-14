@@ -322,6 +322,7 @@ entry = {
         lambda auth_cookie_secure_flag: validate_true_false(auth_cookie_secure_flag),
         lambda security: validate_one_of(security, ['strict', 'permissive', 'disabled']),
         lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
+        lambda exhibitor_admin_password_enabled: validate_true_false(exhibitor_admin_password_enabled),
     ],
     'default': {
         'bouncer_expiration_auth_token_days': '5',
