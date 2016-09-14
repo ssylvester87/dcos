@@ -414,12 +414,12 @@ class TestAdminRouterACLs:
 class TestMarathonAppDeployment:
 
     def test_anonymous_sleep_app(self):
-        app = MarathonApp(sleep_app_definition())
+        app = MarathonApp(sleep_app_definition("anonymous-%s" % str(uuid.uuid4())))
         r = app.deploy()
         assert r.status_code == 401
 
     def test_peter_sleep_app(self, peter):
-        app = MarathonApp(sleep_app_definition())
+        app = MarathonApp(sleep_app_definition("peter-%s" % str(uuid.uuid4())))
         r = app.deploy(headers=peter.authheader)
         assert r.status_code == 403
 
