@@ -4,10 +4,10 @@ Test authorization behavior of various components.
 
 
 import logging
+import uuid
 
 
 import pytest
-import uuid
 import requests
 
 from dcostests import CAUrl, dcos, IAMUrl, Url

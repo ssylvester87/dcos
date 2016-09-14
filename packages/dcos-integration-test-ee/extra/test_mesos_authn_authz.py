@@ -1,8 +1,8 @@
 import copy
 import logging
+import uuid
 
 import pytest
-import uuid
 import requests
 
 from dcostests import dcos, Url
