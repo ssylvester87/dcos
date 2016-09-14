@@ -9,6 +9,7 @@ import sys
 from dcos_internal_utils import bootstrap
 from dcos_internal_utils import exhibitor
 
+from pkgpanda.actions import apply_service_configuration
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,8 @@ bootstrappers = {
     'dcos-mesos-master': noop,
     'dcos-cosmos': noop,
     'dcos-metronome': noop,
-    'dcos-bouncer': noop
+    'dcos-bouncer': noop,
+    'dcos-minuteman': noop
 }
 
 
@@ -66,6 +68,7 @@ def main():
             log.error('Unknown service: {}'.format(service))
             sys.exit(1)
         log.debug('bootstrapping {}'.format(service))
+        apply_service_configuration(service)
         bootstrappers[service](b, opts)
 
 
