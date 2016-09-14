@@ -188,6 +188,15 @@ def validate_zk_agent_credentials(zk_agent_credentials):
     validate_zk_credentials(zk_agent_credentials, "Agent ZK")
 
 
+def validate_bouncer_expiration_auth_token_days(bouncer_expiration_auth_token_days):
+    try:
+        float(bouncer_expiration_auth_token_days)
+    except ValueError:
+        raise AssertionError(
+            "bouncer_expiration_auth_token_days must be a number of days or decimal thereof.")
+    assert float(bouncer_expiration_auth_token_days) > 0, "bouncer_expiration_auth_token_days must be greater than 0."
+
+
 def calculate_digest(credentials):
     if empty(credentials):
         return ''
@@ -239,6 +248,7 @@ def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
 
 entry = {
     'validate': [
+        validate_bouncer_expiration_auth_token_days,
         validate_customer_key,
         validate_zk_super_credentials,
         validate_zk_master_credentials,
@@ -247,6 +257,7 @@ entry = {
         lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
     ],
     'default': {
+        'bouncer_expiration_auth_token_days': '5',
         'security': 'permissive',
         'dcos_audit_logging': 'true',
         'superuser_username': '',
