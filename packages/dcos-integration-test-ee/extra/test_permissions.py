@@ -8,6 +8,7 @@ import logging
 
 import pytest
 import requests
+import uuid
 
 from dcostests import CAUrl, dcos, IAMUrl, Url
 from dcostests.marathon import MarathonApp, sleep_app_definition
@@ -423,7 +424,7 @@ class TestMarathonAppDeployment:
         assert r.status_code == 403
 
     def test_superuser_sleep_app(self, superuser):
-        app = MarathonApp(sleep_app_definition())
+        app = MarathonApp(sleep_app_definition("super-%s" % str(uuid.uuid4())))
         r = app.deploy(headers=superuser.authheader)
         r.raise_for_status()
         app.wait(check_health=False, headers=superuser.authheader)
