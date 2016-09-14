@@ -17,6 +17,7 @@ cat <<EOF > add_config.yaml
 customer_key: 123456-78901-234567-89012345-6789012
 superuser_username: testadmin
 superuser_password_hash: $password_hash
+security: $DCOS_SECURITY
 EOF
 
 # pip installed command to run tests
