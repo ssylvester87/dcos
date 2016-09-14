@@ -298,6 +298,7 @@ class TestMesosAuthz:
             if 'slave_public' in agent['reserved_resources']:
                 continue
             agent_id = agent['id']
+            break
 
         assert agent_id
 
