@@ -27,5 +27,10 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
           -com.mesosphere.cosmos.zookeeperUri=${ZOOKEEPER_URI} \
           -com.mesosphere.cosmos.dataDir=/var/lib/dcos/cosmos
 else
-    exec /opt/mesosphere/bin/java -Xmx2G -classpath $PKG_PATH/usr/cosmos.jar com.simontuffs.onejar.Boot -com.mesosphere.cosmos.dataDir=/var/lib/dcos/cosmos
+    exec /opt/mesosphere/bin/java \
+        -Xmx2G \
+        -classpath $PKG_PATH/usr/cosmos.jar \
+        com.simontuffs.onejar.Boot \
+          -admin.port=127.0.0.1:9990 \
+          -com.mesosphere.cosmos.dataDir=/var/lib/dcos/cosmos
 fi

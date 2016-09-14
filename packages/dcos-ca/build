@@ -18,7 +18,7 @@ cp -v ./cfssljson $PKG_PATH/bin/
 # Config
 mkdir -pv $PKG_PATH/etc/dcos-ca/
 cp -v /pkg/extra/config.json $PKG_PATH/etc/dcos-ca/
-cp -v /pkg/extra/dbconfig.json $PKG_PATH/etc/dcos-ca/dbconfig.json.example
+cp -v /pkg/extra/dbconfig.json $PKG_PATH/etc/dcos-ca/dbconfig.json
 cp -vR ./certdb/migrations/sqlite3/ $PKG_PATH/etc/dcos-ca/migrations/
 
 # Create the service file:

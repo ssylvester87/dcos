@@ -121,6 +121,17 @@ def calculate_mesos_authenticate_agents(security):
         return 'false'
 
 
+def calculate_framework_authn_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'true'
+
+    elif security == 'disabled':
+        return 'false'
+
+
 def calculate_agent_authn_enabled(security):
     if security == 'strict':
         return 'true'
@@ -141,6 +152,17 @@ def calculate_default_task_user(security):
 
     elif security == 'disabled':
         return 'root'
+
+
+def calculate_marathon_https_enabled(security):
+    if security == 'strict':
+        return 'true'
+
+    elif security == 'permissive':
+        return 'true'
+
+    elif security == 'disabled':
+        return 'false'
 
 
 def calculate_marathon_extra_args(security):
@@ -341,6 +363,7 @@ entry = {
         'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
         'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
         'agent_authn_enabled': calculate_agent_authn_enabled,
+        'framework_authn_enabled': calculate_framework_authn_enabled,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
@@ -350,6 +373,7 @@ entry = {
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'default_task_user': calculate_default_task_user,
+        'marathon_https_enabled': calculate_marathon_https_enabled,
         'marathon_extra_args': calculate_marathon_extra_args,
         'zk_acls_enabled': calculate_zk_acls_enabled,
         'marathon_port': calculate_marathon_port,

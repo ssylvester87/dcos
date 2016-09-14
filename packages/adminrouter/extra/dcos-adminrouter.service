@@ -22,7 +22,6 @@ EnvironmentFile=-/opt/mesosphere/etc/aws_dnsnames
 EnvironmentFile=-/run/dcos/etc/adminrouter.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-adminrouter
 ExecStartPre=/usr/bin/test -f /var/lib/dcos/cluster-id
-ExecStartPre=/usr/bin/test -f /run/dcos/pki/tls/certs/adminrouter.crt -a -f /run/dcos/pki/tls/private/adminrouter.key
 # Wait for auth backend to seed the secret key
 ExecStartPre=/usr/bin/curl --fail -sS -o /dev/null http://127.0.0.1:8101/acs/api/v1/groups
 ExecStart=$PKG_PATH/nginx/sbin/nginx -c $PKG_PATH/nginx/conf/nginx.master.conf

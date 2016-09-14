@@ -14,7 +14,7 @@ from dcostests import dcos, Url
 
 
 def test_if_all_mesos_agents_have_registered(superuser):
-    url = Url('/mesos/master/slaves')
+    url = Url('/mesos/master/state')
 
     r = requests.get(url, headers=superuser.authheader)
     assert r.status_code == 200

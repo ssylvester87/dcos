@@ -13,7 +13,7 @@ import pytest
 import requests
 import retrying
 
-from dcostests import Url
+from dcostests import dcos, Url
 
 
 log = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ log = logging.getLogger(__name__)
 class TestHttpHttpsConfig:
 
     @pytest.mark.xfail(
-        pytest.config.getoption('expect_strict_security'),
-        reason='AR must not serve content over HTTP in strict security mode.',
+        dcos.config['security'] != 'disabled',
+        reason='AR must not serve / over HTTP except in security-disabled mode.',
         strict=True
     )
     def test_root_path_http(self):
@@ -32,8 +32,8 @@ class TestHttpHttpsConfig:
         assert r.status_code == 200
 
     @pytest.mark.xfail(
-        not pytest.config.getoption('expect_strict_security'),
-        reason='AR is not expected to redirect from HTTP to HTTPS.',
+        dcos.config['security'] == 'disabled',
+        reason='AR is not expected to redirect from HTTP to HTTPS in disabled mode.',
         strict=True
     )
     def test_root_path_http_https_redirect(self):
@@ -45,6 +45,25 @@ class TestHttpHttpsConfig:
         assert r.status_code == 200
         assert '<html' in r.text
 
+    @pytest.mark.xfail(
+        dcos.config['security'] != 'strict',
+        reason='AR is only expected to redirect non-root paths from HTTP to HTTPS in strict mode.',
+        strict=True
+    )
+    def test_mesos_path_http_https_redirect(self):
+        r = requests.get(Url('/mesos', scheme='http'), allow_redirects=False)
+        assert r.status_code == 307
+        assert r.headers['location'].startswith('https')
+
+        r = requests.get(Url('/mesos', scheme='http'))
+        assert r.status_code == 200
+        assert '<html' in r.text
+
+    @pytest.mark.xfail(
+        dcos.config['security'] == 'disabled',
+        reason='AR does not support HTTPS with security disabled',
+        strict=True
+    )
     def test_root_path_https_cert_verification(self):
         r = requests.get(Url('/', scheme='https'))
         assert r.status_code == 200
@@ -174,7 +193,7 @@ def test_agents_endpoint_all_agents(superuser):
     # straight from Mesos (no AdminRouter-based caching is involved).
 
     r = requests.get(
-        Url('/mesos/master/slaves'),
+        Url('/mesos/master/state'),
         headers=superuser.authheader
         )
     assert r.status_code == 200

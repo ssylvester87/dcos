@@ -1,6 +1,8 @@
+import argparse
 import json
 import logging
 import os
+import random
 import shutil
 import stat
 import subprocess
@@ -14,9 +16,11 @@ from kazoo.security import ACL, ANYONE_ID_UNSAFE, Permissions
 from kazoo.security import make_acl, make_digest_acl
 
 
+import gen
 from dcos_internal_utils import ca
 from dcos_internal_utils import iam
 from dcos_internal_utils import utils
+
 
 log = logging.getLogger(__name__)
 
@@ -26,25 +30,51 @@ ANYONE_READ = [ACL(Permissions.READ, ANYONE_ID_UNSAFE)]
 ANYONE_ALL = [ACL(Permissions.ALL, ANYONE_ID_UNSAFE)]
 LOCALHOST_ALL = [make_acl('ip', '127.0.0.1', all=True)]
 
+vault_config_template = """
+disable_mlock = true
+
+backend "zookeeper" {
+  address = "127.0.0.1:2181"
+  advertise_addr = "%(advertise_addr)s"
+  path = "dcos/vault/default"
+  %(znode_owner)s
+  %(auth_info)s
+}
+
+listener "tcp" {
+  address = "127.0.0.1:8200"
+  tls_disable = 1
+}
+"""
+
 
 class Bootstrapper(object):
-    def __init__(self, zk_hosts, zk_creds, iam_url, ca_url):
+    def __init__(self, opts):
+        self.opts = opts
+
+        zk_creds = None
+        if opts.zk_super_creds:
+            log.info("Using super credentials for Zookeeper")
+            zk_creds = opts.zk_super_creds
+        elif opts.zk_agent_creds:
+            log.info("Using agent credentials for Zookeeper")
+            zk_creds = opts.zk_agent_creds
+
         conn_retry_policy = KazooRetry(max_tries=-1, delay=0.1, max_delay=0.1)
         cmd_retry_policy = KazooRetry(max_tries=3, delay=0.3, backoff=1, max_delay=1, ignore_expire=False)
-        zk = KazooClient(hosts=zk_hosts, connection_retry=conn_retry_policy, command_retry=cmd_retry_policy)
+        zk = KazooClient(hosts=opts.zk, connection_retry=conn_retry_policy, command_retry=cmd_retry_policy)
         zk.start()
         if zk_creds:
             zk.add_auth('digest', zk_creds)
         self.zk = zk
 
-        self.iam_url = iam_url
-        self.ca_url = ca_url
+        self.iam_url = opts.iam_url
+        self.ca_url = opts.ca_url
         self.secrets = {}
 
         self.CA_certificate = None
         self.CA_certificate_filename = None
 
-        # TODO(adam): Only include agent_public or agent, not both.
         self.agent_services = [
             'dcos_agent',
             'dcos_mesos_agent',
@@ -53,7 +83,7 @@ class Bootstrapper(object):
             'dcos_3dt_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
-            'dcos_spartan_agent'
+            'dcos_spartan_agent',
         ]
 
     def close(self):
@@ -93,7 +123,10 @@ class Bootstrapper(object):
 
                 return zkid
 
-    def init_acls(self):
+    def init_zk_acls(self):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
         paths = {
             '/': ANYONE_CR + LOCALHOST_ALL,
             '/cosmos': ANYONE_ALL,
@@ -105,7 +138,7 @@ class Bootstrapper(object):
         for path in sorted(paths):
             log.info('Initializing ACLs for znode {}'.format(path))
             acl = paths[path]
-            self.ensure_path(path, acl=acl)
+            self.ensure_zk_path(path, acl=acl)
 
     def _create_secrets(self, basepath, secrets, acl):
         for k, v in secrets.items():
@@ -120,16 +153,16 @@ class Bootstrapper(object):
                 self._create_secrets(path, v, acl)
                 continue
 
-            self.ensure_path(basepath, acl=acl)
+            self.ensure_zk_path(basepath, acl=acl)
 
             path = '/'.join([basepath, k])
             js = bytes(json.dumps(v), 'ascii')
             js = self._consensus(path, js, acl)
             secrets[k] = json.loads(js.decode('ascii'))
 
-            # set ACLs again in case znode already existed but
-            # with outdated ACLs
-            self.zk.set_acls(path, acl)
+            # set ACLs again in case znode already existed but with outdated ACLs
+            if acl:
+                self.zk.set_acls(path, acl)
 
         return secrets
 
@@ -163,26 +196,34 @@ class Bootstrapper(object):
 
         return crt
 
-    def create_master_secrets(self, creds):
-        user, password = creds.split(':', 1)
-        acl = [make_digest_acl(user, password, read=True)]
+    def create_master_secrets(self):
+        creds = self.opts.zk_master_creds
 
-        log.info('Creating master secrets with user {}'.format(user))
-
-        service_account_zk_creds = [
-            'dcos_mesos_master',
-            'dcos_marathon',
-            'dcos_metronome',
-            'dcos_cosmos',
-            'dcos_bouncer',
-            'dcos_ca',
-            'dcos_secrets',
-            'dcos_vault_default']
+        if creds:
+            user, password = creds.split(':', 1)
+            acl = [make_digest_acl(user, password, read=True)]
+            log.info('Creating master secrets with user {}'.format(user))
+        else:
+            acl = None
 
         zk_creds = {}
-
-        for account in service_account_zk_creds:
-            zk_creds[account] = {'scheme': 'digest', 'username': account, 'password': utils.random_string(64)}
+        if self.opts.config['zk_acls_enabled']:
+            service_account_zk_creds = [
+                'dcos_mesos_master',
+                'dcos_marathon',
+                'dcos_metronome',
+                'dcos_cosmos',
+                'dcos_bouncer',
+                'dcos_ca',
+                'dcos_secrets',
+                'dcos_vault_default',
+            ]
+            for account in service_account_zk_creds:
+                zk_creds[account] = {
+                    'scheme': 'digest',
+                    'username': account,
+                    'password': utils.random_string(64),
+                }
 
         master_service_accounts = [
             'dcos_adminrouter',
@@ -199,13 +240,15 @@ class Bootstrapper(object):
         ]
 
         service_account_creds = {}
-
         for account in master_service_accounts:
             service_account_creds[account] = {
                 'scheme': 'RS256',
                 'uid': account,
-                'private_key': utils.generate_RSA_keypair(2048)[0]}
+                'private_key': utils.generate_RSA_keypair(2048)[0],
+            }
 
+        # always generate the CA cert, regardless of whether
+        # SSL is being used in the cluster
         ca_key, ca_crt = utils.generate_CA_key_certificate(3650)
         ca_certs = {
             'RootCA': {
@@ -231,10 +274,14 @@ class Bootstrapper(object):
         return secrets
 
     def create_agent_secrets(self, digest):
-        acl = [make_acl('digest', digest, read=True)]
+        if self.opts.config['zk_acls_enabled']:
+            # kazoo.exceptions.MarshallingError here probably means
+            # that digest is None
+            acl = [make_acl('digest', digest, read=True)]
+        else:
+            acl = None
 
         service_account_creds = {}
-
         for account in self.agent_services:
             service_account_creds[account] = {
                 'scheme': 'RS256',
@@ -270,11 +317,7 @@ class Bootstrapper(object):
 
     def write_service_account_credentials(self, uid, filename):
         creds = self.secrets['services'][uid].copy()
-
-        # hacks for mesos-dns
-        creds['secret'] = creds['private_key']
         creds['login_endpoint'] = self.iam_url + '/acs/api/v1/auth/login'
-
         creds = bytes(json.dumps(creds), 'ascii')
 
         log.info('Writing {} service account credentials to {}'.format(uid, filename))
@@ -307,11 +350,7 @@ class Bootstrapper(object):
         iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
         iamcli.create_service_account(uid, public_key=pubkey_pem, exist_ok=True)
 
-        # TODO if account already exists, verify that public key matches
-
-        # TODO set up groups and acls, then verify permissions
-
-        # TODO temporary hack to get going
+        # TODO fine-grained permissions for service accounts
         iamcli.add_user_to_group(uid, 'superusers')
 
         return account
@@ -338,80 +377,130 @@ class Bootstrapper(object):
         p = self.secrets['zk'][service]['password']
         return make_digest_acl(u, p, **kwargs)
 
-    def ensure_path(self, path, acl=None):
-        log.info('ensure_path({}, {})'.format(path, acl))
+    def ensure_zk_path(self, path, acl=None):
+        log.info('ensure_zk_path({}, {})'.format(path, acl))
         self.zk.ensure_path(path, acl=acl)
-        self.zk.set_acls(path, acl)
+        if acl:
+            self.zk.set_acls(path, acl)
 
     def mesos_acls(self):
-        acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_mesos_master', all=True)]
-        self.ensure_path('/mesos', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_mesos_master', all=True)]
+        self.ensure_zk_path('/mesos', acl=acl)
 
     def marathon_acls(self):
-        acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_marathon', all=True)]
-        self.ensure_path('/marathon', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_marathon', all=True)]
+        self.ensure_zk_path('/marathon', acl=acl)
 
     def metronome_acls(self):
-        acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_metronome', all=True)]
-        self.ensure_path('/metronome', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_metronome', all=True)]
+        self.ensure_zk_path('/metronome', acl=acl)
 
     def cosmos_acls(self):
-        acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_cosmos', all=True)]
-        self.ensure_path('/cosmos', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_cosmos', all=True)]
+        self.ensure_zk_path('/cosmos', acl=acl)
 
     def bouncer_acls(self):
-        acl = LOCALHOST_ALL + [self.make_service_acl('dcos_bouncer', all=True)]
-        self.ensure_path('/bouncer', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_bouncer', all=True)]
+        self.ensure_zk_path('/bouncer', acl=acl)
 
     def dcos_ca_acls(self):
-        acl = LOCALHOST_ALL + [self.make_service_acl('dcos_ca', all=True)]
-        self.ensure_path('/dcos/ca', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_ca', all=True)]
+        self.ensure_zk_path('/dcos/ca', acl=acl)
 
     def dcos_secrets_acls(self):
-        acl = LOCALHOST_ALL + [self.make_service_acl('dcos_secrets', all=True)]
-        self.ensure_path('/dcos/secrets', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_secrets', all=True)]
+        self.ensure_zk_path('/dcos/secrets', acl=acl)
 
     def dcos_vault_default_acls(self):
-        acl = LOCALHOST_ALL + [self.make_service_acl('dcos_vault_default', all=True)]
-        self.ensure_path('/dcos/vault/default', acl=acl)
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_vault_default', all=True)]
+        self.ensure_zk_path('/dcos/vault/default', acl=acl)
 
     def write_dcos_ca_creds(self, src, dst):
-        zk_creds = self.secrets['zk']['dcos_ca']
         with open(src, 'rb') as fh:
             ca_conf = json.loads(fh.read().decode('utf-8'))
         assert 'data_source' in ca_conf
         assert ca_conf['data_source'][:5] == 'file:'
-        ca_conf['data_source'] = 'file:{}:{}@{}'.format(zk_creds['username'],
-                                                        zk_creds['password'],
-                                                        ca_conf['data_source'][5:]
-                                                        )
-        blob = json.dumps(ca_conf, sort_keys=True, indent=True,
-                          ensure_ascii=False).encode('utf-8')
+
+        if self.opts.config['zk_acls_enabled']:
+            zk_creds = self.secrets['zk']['dcos_ca']
+            ca_conf['data_source'] = 'file:{}:{}@{}'.format(
+                zk_creds['username'],
+                zk_creds['password'],
+                ca_conf['data_source'][5:]
+            )
+
+        blob = json.dumps(ca_conf, sort_keys=True, indent=True, ensure_ascii=False).encode('utf-8')
         _write_file(dst, blob, 0o600)
+        shutil.chown(dst, user=self.opts.dcos_ca_user)
 
     def write_bouncer_env(self, filename):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
         zk_creds = self.secrets['zk']['dcos_bouncer']
+
         env = 'DATASTORE_ZK_USER={username}\nDATASTORE_ZK_SECRET={password}\n'
         env = bytes(env.format_map(zk_creds), 'ascii')
 
         log.info('Writing Bouncer ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
 
-    def write_vault_default_env(self, filename):
-        zk_creds = self.secrets['zk']['dcos_vault_default']
-        user = zk_creds['username']
-        pw = zk_creds['password']
+        shutil.chown(filename, user=self.opts.bouncer_user)
 
-        acl = make_digest_acl(user, pw, all=True)
+    def write_vault_config(self, filename):
+        if self.opts.config['zk_acls_enabled']:
+            zk_creds = self.secrets['zk']['dcos_vault_default']
+            user = zk_creds['username']
+            pw = zk_creds['password']
+            acl = make_digest_acl(user, pw, all=True)
+            znode_owner = 'znode_owner = "digest:{}"'.format(acl.id.id)
+            auth_info = 'auth_info = "digest:{}:{}"'.format(user, pw)
+        else:
+            znode_owner = ''
+            auth_info = ''
 
-        env = 'VAULT_AUTH_INFO=digest:{}:{}\nVAULT_ZNODE_OWNER=digest:{}\n'
-        env = env.format(user, pw, acl.id.id)
-        env = bytes(env, 'ascii')
+        if self.opts.config['ssl_enabled']:
+            scheme = 'https://'
+        else:
+            scheme = 'http://'
 
-        log.info('Writing Vault ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        ip = utils.detect_ip()
+        advertise_addr = scheme + ip + '/vault/default'
+
+        params = {
+            'znode_owner': znode_owner,
+            'auth_info': auth_info,
+            'advertise_addr': advertise_addr,
+        }
+        cfg = vault_config_template % params
+        cfg = cfg.strip() + '\n'
+        cfg = cfg.encode('ascii')
+
+        log.info('Writing Vault config to {}'.format(filename))
+        _write_file(filename, cfg, 0o600)
+
+        shutil.chown(filename, user=self.opts.dcos_vault_user)
 
     def write_secrets_env(self, filename):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
         zk_creds = self.secrets['zk']['dcos_secrets']
         user = zk_creds['username']
         pw = zk_creds['password']
@@ -425,7 +514,12 @@ class Bootstrapper(object):
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
 
+        shutil.chown(filename, user=self.opts.dcos_secrets_user)
+
     def write_mesos_master_env(self, filename):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
         zk_creds = self.secrets['zk']['dcos_mesos_master']
 
         env = 'MESOS_ZK=zk://{username}:{password}@127.0.0.1:2181/mesos\n'
@@ -436,6 +530,9 @@ class Bootstrapper(object):
         _write_file(filename, env, 0o600)
 
     def write_cosmos_env(self, key_fn, crt_fn, ca_fn, env_fn):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
         zk_creds = self.secrets['zk']['dcos_cosmos']
         env = 'ZOOKEEPER_USER={username}\nZOOKEEPER_SECRET={password}\n'
         env = env.format_map(zk_creds)
@@ -443,6 +540,7 @@ class Bootstrapper(object):
 
         log.info('Writing Cosmos environment to {}'.format(env_fn))
         _write_file(env_fn, env, 0o600)
+        shutil.chown(env_fn, user=self.opts.dcos_cosmos_user)
 
     def write_metronome_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -509,16 +607,16 @@ class Bootstrapper(object):
         os.chmod(jks_fn, stat.S_IRUSR | stat.S_IWUSR)
         os.remove(pfx_fn)
 
-    def write_history_service_env(self, ca_fn, env_fn):
-        env = 'STATE_SUMMARY_URI=https://leader.mesos/mesos/state-summary\n' \
-            'TLS_VERIFY={ca_fn}\n'
-        env = env.format(ca_fn=ca_fn)
+    def write_marathon_zk_env(self, env_fn):
+        zk_creds = self.secrets['zk']['dcos_marathon']
+        env = 'MARATHON_ZK=zk://{username}:{password}@127.0.0.1:2181/marathon\n'
+        env = env.format_map(zk_creds)
         env = bytes(env, 'ascii')
 
-        log.info('Writing History Service environment to {}'.format(env_fn))
+        log.info('Writing Marathon ZK environment to {}'.format(env_fn))
         _write_file(env_fn, env, 0o600)
 
-    def write_marathon_env(self, key_fn, crt_fn, ca_fn, env_fn):
+    def write_marathon_tls_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
         jks_fn = os.path.splitext(key_fn)[0] + '.jks'
 
@@ -527,14 +625,9 @@ class Bootstrapper(object):
         except OSError:
             pass
 
-        zk_creds = self.secrets['zk']['dcos_marathon']
-        env1 = 'MARATHON_ZK=zk://{username}:{password}@127.0.0.1:2181/marathon\n'
-        env1 = env1.format_map(zk_creds)
-
         password = utils.random_string(256)
-        env2 = 'SSL_KEYSTORE_PASSWORD={}\n'.format(password)
-
-        env = bytes(env1 + env2, 'ascii')
+        env = 'SSL_KEYSTORE_PASSWORD={}\n'.format(password)
+        env = bytes(env, 'ascii')
 
         _write_file(env_fn, env, 0o600)
 
@@ -664,7 +757,7 @@ class Bootstrapper(object):
         except FileNotFoundError:
             log.warn('Certificate was not found')
             return False
-        if '--BEGIN CERTIFICATE--' not in crt:
+        if 'BEGIN CERTIFICATE' not in crt:
             log.warn('Certificate is invalid')
             return False
         # Certificate validity (expiration, issuing CA, etc.) is not checked.
@@ -718,3 +811,621 @@ def _set_umask():
     os.setpgrp()
     # prevent other users from reading files created by this process
     os.umask(0o077)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('services', nargs='+')
+    parser.add_argument(
+        '--rundir',
+        default='/run/dcos',
+        help='Runtime directory')
+    parser.add_argument(
+        '--statedir',
+        default='/var/lib/dcos',
+        help='State direcotry')
+    parser.add_argument(
+        '--zk',
+        default=None,
+        help='Host string passed to Kazoo client constructor.')
+    parser.add_argument(
+        '--zk_super_creds',
+        default='/opt/mesosphere/etc/zk_super_credentials',
+        help='File with ZooKeeper super credentials')
+    parser.add_argument(
+        '--zk_master_creds',
+        default='/opt/mesosphere/etc/zk_master_credentials',
+        help='File with ZooKeeper master credentials')
+    parser.add_argument(
+        '--zk_agent_creds',
+        default='/opt/mesosphere/etc/zk_agent_credentials',
+        help='File with ZooKeeper agent credentials')
+    parser.add_argument(
+        '--zk_agent_digest',
+        default='/opt/mesosphere/etc/zk_agent_digest',
+        help='File with ZooKeeper agent digest')
+    parser.add_argument(
+        '--master_count',
+        default='/opt/mesosphere/etc/master_count',
+        help='File with number of master servers')
+    parser.add_argument(
+        '--iam_url',
+        default=None,
+        help='IAM Service (Bouncer) URL')
+    parser.add_argument(
+        '--ca_url',
+        default=None,
+        help='CA URL')
+    parser.add_argument(
+        '--config-path',
+        default='/opt/mesosphere/etc/bootstrap-config.json',
+        help='Path to config file for bootstrap')
+
+    opts = parser.parse_args()
+
+    with open(opts.config_path, 'rb') as f:
+        opts.config = json.loads(f.read().decode('ascii'))
+
+    opts.bouncer_user = 'dcos_bouncer'
+    opts.dcos_secrets_user = 'dcos_secrets'
+    opts.dcos_vault_user = 'dcos_vault'
+    opts.dcos_ca_user = 'dcos_ca'
+    opts.dcos_cosmos_user = 'dcos_cosmos'
+
+    def _verify_and_set_zk_creds(credentials_path, credentials_type=None):
+        if os.path.exists(credentials_path):
+            log.info('Reading {credentials_type} credentials from {credentials_path}'.format(
+                credentials_type=credentials_type, credentials_path=credentials_path))
+            return utils.read_file_line(credentials_path)
+        log.info('{credentials_type} credentials not available'.format(credentials_type=credentials_type))
+        return None
+
+    if opts.config['security'] == 'disabled':
+        opts.zk_super_creds = None
+        opts.zk_master_creds = None
+        opts.zk_agent_creds = None
+        opts.zk_agent_digest = None
+    else:
+        opts.zk_super_creds = _verify_and_set_zk_creds(opts.zk_super_creds, "ZooKeeper super")
+        opts.zk_master_creds = _verify_and_set_zk_creds(opts.zk_master_creds, "ZooKeeper master")
+        opts.zk_agent_creds = _verify_and_set_zk_creds(opts.zk_agent_creds, "ZooKeeper agent")
+        opts.zk_agent_digest = _verify_and_set_zk_creds(opts.zk_agent_digest, "ZooKeeper agent digest")
+
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
+        zk_default = '127.0.0.1:2181'
+        iam_default = 'http://127.0.0.1:8101'
+        ca_default = 'http://127.0.0.1:8888'
+    else:
+        if os.getenv('MASTER_SOURCE') == 'master_list':
+            # Spartan agents with static master list
+            with open('/opt/mesosphere/etc/master_list', 'r') as f:
+                master_list = json.load(f)
+            assert len(master_list) > 0
+            leader = random.choice(master_list)
+        elif os.getenv('EXHIBITOR_ADDRESS'):
+            # Spartan agents on AWS
+            leader = os.getenv('EXHIBITOR_ADDRESS')
+        else:
+            # any other agent service
+            leader = 'leader.mesos'
+
+        zk_default = leader + ':2181'
+        if opts.config['ssl_enabled']:
+            iam_default = 'https://' + leader
+            ca_default = 'https://' + leader
+        else:
+            iam_default = 'http://' + leader
+            ca_default = 'http://' + leader
+
+    if not opts.zk:
+        opts.zk = zk_default
+    if not opts.iam_url:
+        opts.iam_url = iam_default
+    if not opts.ca_url:
+        opts.ca_url = ca_default
+
+    return opts
+
+
+def make_run_dirs(opts):
+    dirs = [
+        opts.rundir,
+        opts.rundir + '/etc',
+        opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/marathon',
+        opts.rundir + '/etc/mesos',
+        opts.rundir + '/etc/mesos-dns',
+        opts.rundir + '/etc/dcos-ca',
+        opts.rundir + '/etc/metronome',
+        opts.rundir + '/etc/history-service',
+        opts.rundir + '/etc/signal-service',
+        opts.rundir + '/pki/tls/private',
+        opts.rundir + '/pki/tls/certs',
+        opts.rundir + '/pki/CA/certs',
+        opts.rundir + '/pki/CA/private'
+    ]
+
+    for d in dirs:
+        log.info('Preparing directory {}'.format(d))
+        os.makedirs(d, exist_ok=True)
+
+
+def dcos_bouncer(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.bouncer_acls()
+
+    keypath = opts.rundir + '/pki/tls/private/bouncer.key'
+    b.write_private_key('dcos_bouncer', keypath)
+    shutil.chown(keypath, user=opts.bouncer_user)
+
+    path = opts.rundir + '/etc/bouncer'
+    b.write_bouncer_env(path)
+
+
+def dcos_secrets(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.dcos_secrets_acls()
+
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/dcos-secrets.key'
+        crtpath = opts.rundir + '/pki/tls/certs/dcos-secrets.crt'
+        b.ensure_key_certificate('Secrets', keypath, crtpath, master=True)
+        shutil.chown(keypath, user=opts.dcos_secrets_user)
+        shutil.chown(crtpath, user=opts.dcos_secrets_user)
+
+    path = opts.rundir + '/etc/dcos-secrets.env'
+    b.write_secrets_env(path)
+
+    secrets_dir = opts.statedir + '/secrets'
+    try:
+        os.makedirs(secrets_dir)
+    except FileExistsError:
+        pass
+    shutil.chown(secrets_dir, user=opts.dcos_secrets_user)
+
+
+def dcos_vault_default(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.dcos_vault_default_acls()
+
+    vault_dir = opts.statedir + '/secrets/vault'
+    try:
+        os.makedirs(vault_dir, exist_ok=True)
+    except FileExistsError:
+        pass
+
+    vault_default_dir = opts.statedir + '/secrets/vault/default'
+    try:
+        os.makedirs(vault_default_dir, exist_ok=True)
+    except FileExistsError:
+        pass
+    # secrets writes keys into this directory
+    shutil.chown(vault_default_dir, user=opts.dcos_secrets_user)
+
+    hcl = opts.rundir + '/etc/vault.hcl'
+    b.write_vault_config(hcl)
+
+
+def dcos_ca(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.dcos_ca_acls()
+
+    path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
+    b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
+
+    path = opts.rundir + '/pki/CA/certs/ca.crt'
+    b.write_CA_certificate(filename=path)
+
+    path = opts.rundir + '/pki/CA/private/ca.key'
+    b.write_CA_key(path)
+    shutil.chown(path, user=opts.dcos_ca_user)
+
+
+def dcos_mesos_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.mesos_acls()
+
+    b.write_mesos_master_env(opts.rundir + '/etc/mesos-master')
+
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/mesos-master.key'
+        crtpath = opts.rundir + '/pki/tls/certs/mesos-master.crt'
+        b.ensure_key_certificate('Mesos Master', keypath, crtpath, master=True)
+
+    # agent secrets are needed for it to contact the master
+    b.create_agent_secrets(opts.zk_agent_digest)
+
+    b.create_agent_service_accounts()
+
+
+def dcos_mesos_slave(b, opts):
+    b.read_agent_secrets()
+    b.write_CA_certificate()
+
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
+        crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
+        b.ensure_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
+
+    # Service account needed to
+    # a) authenticate with master, and/or
+    # b) retrieve ACLs from bouncer, and/or
+    # c) fetch secrets
+    # As a result, we always create this account.
+    svc_acc_creds_fn = opts.rundir + '/etc/mesos/agent_service_account.json'
+    b.write_service_account_credentials('dcos_mesos_agent', svc_acc_creds_fn)
+
+    # TODO(adam): orchestration API should handle this in the future
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/scheduler.key'
+        crtpath = opts.rundir + '/pki/tls/certs/scheduler.crt'
+        b.ensure_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
+
+
+def dcos_mesos_slave_public(b, opts):
+    b.read_agent_secrets()
+
+    if opts.config['ssl_enabled']:
+        b.write_CA_certificate()
+
+        keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
+        crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
+        b.ensure_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
+
+    # Service account needed to
+    # a) authenticate with master, and/or
+    # b) retrieve ACLs from bouncer, and/or
+    # c) fetch secrets
+    # As a result, we always create this account.
+    svc_acc_creds_fn = opts.rundir + '/etc/mesos/agent_service_account.json'
+    b.write_service_account_credentials('dcos_mesos_agent_public', svc_acc_creds_fn)
+
+    # TODO(adam): orchestration API should handle this in the future
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/scheduler.key'
+        crtpath = opts.rundir + '/pki/tls/certs/scheduler.crt'
+        b.ensure_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
+
+
+def dcos_marathon(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.marathon_acls()
+
+    if opts.config['zk_acls_enabled']:
+        # Must be run after create_master_secrets.
+        env = opts.rundir + '/etc/marathon/zk.env'
+        b.write_marathon_zk_env(env)
+        shutil.chown(env, user='dcos_marathon')
+
+    # For libmesos scheduler SSL or Marathon UI/API SSL.
+    if opts.config['ssl_enabled'] or opts.config['marathon_https_enabled']:
+        key = opts.rundir + '/pki/tls/private/marathon.key'
+        crt = opts.rundir + '/pki/tls/certs/marathon.crt'
+        b.ensure_key_certificate('Marathon', key, crt, master=True, marathon=True)
+        shutil.chown(key, user='dcos_marathon')
+        shutil.chown(crt, user='dcos_marathon')
+
+        ca = opts.rundir + '/pki/CA/certs/ca.crt'
+        b.write_CA_certificate(filename=ca)
+
+    # For Marathon UI/API SSL.
+    if opts.config['marathon_https_enabled']:
+        ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
+        b.write_truststore(ts, ca)
+        os.chmod(ts, 0o644)
+
+        env = opts.rundir + '/etc/marathon/tls.env'
+        b.write_marathon_tls_env(key, crt, ca, env)
+        shutil.chown(env, user='dcos_marathon')
+        shutil.chown(opts.rundir + '/pki/tls/private/marathon.jks', user='dcos_marathon')
+
+    # For framework authentication.
+    if opts.config['framework_authn_enabled']:
+        b.create_service_account('dcos_marathon')
+        svc_acc_creds_fn = opts.rundir + '/etc/marathon/service_account.json'
+        b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
+        shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
+
+
+def dcos_metronome(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.metronome_acls()
+
+    # For libmesos scheduler SSL.
+    if opts.config['ssl_enabled']:
+        key = opts.rundir + '/pki/tls/private/metronome.key'
+        crt = opts.rundir + '/pki/tls/certs/metronome.crt'
+        b.ensure_key_certificate('Metronome', key, crt, master=True)
+        shutil.chown(key, user='dcos_metronome')
+        shutil.chown(crt, user='dcos_metronome')
+        # ca.crt also only for libmesos SSL.
+        ca = opts.rundir + '/pki/CA/certs/ca.crt'
+        b.write_CA_certificate(filename=ca)
+
+        # For Metronome UI/API SSL.
+        ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
+        b.write_truststore(ts, ca)
+        os.chmod(ts, 0o644)
+
+        env = opts.rundir + '/etc/metronome/tls.env'
+        b.write_metronome_env(key, crt, ca, env)
+        shutil.chown(env, user='dcos_metronome')
+        shutil.chown(opts.rundir + '/pki/tls/private/metronome.jks', user='dcos_metronome')
+
+    # For framework authentication.
+    if opts.config['framework_authn_enabled']:
+        b.create_service_account('dcos_metronome')
+        svc_acc_creds_fn = opts.rundir + '/etc/metronome/service_account.json'
+        b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)
+        shutil.chown(svc_acc_creds_fn, user='dcos_metronome')
+
+    shutil.chown(opts.rundir + '/etc/metronome', user='dcos_metronome')
+
+
+def dcos_mesos_dns(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_mesos_dns')
+
+    if opts.config['ssl_enabled']:
+        path = opts.rundir + '/pki/CA/certs/ca.crt'
+        b.write_CA_certificate(filename=path)
+
+    if opts.config['mesos_authenticate_http']:
+        svc_acc_creds_fn = opts.rundir + '/etc/mesos-dns/iam.json'
+        b.write_service_account_credentials('dcos_mesos_dns', svc_acc_creds_fn)
+        shutil.chown(svc_acc_creds_fn, user='dcos_mesos_dns')
+
+
+def dcos_adminrouter(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.cluster_id()
+
+    b.create_service_account('dcos_adminrouter')
+
+    extra_san = []
+    internal_lb = os.getenv('INTERNAL_MASTER_LB_DNSNAME')
+    if internal_lb:
+        extra_san.append(utils.SanEntry('dns', internal_lb))
+    external_lb = os.getenv('MASTER_LB_DNSNAME')
+    if external_lb:
+        extra_san.append(utils.SanEntry('dns', external_lb))
+
+    machine_pub_ip = subprocess.check_output(
+        ['/opt/mesosphere/bin/detect_ip_public'],
+        stderr=subprocess.DEVNULL).decode('ascii').strip()
+    gen.calc.validate_ipv4_addresses([machine_pub_ip])
+    # We add ip as both DNS and IP entry so that old/broken software that does
+    # not support IPAddress type SAN can still use it.
+    extra_san.append(utils.SanEntry('dns', machine_pub_ip))
+    extra_san.append(utils.SanEntry('ip', machine_pub_ip))
+
+    if opts.config['ssl_enabled']:
+        keypath = opts.rundir + '/pki/tls/private/adminrouter.key'
+        crtpath = opts.rundir + '/pki/tls/certs/adminrouter.crt'
+        b.ensure_key_certificate('AdminRouter', keypath, crtpath, master=True, extra_san=extra_san)
+
+    b.write_jwks_public_keys(opts.rundir + '/etc/jwks.pub')
+
+    b.write_service_auth_token('dcos_adminrouter', opts.rundir + '/etc/adminrouter.env', exp=0)
+
+
+def dcos_adminrouter_agent(b, opts):
+    b.read_agent_secrets()
+
+    if opts.config['ssl_enabled']:
+        b.write_CA_certificate()
+
+        keypath = opts.rundir + '/pki/tls/private/adminrouter-agent.key'
+        crtpath = opts.rundir + '/pki/tls/certs/adminrouter-agent.crt'
+        b.ensure_key_certificate('Adminrouter Agent', keypath, crtpath, service_account='dcos_agent')
+
+    b.write_jwks_public_keys(opts.rundir + '/etc/jwks.pub')
+
+    # write_service_auth_token must follow
+    # write_CA_certificate on agents to allow
+    # for a verified HTTPS connection on login
+    b.write_service_auth_token('dcos_adminrouter_agent', opts.rundir + '/etc/adminrouter.env', exp=0)
+
+
+def dcos_spartan(b, opts):
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
+        return dcos_spartan_master(b, opts)
+    else:
+        return dcos_spartan_agent(b, opts)
+
+
+def dcos_spartan_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    if opts.config['ssl_enabled']:
+        b.write_CA_certificate()
+
+        key = opts.rundir + '/pki/tls/private/spartan.key'
+        crt = opts.rundir + '/pki/tls/certs/spartan.crt'
+        b.ensure_key_certificate('Spartan Master', key, crt, master=True)
+
+
+def dcos_spartan_agent(b, opts):
+    b.read_agent_secrets()
+
+    if opts.config['ssl_enabled']:
+        b.write_CA_certificate()
+
+        keypath = opts.rundir + '/pki/tls/private/spartan.key'
+        crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
+        b.ensure_key_certificate('Spartan Agent', keypath, crtpath, service_account='dcos_agent')
+
+
+def dcos_erlang_service(servicename, b, opts):
+    if servicename == 'networking_api':
+        for file in ['/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/vm.args.2.config',
+                     '/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/sys.config.2.config']:
+            if not os.path.exists(file):
+                open(file, 'a').close()
+                shutil.chown(file, user='dcos_networking_api')
+        shutil.chown('/opt/mesosphere/active/networking_api/networking_api', user='dcos_networking_api')
+        shutil.chown('/opt/mesosphere/active/networking_api/networking_api/log', user='dcos_networking_api')
+    if os.path.exists('/opt/mesosphere/etc/roles/master'):
+        log.info('%s master bootstrap', servicename)
+        return dcos_erlang_service_master(servicename, b, opts)
+    else:
+        log.info('%s agent bootstrap', servicename)
+        return dcos_erlang_service_agent(servicename, b, opts)
+
+
+def dcos_erlang_service_master(servicename, b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_{}_master'.format(servicename))
+
+    user = 'dcos_' + servicename
+
+    ca = opts.rundir + '/pki/CA/certs/ca.crt'
+    b.write_CA_certificate(filename=ca)
+
+    friendly_name = servicename[0].upper() + servicename[1:]
+    key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
+    crt = opts.rundir + '/pki/tls/certs/{}.crt'.format(servicename)
+    b.ensure_key_certificate(friendly_name, key, crt)
+    if servicename == 'networking_api':
+        shutil.chown(key, user=user)
+        shutil.chown(crt, user=user)
+
+    auth_env = opts.rundir + '/etc/{}_auth.env'.format(servicename)
+    b.write_service_auth_token('dcos_{}_master'.format(servicename), auth_env, exp=0)
+    if servicename == 'networking_api':
+        shutil.chown(auth_env, user=user)
+
+
+def dcos_erlang_service_agent(servicename, b, opts):
+    b.read_agent_secrets()
+
+    user = 'dcos_' + servicename
+
+    if opts.config['ssl_enabled']:
+        ca = opts.rundir + '/pki/CA/certs/ca.crt'
+        b.write_CA_certificate(filename=ca)
+
+        friendly_name = servicename[0].upper() + servicename[1:]
+        key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
+        crt = opts.rundir + '/pki/tls/certs/{}.crt'.format(servicename)
+        b.ensure_key_certificate(friendly_name, key, crt, service_account='dcos_agent')
+
+    if servicename == 'networking_api':
+        shutil.chown(key, user=user)
+        shutil.chown(crt, user=user)
+
+    auth_env = opts.rundir + '/etc/{}_auth.env'.format(servicename)
+    b.write_service_auth_token('dcos_{}_agent'.format(servicename), auth_env, exp=0)
+    if servicename == 'networking_api':
+        shutil.chown(auth_env, user=user)
+
+
+def dcos_cosmos(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.cosmos_acls()
+
+    key = opts.rundir + '/pki/tls/private/cosmos.key'
+    crt = opts.rundir + '/pki/tls/certs/cosmos.crt'
+    b.ensure_key_certificate('Cosmos', key, crt, master=True)
+    shutil.chown(key, user='dcos_cosmos')
+    shutil.chown(crt, user='dcos_cosmos')
+
+    ca = opts.rundir + '/pki/CA/certs/ca.crt'
+    b.write_CA_certificate(filename=ca)
+
+    ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
+    b.write_truststore(ts, ca)
+    os.chmod(ts, 0o644)
+
+    env = opts.rundir + '/etc/cosmos.env'
+    b.write_cosmos_env(key, crt, ca, env)
+
+
+def dcos_signal(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.cluster_id()
+    b.create_service_account('dcos_signal_service')
+
+    svc_acc_creds_fn = opts.rundir + '/etc/signal-service/service_account.json'
+    b.write_service_account_credentials('dcos_signal_service', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_signal')
+
+
+def dcos_3dt_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_3dt_master')
+    svc_acc_creds_fn = opts.rundir + '/etc/3dt/master_service_account.json'
+    b.write_service_account_credentials('dcos_3dt_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
+
+    # 3dt agent secrets are needed for it to contact the 3dt master
+    b.create_agent_secrets(opts.zk_agent_digest)
+    b.create_service_account('dcos_3dt_agent')
+
+
+def dcos_3dt_agent(b, opts):
+    b.read_3dt_agent_secrets()
+    svc_acc_creds_fn = opts.rundir + '/etc/3dt/agent_service_account.json'
+    b.write_service_account_credentials('dcos_3dt_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
+
+
+def dcos_history(b, opts):
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_history_service')
+
+    svc_acc_creds_fn = opts.rundir + '/etc/history-service/service_account.json'
+    b.write_service_account_credentials('dcos_history_service', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_history')
+
+    ca = opts.rundir + '/pki/CA/certs/ca.crt'
+    b.write_CA_certificate(filename=ca)
+
+    os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
+    shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
+
+
+bootstrappers = {
+    'dcos-adminrouter': dcos_adminrouter,
+    'dcos-adminrouter-agent': dcos_adminrouter_agent,
+    'dcos-bouncer': dcos_bouncer,
+    'dcos-ca': dcos_ca,
+    'dcos-cosmos': dcos_cosmos,
+    'dcos-3dt-agent': dcos_3dt_agent,
+    'dcos-3dt-master': dcos_3dt_master,
+    'dcos-history': dcos_history,
+    'dcos-marathon': dcos_marathon,
+    'dcos-mesos-slave': dcos_mesos_slave,
+    'dcos-mesos-slave-public': dcos_mesos_slave_public,
+    'dcos-mesos-dns': dcos_mesos_dns,
+    'dcos-mesos-master': dcos_mesos_master,
+    'dcos-metronome': dcos_metronome,
+    'dcos-minuteman': (lambda b, opts: dcos_erlang_service('minuteman', b, opts)),
+    'dcos-navstar': (lambda b, opts: dcos_erlang_service('navstar', b, opts)),
+    'dcos-networking_api': (lambda b, opts: dcos_erlang_service('networking_api', b, opts)),
+    'dcos-secrets': dcos_secrets,
+    'dcos-signal': dcos_signal,
+    'dcos-spartan': dcos_spartan,
+    'dcos-vault_default': dcos_vault_default,
+}
