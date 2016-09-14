@@ -124,12 +124,12 @@ def test_mesos_endpoint_authn(superuser):
 )
 class TestMesosAuthz:
     @pytest.mark.parametrize(("path", "endpoint_info"), [
-        ("/logging/toggle", {"process": ["master", "agent"]}),
-        ("/metrics/snapshot", {"process": ["master", "agent"]}),
-        ("/files/read?path=/master/log", {"process": ["master"]}),
-        ("/files/read?path=/slave/log", {"process": ["agent"]}),
-        ("/containers", {"process": ["agent"]}),
-        ("/monitor/statistics", {"process": ["agent"]})
+        ("/logging/toggle", {"target": ["master", "agent"]}),
+        ("/metrics/snapshot", {"target": ["master", "agent"]}),
+        ("/files/read?path=/master/log", {"target": ["master"]}),
+        ("/files/read?path=/slave/log", {"target": ["agent"]}),
+        ("/containers", {"target": ["agent"]}),
+        ("/monitor/statistics", {"target": ["agent"]})
     ])
     def test_mesos_endpoint_authz(self, superuser, peter, path, endpoint_info):
         """Test that Mesos endpoints behave as expected with respect to
@@ -159,10 +159,10 @@ class TestMesosAuthz:
             'agent': str(Url('', host=dcos.agents[0], port=5051))
         }
 
-        for process in endpoint_info['process']:
-            log.info('Test Mesos %s endpoint: %s', process, path)
+        for target in endpoint_info['target']:
+            log.info('Test Mesos %s endpoint: %s', target, path)
             for authorized in [False, True]:
-                request(urls[process] + path, authorized)
+                request(urls[target] + path, authorized)
 
     @pytest.mark.parametrize(("path", "endpoint_info"), [
         ('/state', {
