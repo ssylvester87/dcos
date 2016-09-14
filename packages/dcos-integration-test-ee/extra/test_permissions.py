@@ -7,8 +7,8 @@ import logging
 
 
 import pytest
-import requests
 import uuid
+import requests
 
 from dcostests import CAUrl, dcos, IAMUrl, Url
 from dcostests.marathon import MarathonApp, sleep_app_definition
