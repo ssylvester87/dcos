@@ -125,6 +125,251 @@ package:
         "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt"
 {% endswitch %}
       }
+  - path: /etc_master/3dt_config.json
+    content: |
+        {
+            {% switch ssl_enabled %}
+            {% case "true" %}
+            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            {% endswitch %}
+            "pull": true,
+            "diagnostics-bundle-dir": "/var/lib/dcos/3dt/diag-bundles",
+            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "master-port": {{ adminrouter_master_port }},
+            "agent-port": {{ adminrouter_agent_port }},
+            "force-tls": {{ ssl_enabled }}
+        }
+  - path: /etc_slave/3dt_config.json
+    content: |
+        {
+            {% switch ssl_enabled %}
+            {% case "true" %}
+            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            {% endswitch %}
+            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "force-tls": {{ ssl_enabled }},
+            "agent-port": {{ adminrouter_agent_port }}
+        }
+  - path: /etc_slave_public/3dt_config.json
+    content: |
+        {
+            {% switch ssl_enabled %}
+            {% case "true" %}
+            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            {% endswitch %}
+            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "force-tls": {{ ssl_enabled }},
+            "agent-port": {{ adminrouter_agent_port }}
+        }
+  # TODO: Fix a copy of endpoints_config.json. We need a way to ship only 1 config for both open and enterprise DC/OS.
+  #       If you add a new endpoint here, please make sure to add it to open DC/OS config as well.
+  - path: /etc/endpoints_config.json
+    content: |
+        {
+          "HTTPEndpoints": [
+              {
+                  "Port": 5050,
+                  "Uri": "/__processes__",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/flags",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/frameworks",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/maintenance/schedule",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/maintenance/status",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/roles",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/slaves",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/state",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/state-summary",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/master/tasks",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/metrics/snapshot",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/registrar(1)/registry",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/system/stats.json",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5050,
+                  "Uri": "/version",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/metrics",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/apps",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/deployments",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/eventSubscriptions",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/groups",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/info",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/leader",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/queue",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ marathon_port }},
+                  "Uri": "/v2/tasks",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/exhibitor/exhibitor/v1/cluster/list",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/exhibitor/exhibitor/v1/cluster/log",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/exhibitor/exhibitor/v1/cluster/state",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/exhibitor/exhibitor/v1/cluster/status",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/exhibitor/exhibitor/v1/config/get-state",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": 5051,
+                  "Uri": "/__processes__",
+                  "Role":["agent", "agent_public"]
+              },
+              {
+                  "Port": 5051,
+                  "Uri": "/metrics/snapshot",
+                  "Role":["agent", "agent_public"]
+              },
+              {
+                  "Port": 5051,
+                  "Uri": "/slave/flags",
+                  "Role":["agent", "agent_public"]
+              },
+              {
+                  "Port": 5051,
+                  "Uri": "/slave/state",
+                  "Role":["agent", "agent_public"]
+              },
+              {
+                  "Port": 5051,
+                  "Uri": "/system/stats.json",
+                  "Role":["agent", "agent_public"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/mesos_dns/v1/config",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/mesos_dns/v1/version",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/dcos-history-service/history/last",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/dcos-history-service/history/minute",
+                  "Role": ["master"]
+              },
+              {
+                  "Port": {{ adminrouter_master_port }},
+                  "Uri": "/dcos-history-service/history/hour",
+                  "Role": ["master"]
+              }
+          ],
+          "LocalFiles": [
+              {
+                  "Location": "/opt/mesosphere/active.buildinfo.full.json"
+              }
+          ],
+          "LocalCommands": [
+              {
+                  "Command": ["dmesg"]
+              }
+          ]
+        }
+
   - path: /etc/minuteman.env
     content: |
 {% switch ssl_enabled %}
