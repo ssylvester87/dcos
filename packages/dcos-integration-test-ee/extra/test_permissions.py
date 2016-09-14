@@ -413,17 +413,17 @@ class TestAdminRouterACLs:
 class TestMarathonAppDeployment:
 
     def test_anonymous_sleep_app(self):
-        app = MarathonApp(sleep_app_definition)
+        app = MarathonApp(sleep_app_definition())
         r = app.deploy()
         assert r.status_code == 401
 
     def test_peter_sleep_app(self, peter):
-        app = MarathonApp(sleep_app_definition)
+        app = MarathonApp(sleep_app_definition())
         r = app.deploy(headers=peter.authheader)
         assert r.status_code == 403
 
     def test_superuser_sleep_app(self, superuser):
-        app = MarathonApp(sleep_app_definition)
+        app = MarathonApp(sleep_app_definition())
         r = app.deploy(headers=superuser.authheader)
         r.raise_for_status()
         app.wait(check_health=False, headers=superuser.authheader)

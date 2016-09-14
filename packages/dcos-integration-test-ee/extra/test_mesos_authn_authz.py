@@ -38,8 +38,9 @@ def get_mesos_endpoints(mesos_url):
 
 
 def run_task(superuser):
-    app = MarathonApp(sleep_app_definition)
-    app.deploy(headers=superuser.authheader)
+    app = MarathonApp(sleep_app_definition())
+    r = app.deploy(headers=superuser.authheader)
+    r.raise_for_status()
     app.wait(check_health=False, headers=superuser.authheader)
 
 
