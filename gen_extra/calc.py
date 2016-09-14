@@ -99,7 +99,7 @@ def calculate_mesos_authorizer(mesos_authz_enforced):
         return 'local'
 
 
-def calculate_mesos_authenticate_frameworks(security):
+def calculate_framework_authentication_required(security):
     if security == 'strict':
         return 'true'
 
@@ -110,7 +110,7 @@ def calculate_mesos_authenticate_frameworks(security):
         return 'false'
 
 
-def calculate_mesos_authenticate_agents(security):
+def calculate_agent_authentication_required(security):
     if security == 'strict':
         return 'true'
 
@@ -121,7 +121,7 @@ def calculate_mesos_authenticate_agents(security):
         return 'false'
 
 
-def calculate_framework_authn_enabled(security):
+def calculate_framework_authentication_enabled(security):
     if security == 'strict':
         return 'true'
 
@@ -141,6 +141,13 @@ def calculate_agent_authn_enabled(security):
 
     elif security == 'disabled':
         return 'false'
+
+
+def calculate_mesos_classic_authenticator(framework_authentication_enabled, agent_authn_enabled):
+    if framework_authentication_enabled == 'true' or agent_authn_enabled == 'true':
+        return 'com_mesosphere_dcos_ClassicRPCAuthenticator'
+    else:
+        return 'crammd5'
 
 
 def calculate_default_task_user(security):
@@ -359,11 +366,11 @@ entry = {
         'custom_auth_json': get_ui_auth_json,
         'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
         'mesos_authenticate_http': calculate_mesos_authenticate_http,
-        'mesos_classic_authenticator': 'com_mesosphere_dcos_ClassicRPCAuthenticator',
-        'mesos_authenticate_frameworks': calculate_mesos_authenticate_frameworks,
-        'mesos_authenticate_agents': calculate_mesos_authenticate_agents,
+        'mesos_classic_authenticator': calculate_mesos_classic_authenticator,
+        'framework_authentication_required': calculate_framework_authentication_required,
+        'agent_authentication_required': calculate_agent_authentication_required,
         'agent_authn_enabled': calculate_agent_authn_enabled,
-        'framework_authn_enabled': calculate_framework_authn_enabled,
+        'framework_authentication_enabled': calculate_framework_authentication_enabled,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
