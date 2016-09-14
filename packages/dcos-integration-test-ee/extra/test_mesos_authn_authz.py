@@ -2,8 +2,8 @@ import copy
 import logging
 
 import pytest
-import requests
 import uuid
+import requests
 
 from dcostests import dcos, Url
 from dcostests.marathon import MarathonApp, sleep_app_definition
@@ -39,7 +39,7 @@ def get_mesos_endpoints(mesos_url):
 
 
 def run_task(superuser):
-    app = MarathonApp(sleep_app_definition("mesos-authz-%s" % str(uuid.uuid4()))
+    app = MarathonApp(sleep_app_definition("mesos-authz-%s" % str(uuid.uuid4())))
     r = app.deploy(headers=superuser.authheader)
     r.raise_for_status()
     app.wait(check_health=False, headers=superuser.authheader)
