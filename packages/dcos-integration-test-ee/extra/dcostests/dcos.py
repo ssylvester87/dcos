@@ -98,10 +98,10 @@ class _DCOS:
         self._make_ca_crt_file()
 
     def _get_hosts(self):
-        self.masters = os.environ['MASTER_HOSTS'].split(',')
-        self.public_masters = os.environ['PUBLIC_MASTER_HOSTS'].split(',')
-        self.private_agents = os.environ['SLAVE_HOSTS'].split(',')
-        self.public_agents = os.environ['PUBLIC_SLAVE_HOSTS'].split(',')
+        self.masters = sorted(os.environ['MASTER_HOSTS'].split(','))
+        self.public_masters = sorted(os.environ['PUBLIC_MASTER_HOSTS'].split(','))
+        self.private_agents = sorted(os.environ['SLAVE_HOSTS'].split(','))
+        self.public_agents = sorted(os.environ['PUBLIC_SLAVE_HOSTS'].split(','))
         self.agents = sorted(self.private_agents + self.public_agents)
 
         # Build ZK hostports string.
