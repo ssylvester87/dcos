@@ -563,7 +563,6 @@ package:
       {
         "disabled_endpoints" : {
           "paths" : [
-              "/slaves",
               "/profiler/start",
               "/profiler/stop",
               "/registrar(1)/registry",
