@@ -90,6 +90,15 @@ class _DCOS:
         self.configure()
         self._wait_for_DCOS()
 
+        # Security-related bootstrapping code creates these RIDs.
+        if self.config['security'] != 'disabled':
+            self.initial_resource_ids.extend([
+                'dcos:mesos:master:framework',
+                'dcos:mesos:master:reservation',
+                'dcos:mesos:master:volume',
+                'dcos:mesos:master:task'
+                ])
+
     def configure(self):
         self._get_bootstrap_config()
         self._get_hostname()

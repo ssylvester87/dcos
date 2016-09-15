@@ -210,7 +210,10 @@ def iam_reset_undecorated(superuser, peter):
     # Remove unexpected users.
     r = requests.get(IAMUrl('/users'), headers=superuser.authheader)
     for u in r.json()['array']:
-        if u['uid'] in (peter.uid, superuser.uid):
+        expected_uids = (peter.uid, superuser.uid)
+        if dcos.config['security'] == 'permissive':
+            expected_uids += ('dcos_anonymous',)
+        if u['uid'] in expected_uids:
             continue
         log.info("Delete user: %s", u['url'])
         r = requests.delete(Url(u['url']), headers=superuser.authheader)
@@ -264,7 +267,10 @@ def iam_verify_undecorated(superuser, peter):
     # Verify there are no other users except for superuser and Peter.
     r = requests.get(IAMUrl('/users'), headers=superuser.authheader)
     uids = [_['uid'] for _ in r.json()['array']]
-    assert set(uids) == set((superuser.uid, peter.uid))
+    if dcos.config['security'] == 'permissive':
+        assert set(uids) == set((superuser.uid, peter.uid, 'dcos_anonymous'))
+    else:
+        assert set(uids) == set((superuser.uid, peter.uid))
 
     # Verify there are no groups other than 'superuser'.
     r = requests.get(IAMUrl('/groups'), headers=superuser.authheader)
