@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "https://github.com/mesosphere/mesos",
-    "ref": "4dc74fbe54d193af17fd998d1fe8678ea84d482a",
+    "ref": "d2d6aa335ecd43c772504dd5d66f636be46d33f8",
     "ref_origin" : "till/fileisolator-workaround_PLUS_dcos101"
   },
   "environment": {
