@@ -47,12 +47,12 @@ class TestHttpHttpsConfig:
 
     @pytest.mark.xfail(
         dcos.config['security'] == 'strict',
-        reason='AR must not serve /mesos over HTTP in strict-security mode.',
+        reason='AR must not serve /mesos/ over HTTP in strict-security mode.',
         strict=True
     )
     def test_mesos_path_http(self, superuser):
         r = requests.get(
-            Url('/mesos', scheme='http'),
+            Url('/mesos/', scheme='http'),
             headers=superuser.authheader,
             allow_redirects=False
             )
@@ -66,7 +66,7 @@ class TestHttpHttpsConfig:
     )
     def test_mesos_path_http_https_redirect(self, superuser):
         r = requests.get(
-            Url('/mesos', scheme='http'),
+            Url('/mesos/', scheme='http'),
             headers=superuser.authheader,
             allow_redirects=False
             )
@@ -74,7 +74,7 @@ class TestHttpHttpsConfig:
         assert r.headers['location'].startswith('https')
 
         r = requests.get(
-            Url('/mesos', scheme='http'),
+            Url('/mesos/', scheme='http'),
             headers=superuser.authheader
             )
         assert r.status_code == 200
