@@ -120,8 +120,8 @@ def test_mesos_endpoint_authn(superuser):
 
 
 @pytest.mark.xfail(
-    dcos.config['security'] != 'strict',
-    reason='Mesos authZ is currently only enabled in strict mode.',
+    dcos.config['security'] == 'disabled',
+    reason='Mesos authZ is currently enabled in strict and permissive modes.',
     strict=False
 )
 class TestMesosAuthz:
