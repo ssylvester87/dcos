@@ -242,6 +242,9 @@ class Bootstrapper(object):
             'dcos_3dt_master'
         ]
 
+        if self.opts.config['security'] == 'permissive':
+            master_service_accounts.append('dcos_anonymous')
+
         service_account_creds = {}
         for account in master_service_accounts:
             service_account_creds[account] = {
@@ -1093,9 +1096,9 @@ def dcos_mesos_master(b, opts):
 
     # If permissive security is enabled, create the 'dcos_anonymous' account.
     if opts.config['security'] == 'permissive':
-        iamcli = iam.IAMClient(b.iam_url, b.CA_certificate_filename)
-        iamcli.create_user('dcos_anonymous', 'anonymous')
+        b.create_service_account('dcos_anonymous')
         # TODO(greggomann): add proper ACLs for 'dcos_anonymous'.
+        iamcli = iam.IAMClient(b.iam_url, b.CA_certificate_filename)
         iamcli.add_user_to_group('dcos_anonymous', 'superusers')
 
 

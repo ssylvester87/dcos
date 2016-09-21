@@ -63,12 +63,6 @@ class IAMClient:
         if r.status_code != 201:
             raise Exception('create service account failed: status {}'.format(r.status_code))
 
-    def create_user(self, username, password):
-        url = '/acs/api/v1/users/{}'.format(username)
-        data = {'description': 'User: {}'.format(username),
-                'password': password}
-        self.request('put', url, json=data)
-
     def create_acls(self, rids_and_actions, username):
         for rid, action in rids_and_actions:
             url_root = '/acs/api/v1/acls/{}'.format(rid)
