@@ -67,7 +67,6 @@ class TestHttpHttpsConfig:
     def test_mesos_path_http_https_redirect(self, superuser):
         r = requests.get(
             Url('/mesos/', scheme='http'),
-            headers=superuser.authheader,
             allow_redirects=False
             )
         assert r.status_code == 307
