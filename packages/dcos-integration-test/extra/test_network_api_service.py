@@ -130,6 +130,7 @@ def test_network_api_named_vips(superuser):
             rv = x.get('port', '') == app_port
             rv = rv and x.get('ip', '') == app_ip
             rv = rv and x.get('protocol', '') == 'tcp'
+            rv = rv and x.get('name', '') == '{}.marathon'.format(app_name)
             return rv
         return wait_for_networking_api_up(app_host, app_port, is_named_vip)
 
