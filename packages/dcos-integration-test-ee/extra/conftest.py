@@ -19,6 +19,12 @@ from dcostests import AuthedUser, dcos, IAMUrl, SuperUser, Url
 log = logging.getLogger(__name__)
 
 
+# These test for this option only exists upstream, but nested
+# conftest.py's cannot instantiate options
+def pytest_addoption(parser):
+        parser.addoption('--resiliency', action='store_true')
+
+
 @pytest.fixture(scope="session", autouse=True)
 def https_enabled():
     """This fixture allows upstream integration tests
