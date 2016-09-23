@@ -13,17 +13,17 @@ def validate_customer_key(customer_key):
 
 def calculate_ssl_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_ssl_support_downgrade(security):
     return {
-	'strict': 'false',
-	'permissive': 'true',
-	'disabled': 'true'
+        'strict': 'false',
+        'permissive': 'true',
+        'disabled': 'true'
         }[security]
 
 
@@ -53,33 +53,33 @@ def calculate_adminrouter_master_default_scheme(security):
 
 def calculate_firewall_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'false',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_mesos_authenticate_http(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_mesos_authz_enforced(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_mesos_elevate_unknown_users(security):
     return {
-	'strict': 'false',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'false',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
@@ -93,33 +93,33 @@ def calculate_mesos_authorizer(mesos_authz_enforced):
 
 def calculate_framework_authentication_required(security):
     return {
-	'strict': 'true',
-	'permissive': 'false',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_agent_authentication_required(security):
     return {
-	'strict': 'true',
-	'permissive': 'false',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_framework_authentication_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_agent_authn_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
@@ -132,33 +132,33 @@ def calculate_mesos_classic_authenticator(framework_authentication_enabled, agen
 
 def calculate_default_task_user(security):
     return {
-	'strict': 'nobody',
-	'permissive': 'root',
-	'disabled': 'root'
+        'strict': 'nobody',
+        'permissive': 'root',
+        'disabled': 'root'
         }[security]
 
 
 def calculate_marathon_https_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
 def calculate_marathon_extra_args(security):
     return {
-	'strict': '--disable_http',
-	'permissive': '',
-	'disabled': ''
+        'strict': '--disable_http',
+        'permissive': '',
+        'disabled': ''
         }[security]
 
 
 def calculate_zk_acls_enabled(security):
     return {
-	'strict': 'true',
-	'permissive': 'true',
-	'disabled': 'false'
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
         }[security]
 
 
