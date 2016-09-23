@@ -344,7 +344,6 @@ entry = {
     'default': {
         'bouncer_expiration_auth_token_days': '5',
         'security': 'permissive',
-        'dcos_anonymous': 'dcos_anonymous',
         'dcos_audit_logging': 'true',
         'exhibitor_admin_password': '',
         'superuser_username': '',

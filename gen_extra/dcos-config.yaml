@@ -596,7 +596,7 @@ package:
 {% endswitch %}
 {% switch mesos_elevate_unknown_users %}
 {% case "true" %}
-      DCOS_ANONYMOUS_PRINCIPAL={{ dcos_anonymous }}
+      DCOS_ANONYMOUS_PRINCIPAL=dcos_anonymous
 {% case "false" %}
 {% endswitch %}
       MESOS_AUTHORIZERS={{ mesos_master_authorizers }}
@@ -669,7 +669,7 @@ package:
       DCOS_AUDIT_LOG={{ dcos_audit_logging }}
 {% switch mesos_elevate_unknown_users %}
 {% case "true" %}
-      DCOS_ANONYMOUS_PRINCIPAL={{ dcos_anonymous }}
+      DCOS_ANONYMOUS_PRINCIPAL=dcos_anonymous
 {% case "false" %}
 {% endswitch %}
   - path: /etc_master/marathon-extras
