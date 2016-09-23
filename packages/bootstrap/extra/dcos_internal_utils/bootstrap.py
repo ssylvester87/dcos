@@ -11,8 +11,6 @@ import uuid
 
 
 import kazoo.exceptions
-
-
 from kazoo.client import KazooClient
 from kazoo.retry import KazooRetry
 from kazoo.security import ACL, ANYONE_ID_UNSAFE, Permissions
@@ -337,7 +335,7 @@ class Bootstrapper(object):
         # private key that service can read, but not overwrite
         _write_file(filename, private_key, 0o400)
 
-    def create_service_account(self, uid, zk_secret=True, superuser=False):
+    def create_service_account(self, uid, superuser, zk_secret=True):
         if zk_secret:
             account = self.secrets['services'][uid]
         else:
@@ -1096,10 +1094,10 @@ def dcos_mesos_master(b, opts):
 
     # If permissive security is enabled, create the 'dcos_anonymous' account.
     if opts.config['security'] == 'permissive':
-        b.create_service_account('dcos_anonymous')
         # TODO(greggomann): add proper ACLs for 'dcos_anonymous'.
-        iamcli = iam.IAMClient(b.iam_url, b.CA_certificate_filename)
-        iamcli.add_user_to_group('dcos_anonymous', 'superusers')
+        # For now, we make dcos_anonymous a superuser, so security-ignorant scripts/frameworks
+        # can still access Mesos endpoints and register however they like.
+        b.create_service_account('dcos_anonymous', superuser=True)
 
 
 def dcos_mesos_slave(b, opts):
@@ -1185,7 +1183,7 @@ def dcos_marathon(b, opts):
 
     # For framework authentication.
     if opts.config['framework_authentication_enabled']:
-        b.create_service_account('dcos_marathon')
+        b.create_service_account('dcos_marathon', superuser=False)
         svc_acc_creds_fn = opts.rundir + '/etc/marathon/service_account.json'
         b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
@@ -1221,7 +1219,7 @@ def dcos_metronome(b, opts):
 
     # For framework authentication.
     if opts.config['framework_authentication_enabled']:
-        b.create_service_account('dcos_metronome')
+        b.create_service_account('dcos_metronome', superuser=False)
         svc_acc_creds_fn = opts.rundir + '/etc/metronome/service_account.json'
         b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_metronome')

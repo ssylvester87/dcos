@@ -464,12 +464,12 @@ def xtest_bootstrap_parts(self):
     r = s.get(self.iam_url)
     assert r.status_code == 404
 
-    b.create_service_account('dcos_adminrouter')
+    b.create_service_account('dcos_adminrouter', superuser=True)
     # test exist_ok=True
-    b.create_service_account('dcos_adminrouter')
+    b.create_service_account('dcos_adminrouter', superuser=True)
 
-    b.create_service_account('dcos_agent')
-    b.create_service_account('dcos_foo', zk_secret=False)
+    b.create_service_account('dcos_agent', superuser=True)
+    b.create_service_account('dcos_foo', superuser=False, zk_secret=False)
 
     b.write_bouncer_env(self.tmpdir + '/bouncer.env')
     b.write_vault_default_env(self.tmpdir + '/dcos-vault_default.env')
