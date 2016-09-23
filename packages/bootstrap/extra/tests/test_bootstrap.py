@@ -429,8 +429,8 @@ def xtest_bootstrap_parts(self):
 
     assert secrets1 == secrets2
 
-    b.mesos_acls()
-    b.marathon_acls()
+    b.mesos_zk_acls()
+    b.marathon_zk_acls()
     b.cosmos_acls()
     b.bouncer_acls()
     b.dcos_ca_acls()
