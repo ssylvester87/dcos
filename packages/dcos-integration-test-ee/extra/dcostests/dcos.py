@@ -91,7 +91,7 @@ class _DCOS:
         self._wait_for_DCOS()
 
         # Security-related bootstrapping code creates these RIDs.
-        if self.config['security'] != 'disabled':
+        if self.config['security'] in {'permissive', 'strict'}:
             self.initial_resource_ids.extend([
                 'dcos:mesos:master:framework',
                 'dcos:mesos:master:reservation',

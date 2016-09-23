@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 pytestmark = [
     pytest.mark.security,
     pytest.mark.skipif(
-        dcos.config['security'] != 'strict',
-        reason=("Authentication tests skipped: currently adjusted to strict security mode")
+        dcos.config['security'] in {'disabled', 'permissive'},
+        reason=("Authentication tests skipped: currently adjusted to only run in strict security mode")
     )
 ]
 

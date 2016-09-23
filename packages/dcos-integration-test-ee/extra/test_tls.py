@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 pytestmark = [
     pytest.mark.security,
     pytest.mark.skipif(
-        dcos.config['security'] != 'strict',
-        reason="SSL/TLS tests skipped: strict security mode not expected")
+        dcos.config['security'] in {'disabled', 'permissive'},
+        reason="SSL/TLS tests skipped: only run in strict security mode")
     ]
 
 

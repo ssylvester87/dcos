@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 class TestHttpHttpsConfig:
 
     @pytest.mark.xfail(
-        dcos.config['security'] != 'disabled',
+        dcos.config['security'] in {'permissive', 'strict'},
         reason='AR must not serve / over HTTP except in security-disabled mode.',
         strict=True
     )
@@ -60,7 +60,7 @@ class TestHttpHttpsConfig:
         assert '<html' in r.text
 
     @pytest.mark.xfail(
-        dcos.config['security'] != 'strict',
+        dcos.config['security'] in {'disabled', 'permissive'},
         reason='AR is only expected to redirect non-root paths from HTTP to HTTPS in strict mode.',
         strict=True
     )

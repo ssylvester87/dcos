@@ -11,6 +11,7 @@ def validate_customer_key(customer_key):
     assert len(customer_key) == 36, "'customer_key' must be 36 characters long with hyphens"
 
 
+# TODO(adam): Use a dictionary here instead of if/elifs.
 def calculate_ssl_enabled(security):
     if security == 'strict':
         return 'true'

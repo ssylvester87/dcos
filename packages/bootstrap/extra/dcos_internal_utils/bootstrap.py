@@ -404,7 +404,7 @@ class Bootstrapper(object):
 
     def marathon_iam_acls(self):
         # TODO(adam): Make these more specific for strict mode.
-        if self.opts.config['security'] != 'disabled':
+        if self.opts.config['security'] in {'permissive', 'strict'}:
             bouncer_acls = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
@@ -424,7 +424,7 @@ class Bootstrapper(object):
 
     def metronome_iam_acls(self):
         # TODO(adam): Make these more specific for strict mode.
-        if self.opts.config['security'] != 'disabled':
+        if self.opts.config['security'] in {'permissive', 'strict'}:
             bouncer_acls = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:task', 'create')]

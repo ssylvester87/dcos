@@ -46,7 +46,7 @@ def run_task(superuser):
 
 
 @pytest.mark.xfail(
-    dcos.config['security'] != 'strict',
+    dcos.config['security'] in {'disabled', 'permissive'},
     reason='Mesos authN is disabled in security-disabled mode and unknown requests are elevated in permissive mode.',
     strict=True
 )
