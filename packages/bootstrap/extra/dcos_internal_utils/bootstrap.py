@@ -403,9 +403,8 @@ class Bootstrapper(object):
         self.ensure_zk_path('/marathon', acl=acl)
 
     def marathon_iam_acls(self):
-        # TODO(adam): Make these more specific for strict mode.
-        if self.opts.config['security'] in {'permissive', 'strict'}:
-            bouncer_acls = [
+        if self.opts.config['security'] == 'permissive':
+            permissive_acls = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
                 ('dcos:mesos:master:reservation', 'delete'),
@@ -414,7 +413,26 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:task', 'create')]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
-            iamcli.create_acls(bouncer_acls, 'dcos_marathon')
+            iamcli.create_acls(permissive_acls, 'dcos_marathon')
+
+        elif self.opts.config['security'] == 'strict':
+            # Can only register with 'slave_public' role,
+            # only create volumes/reservations in that role,
+            # only destroy volumes/reservations created by 'dcos_marathon',
+            # only run tasks as linux user 'nobody',
+            # but can create apps in any folder/namespace.
+            strict_acls = [
+                ('dcos:mesos:master:framework:role:slave_public', 'create'),
+                ('dcos:mesos:master:reservation:role:slave_public', 'create'),
+                ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:volume:role:slave_public', 'create'),
+                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:master:task:app_id', 'create')
+                ]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(strict_acls, 'dcos_marathon')
 
     def metronome_zk_acls(self):
         acl = None
