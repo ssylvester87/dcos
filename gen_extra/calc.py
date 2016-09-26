@@ -247,7 +247,6 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
 def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
     isolation = ','.join([
         mesos_isolation,
-        'com_mesosphere_MetricsIsolatorModule',
         'com_mesosphere_dcos_SecretsIsolator'
     ])
     if ssl_enabled == 'true':
