@@ -191,3 +191,56 @@ def test_if_secrets_delete_wrongstore(superuser):
         headers=superuser.authheader
     )
     assert r.status_code == 404
+
+
+def test_if_secrets_seal_and_auto_unseal(superuser):
+    # Seal store
+    r = requests.put(
+        SecretsUrl('/seal/default'),
+        headers=superuser.authheader
+    )
+    assert r.status_code == 204
+
+    # Store should be sealed
+    r = requests.get(
+        SecretsUrl('/seal-status/default'),
+        headers=superuser.authheader
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["sealed"]
+
+    # Get Unseal keys from the init endpoint
+    r = requests.get(
+        SecretsUrl('/init/default'),
+        headers=superuser.authheader
+    )
+    assert r.status_code == 200
+
+    # Secrets are initialized and unseal keys are provided
+    resp = r.json()
+    assert resp['initialized']
+    assert len(resp['keys']) > 0
+
+    # Unseal store with superuser privileges by just passing
+    # still encrypted unseal key to auto-unseal endpoint
+    data = {
+        "key": resp['keys'][0]
+    }
+    r = requests.put(
+        SecretsUrl('/auto-unseal/default'),
+        json=data,
+        headers=superuser.authheader
+    )
+    assert r.status_code == 200
+
+    # Store should not be sealed
+    r = requests.get(
+        SecretsUrl('/seal-status/default'),
+        headers=superuser.authheader
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert not data["sealed"]
