@@ -8,8 +8,5 @@ pip3 install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/p
 mkdir -p $PKG_PATH/open_source_tests
 cp -r /pkg/src/dcos/packages/dcos-integration-test/extra/* $PKG_PATH/open_source_tests
 
-# Remove unwanted upstream test resources
-rm -f $PKG_PATH/open_source_tests/test_3dt.py
-
 # Transfer enterprise test resouces
 cp -r /pkg/extra/* $PKG_PATH/
