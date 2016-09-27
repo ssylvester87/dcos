@@ -441,14 +441,26 @@ class Bootstrapper(object):
         self.ensure_zk_path('/metronome', acl=acl)
 
     def metronome_iam_acls(self):
-        # TODO(adam): Make these more specific for strict mode.
-        if self.opts.config['security'] in {'permissive', 'strict'}:
-            bouncer_acls = [
+        if self.opts.config['security'] == 'permissive':
+            permissive_acls = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:task', 'create')]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
-            iamcli.create_acls(bouncer_acls, 'dcos_metronome')
+            iamcli.create_acls(permissive_acls, 'dcos_metronome')
+
+        elif self.opts.config['security'] == 'strict':
+            # Can only register with '*' role,
+            # only run tasks as linux user 'nobody',
+            # but can create jobs in any folder/namespace.
+            strict_acls = [
+                ('dcos:mesos:master:framework:role:*', 'create'),
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:master:task:app_id', 'create')
+                ]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(strict_acls, 'dcos_metronome')
 
     def cosmos_acls(self):
         acl = None
