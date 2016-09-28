@@ -634,8 +634,7 @@ package:
       MESOS_ISOLATION={{ mesos_enterprise_isolation }}
       MESOS_HOOKS={{ mesos_hooks }}
       LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
-      # TODO(adam-mesos): should be false in strict mode, but.. DCOS-8159
-      LIBPROCESS_SSL_SUPPORT_DOWNGRADE=true
+      LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
       LIBPROCESS_SSL_REQUIRE_CERT=false
       LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
