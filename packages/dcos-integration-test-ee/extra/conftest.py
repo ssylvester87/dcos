@@ -3,11 +3,11 @@ Automatically loaded by py.test.
 
 This is the place to define globally visible fixtures.
 """
-
-
+import atexit
 import json
 import logging
 import os
+import tempfile
 
 import pytest
 import requests
@@ -34,6 +34,22 @@ def https_enabled():
     if dcos.config['ssl_enabled']:
         os.environ['DCOS_DNS_ADDRESS'] = dcos_addr.replace('http', 'https')
     return dcos
+
+
+@pytest.fixture(scope='session', autouse=True)
+def pass_creds_to_upstream():
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(json.dumps({'uid': os.environ['DCOS_LOGIN_UNAME'], 'password': os.environ['DCOS_LOGIN_PW']}).encode())
+        auth_json_path = f.name
+
+    os.environ['DCOS_AUTH_JSON_PATH'] = auth_json_path
+
+    def _remove_file():
+        if os.path.exists(auth_json_path):
+            os.remove(auth_json_path)
+
+    # Attempt to remove the file upon normal interpreter exit.
+    atexit.register(_remove_file)
 
 
 @pytest.fixture(scope="session")
