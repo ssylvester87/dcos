@@ -174,19 +174,6 @@ class TestIAMLoginEndpointBehavior:
                 assert 'path=/' in c
 
 
-class TestIAMLogoutEndpointBehavior:
-
-    def test_logout_simple(self):
-        """Test bouncer's logout endpoint. It's a soft logout, instructing
-        the user agent to delete the authentication cookie, i.e. this test
-        does not have side effects on other tests.
-        """
-        r = requests.get(IAMUrl('/auth/logout'))
-        cookieheader = r.headers['set-cookie']
-        assert 'dcos-acs-auth-cookie=;' in cookieheader
-        assert 'expires' in cookieheader.lower()
-
-
 class TestIAMInvalidAuthHeader:
 
     def test_auth_required(self):
