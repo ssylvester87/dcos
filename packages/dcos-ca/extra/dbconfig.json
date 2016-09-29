@@ -1,5 +1,8 @@
 {
     "data_source": "file:127.0.0.1:2181/dcos/ca/db?vfs=zk-trace",
     "driver": "sqlite3",
-    "migration_schemas": "/opt/mesosphere/etc/dcos-ca/migrations/"
+    "migration_schemas": "/opt/mesosphere/etc/dcos-ca/migrations/",
+    "serialize_db_ops": true,
+    "request_queue_size": 3,
+    "wait_timeout": "2s"
 }
