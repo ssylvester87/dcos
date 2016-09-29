@@ -26,6 +26,14 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session", autouse=True)
+def override_default_os_user():
+    """When strict mode is set, marathon will launch apps as 'nobody' instead 'root'
+    """
+    if dcos.config['security'] == 'strict':
+        os.environ['DCOS_DEFAULT_OS_USER'] = 'nobody'
+
+
+@pytest.fixture(scope="session", autouse=True)
 def https_enabled():
     """This fixture allows upstream integration tests
     to have CA bundle available
