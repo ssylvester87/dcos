@@ -83,6 +83,8 @@ def test_ee_signal_service(cluster):
         'logrotate-master-timer',
         'marathon-service',
         'mesos-dns-service',
+        'metrics-master-service',
+        'metrics-master-socket',
         'mesos-master-service',
         'metronome-service',
         'networking_api-service',
@@ -117,6 +119,8 @@ def test_ee_signal_service(cluster):
         'log-agent-socket',
         'logrotate-agent-service',
         'logrotate-agent-timer',
+        'metrics-agent-service',
+        'metrics-agent-socket',
         'rexray-service']
 
     for unit in master_units:

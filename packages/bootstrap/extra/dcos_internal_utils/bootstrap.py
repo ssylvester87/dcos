@@ -85,7 +85,8 @@ class Bootstrapper(object):
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
             'dcos_spartan_agent',
-            'dcos_log_agent'
+            'dcos_log_agent',
+            'dcos_metrics_agent'
         ]
 
     def close(self):
@@ -239,7 +240,8 @@ class Bootstrapper(object):
             'dcos_signal_service',
             'dcos_mesos_dns',
             'dcos_3dt_master',
-            'dcos_log_master'
+            'dcos_log_master',
+            'dcos_metrics_master'
         ]
 
         if self.opts.config['security'] == 'permissive':
@@ -1025,6 +1027,7 @@ def make_run_dirs(opts):
         opts.rundir + '/etc/metronome',
         opts.rundir + '/etc/history-service',
         opts.rundir + '/etc/signal-service',
+        opts.rundir + '/etc/dcos-metrics',
         opts.rundir + '/pki/tls/private',
         opts.rundir + '/pki/tls/certs',
         opts.rundir + '/pki/CA/certs',
@@ -1488,6 +1491,25 @@ def dcos_signal(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_signal')
 
 
+def dcos_metrics_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.cluster_id()
+    b.create_service_account('dcos_metrics_master', superuser=True)
+
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    b.write_service_account_credentials('dcos_metrics_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
+
+
+def dcos_metrics_agent(b, opts):
+    b.read_agent_secrets()
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    b.write_service_account_credentials('dcos_metrics_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
+
+
 def dcos_3dt_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
@@ -1565,5 +1587,7 @@ bootstrappers = {
     'dcos-spartan': dcos_spartan,
     'dcos-vault_default': dcos_vault_default,
     'dcos-log-master': dcos_log_master,
-    'dcos-log-agent': dcos_log_agent
+    'dcos-log-agent': dcos_log_agent,
+    'dcos-metrics-agent': dcos_metrics_agent,
+    'dcos-metrics-master': dcos_metrics_master
 }
