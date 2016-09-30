@@ -1237,6 +1237,7 @@ def dcos_adminrouter(b, opts):
     # Strip trailing newline returned by  `write_service_auth_token()`.
     service_auth_token_env_declaration = b.write_service_auth_token(
         uid='dcos_adminrouter',
+        exp=0,
         filename=None).decode('ascii').strip()
 
     env_file_lines = [service_auth_token_env_declaration]
