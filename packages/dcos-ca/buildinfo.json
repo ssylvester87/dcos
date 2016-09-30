@@ -5,13 +5,13 @@
       "sqlsurvivor": {
           "kind": "git",
           "git": "git@github.com:mesosphere/sqlsurvivor.git",
-          "ref": "a01235b1a453f072143baf58daedc1ca2673e6a2",
+          "ref": "fecfb86fb820f5bc7422cbfa433c6981653c0def",
           "ref_origin": "master"
       },
       "dcos-ca": {
           "kind": "git",
           "git": "git@github.com:mesosphere/dcos-ca.git",
-          "ref": "66b6fb8f73400357d91f218edf5b6f49ad372332",
+          "ref": "ba117a1cd369fff9ed4f801c095d56603d9a9c13",
           "ref_origin": "master"
       }
   },
