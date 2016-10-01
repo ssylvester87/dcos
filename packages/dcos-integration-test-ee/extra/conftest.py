@@ -3,20 +3,44 @@ Automatically loaded by py.test.
 
 This is the place to define globally visible fixtures.
 """
-
-
+import atexit
+import functools
 import json
 import logging
 import os
+import tempfile
 
 import pytest
 import requests
 from jwt.utils import base64url_decode, base64url_encode
 
+import test_util
 from dcostests import AuthedUser, dcos, IAMUrl, SuperUser, Url
 
 
 log = logging.getLogger(__name__)
+
+
+# These test for this option only exists upstream, but nested
+# conftest.py's cannot instantiate options
+def pytest_addoption(parser):
+        parser.addoption('--resiliency', action='store_true')
+
+
+@pytest.fixture(scope="session", autouse=True)
+def use_custom_ca():
+    for m in ['get', 'post', 'put', 'delete', 'patch', 'head', 'options']:
+        orig = getattr(test_util.cluster_api.ClusterApi, m)
+        patched = functools.partialmethod(orig, verify=dcos.ca_crt_file_path)
+        setattr(test_util.cluster_api.ClusterApi, m, patched)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def override_default_os_user():
+    """When strict mode is set, marathon will launch apps as 'nobody' instead 'root'
+    """
+    if dcos.config['security'] == 'strict':
+        os.environ['DCOS_DEFAULT_OS_USER'] = 'nobody'
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,6 +52,22 @@ def https_enabled():
     if dcos.config['ssl_enabled']:
         os.environ['DCOS_DNS_ADDRESS'] = dcos_addr.replace('http', 'https')
     return dcos
+
+
+@pytest.fixture(scope='session', autouse=True)
+def pass_creds_to_upstream():
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(json.dumps({'uid': os.environ['DCOS_LOGIN_UNAME'], 'password': os.environ['DCOS_LOGIN_PW']}).encode())
+        auth_json_path = f.name
+
+    os.environ['DCOS_AUTH_JSON_PATH'] = auth_json_path
+
+    def _remove_file():
+        if os.path.exists(auth_json_path):
+            os.remove(auth_json_path)
+
+    # Attempt to remove the file upon normal interpreter exit.
+    atexit.register(_remove_file)
 
 
 @pytest.fixture(scope="session")

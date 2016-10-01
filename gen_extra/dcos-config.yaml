@@ -522,6 +522,9 @@ package:
       SERVER_VERIFY=verify_peer
       SERVER_FAIL_IF_NO_PEER_CERT=true
 {% endswitch %}
+  - path: /etc_master/networking_api-erl.env
+    content: |
+      ERL_FLAGS=-kernel inet_dist_listen_min 62500 -kernel inet_dist_listen_max 62500
   - path: /etc_master/networking_api.env
     content: |
 {% switch ssl_enabled %}
