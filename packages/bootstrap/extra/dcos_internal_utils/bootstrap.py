@@ -322,13 +322,15 @@ class Bootstrapper(object):
         creds = bytes(json.dumps(creds), 'ascii')
 
         log.info('Writing {} service account credentials to {}'.format(uid, filename))
-        _write_file(filename, creds, 0o600)
+        # credentials file that service can read, but not overwrite
+        _write_file(filename, creds, 0o400)
 
     def write_private_key(self, name, filename):
         private_key = self.secrets['private_keys'][name]
         private_key = bytes(private_key, 'ascii')
         log.info('Writing {} private key to {}'.format(name, filename))
-        _write_file(filename, private_key, 0o600)
+        # private key that service can read, but not overwrite
+        _write_file(filename, private_key, 0o400)
 
     def create_service_account(self, uid, zk_secret=True, secret_path=None):
         if zk_secret:
@@ -447,7 +449,7 @@ class Bootstrapper(object):
             )
 
         blob = json.dumps(ca_conf, sort_keys=True, indent=True, ensure_ascii=False).encode('utf-8')
-        _write_file(dst, blob, 0o600)
+        _write_file(dst, blob, 0o400)
         shutil.chown(dst, user=self.opts.dcos_ca_user)
 
     def write_bouncer_env(self, filename):
@@ -461,8 +463,6 @@ class Bootstrapper(object):
 
         log.info('Writing Bouncer ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
-
-        shutil.chown(filename, user=self.opts.bouncer_user)
 
     def write_vault_config(self, filename):
         if self.opts.config['zk_acls_enabled']:
@@ -494,8 +494,7 @@ class Bootstrapper(object):
         cfg = cfg.encode('ascii')
 
         log.info('Writing Vault config to {}'.format(filename))
-        _write_file(filename, cfg, 0o600)
-
+        _write_file(filename, cfg, 0o400)
         shutil.chown(filename, user=self.opts.dcos_vault_user)
 
     def write_secrets_env(self, filename):
@@ -514,8 +513,6 @@ class Bootstrapper(object):
 
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
-
-        shutil.chown(filename, user=self.opts.dcos_secrets_user)
 
     def write_mesos_master_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
@@ -540,8 +537,8 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Cosmos environment to {}'.format(env_fn))
+        # environment file is owned by root because systemd reads it
         _write_file(env_fn, env, 0o600)
-        shutil.chown(env_fn, user=self.opts.dcos_cosmos_user)
 
     def write_metronome_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -680,40 +677,45 @@ class Bootstrapper(object):
         if not keytool:
             raise Exception('keytool not found')
 
-        try:
-            os.remove(ts_fn)
-        except OSError:
-            pass
+        dirpath = os.path.dirname(os.path.abspath(ts_fn))
+        with utils.Directory(dirpath) as d:
+            with d.lock():
+                # don't rewrite truststore if it already exists
+                if os.path.exists(ts_fn):
+                    return
 
-        cmd = [
-            keytool,
-            '-importkeystore',
-            '-noprompt',
-            '-srckeystore',
-            '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
-            '-srcstorepass', 'changeit',
-            '-deststorepass', 'changeit',
-            '-destkeystore', ts_fn
-        ]
-        log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-        if proc.wait() != 0:
-            raise Exception('keytool failed')
+                cmd = [
+                    keytool,
+                    '-importkeystore',
+                    '-noprompt',
+                    '-srckeystore',
+                    '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
+                    '-srcstorepass', 'changeit',
+                    '-deststorepass', 'changeit',
+                    '-destkeystore', ts_fn
+                ]
 
-        cmd = [
-            keytool,
-            '-import',
-            '-noprompt',
-            '-trustcacerts',
-            '-alias', 'dcos_root_ca',
-            '-file', ca_fn,
-            '-keystore', ts_fn,
-            '-storepass', 'changeit',
-        ]
-        log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-        if proc.wait() != 0:
-            raise Exception('keytool failed')
+                log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
+                proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+                if proc.wait() != 0:
+                    raise Exception('keytool failed')
+
+                cmd = [
+                    keytool,
+                    '-import',
+                    '-noprompt',
+                    '-trustcacerts',
+                    '-alias', 'dcos_root_ca',
+                    '-file', ca_fn,
+                    '-keystore', ts_fn,
+                    '-storepass', 'changeit',
+                ]
+                log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
+                proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+                if proc.wait() != 0:
+                    raise Exception('keytool failed')
+
+                os.chmod(ts_fn, 0o644)
 
     def service_auth_token(self, uid, exp=None):
         iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -812,6 +814,10 @@ def _write_file(path, data, mode):
     dirpath = os.path.dirname(os.path.abspath(path))
     with utils.Directory(dirpath) as d:
         with d.lock():
+            # don't overwrite existing files
+            if os.path.exists(path):
+                return
+
             umask_original = os.umask(0)
             try:
                 flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
@@ -1134,7 +1140,6 @@ def dcos_marathon(b, opts):
     if opts.config['marathon_https_enabled']:
         ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
         b.write_truststore(ts, ca)
-        os.chmod(ts, 0o644)
 
         env = opts.rundir + '/etc/marathon/tls.env'
         b.write_marathon_tls_env(key, crt, ca, env)
@@ -1168,7 +1173,6 @@ def dcos_metronome(b, opts):
         # For Metronome UI/API SSL.
         ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
         b.write_truststore(ts, ca)
-        os.chmod(ts, 0o644)
 
         env = opts.rundir + '/etc/metronome/tls.env'
         b.write_metronome_env(key, crt, ca, env)
@@ -1389,7 +1393,6 @@ def dcos_cosmos(b, opts):
 
     ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
     b.write_truststore(ts, ca)
-    os.chmod(ts, 0o644)
 
     env = opts.rundir + '/etc/cosmos.env'
     b.write_cosmos_env(key, crt, ca, env)
