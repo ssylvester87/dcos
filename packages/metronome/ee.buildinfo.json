@@ -8,12 +8,12 @@
     },
     "metronome-plugins": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC12/plugins.zip",
-      "sha1": "c0ad9174d88b53f899d06642d148d15e80045d3d"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.0/plugins.zip",
+      "sha1": "a0719fed689f3e910d10ac958a57f787fc206f4b"
     },
     "metronome-plugin-conf": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1-RC12/plugin-conf.json",
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.0/plugin-conf.json",
       "sha1": "ad1af05322b6adff27f0c8fd0edbde763327be6f"
     }
   },
