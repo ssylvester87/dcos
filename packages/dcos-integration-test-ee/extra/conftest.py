@@ -210,7 +210,7 @@ def iam_reset_undecorated(superuser, peter):
     # Remove unexpected users.
     r = requests.get(IAMUrl('/users'), headers=superuser.authheader)
     for u in r.json()['array']:
-        if u['uid'] in (peter.uid, superuser.uid):
+        if u['uid'] in (peter.uid, superuser.uid, 'dcos_marathon', 'dcos_metronome'):
             continue
         log.info("Delete user: %s", u['url'])
         r = requests.delete(Url(u['url']), headers=superuser.authheader)
