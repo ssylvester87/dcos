@@ -46,16 +46,36 @@ class TestHttpHttpsConfig:
         assert '<html' in r.text
 
     @pytest.mark.xfail(
+        dcos.config['security'] == 'strict',
+        reason='AR must not serve /mesos/ over HTTP in strict-security mode.',
+        strict=True
+    )
+    def test_mesos_path_http(self, superuser):
+        r = requests.get(
+            Url('/mesos/', scheme='http'),
+            headers=superuser.authheader,
+            allow_redirects=False
+            )
+        assert r.status_code == 200
+        assert '<html' in r.text
+
+    @pytest.mark.xfail(
         dcos.config['security'] != 'strict',
         reason='AR is only expected to redirect non-root paths from HTTP to HTTPS in strict mode.',
         strict=True
     )
-    def test_mesos_path_http_https_redirect(self):
-        r = requests.get(Url('/mesos', scheme='http'), allow_redirects=False)
+    def test_mesos_path_http_https_redirect(self, superuser):
+        r = requests.get(
+            Url('/mesos/', scheme='http'),
+            allow_redirects=False
+            )
         assert r.status_code == 307
         assert r.headers['location'].startswith('https')
 
-        r = requests.get(Url('/mesos', scheme='http'))
+        r = requests.get(
+            Url('/mesos/', scheme='http'),
+            headers=superuser.authheader
+            )
         assert r.status_code == 200
         assert '<html' in r.text
 
