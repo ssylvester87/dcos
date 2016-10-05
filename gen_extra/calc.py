@@ -70,7 +70,7 @@ def calculate_mesos_authenticate_http(security):
 def calculate_mesos_authz_enforced(security):
     return {
         'strict': 'true',
-        'permissive': 'true',
+        'permissive': 'false',
         'disabled': 'false'
         }[security]
 
