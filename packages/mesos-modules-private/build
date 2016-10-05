@@ -22,7 +22,7 @@ pushd build
  --with-boost=/opt/mesosphere/lib/mesos/3rdparty/include/boost \
  --prefix="$PKG_PATH"
 
-make -j8
+make -j$NUM_CORES
 make install
 popd
 

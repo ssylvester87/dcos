@@ -18,7 +18,7 @@ pushd "/pkg/src/nginx"
   --without-mail_imap_module \
   --without-mail_smtp_module
 
-make -j8
+make -j$NUM_CORES
 make install
 
 popd

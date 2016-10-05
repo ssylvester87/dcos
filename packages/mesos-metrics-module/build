@@ -18,7 +18,7 @@ cmake \
   -DUSE_LOCAL_AVRO=False \
   /pkg/src/mesos-metrics-module/module/
 
-make -j8
+make -j$NUM_CORES
 
 # install lib to $PKG_PATH/...
 make install
