@@ -62,6 +62,7 @@ class _DCOS:
         '/system/health/v1'
         ]
 
+    # TODO(greggomann): Automatically populate this list.
     initial_resource_ids = [
         "dcos:adminrouter:ops:metadata",
         "dcos:adminrouter:ops:historyservice",
@@ -89,6 +90,26 @@ class _DCOS:
     def __init__(self):
         self.configure()
         self._wait_for_DCOS()
+
+        # Security-related bootstrapping code creates these RIDs.
+        if self.config['security'] == 'permissive':
+            self.initial_resource_ids.extend([
+                'dcos:mesos:master:framework',
+                'dcos:mesos:master:reservation',
+                'dcos:mesos:master:volume',
+                'dcos:mesos:master:task'
+                ])
+        elif self.config['security'] == 'strict':
+            self.initial_resource_ids.extend([
+                'dcos:mesos:master:framework:role:slave_public',
+                'dcos:mesos:master:framework:role:*',
+                'dcos:mesos:master:reservation:role:slave_public',
+                'dcos:mesos:master:reservation:principal:dcos_marathon',
+                'dcos:mesos:master:volume:role:slave_public',
+                'dcos:mesos:master:volume:principal:dcos_marathon',
+                'dcos:mesos:master:task:user:nobody',
+                'dcos:mesos:master:task:app_id'
+                ])
 
     def configure(self):
         self._get_bootstrap_config()

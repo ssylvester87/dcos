@@ -240,6 +240,9 @@ class Bootstrapper(object):
             'dcos_3dt_master'
         ]
 
+        if self.opts.config['security'] == 'permissive':
+            master_service_accounts.append('dcos_anonymous')
+
         service_account_creds = {}
         for account in master_service_accounts:
             service_account_creds[account] = {
@@ -332,7 +335,7 @@ class Bootstrapper(object):
         # private key that service can read, but not overwrite
         _write_file(filename, private_key, 0o400)
 
-    def create_service_account(self, uid, zk_secret=True, secret_path=None):
+    def create_service_account(self, uid, superuser, zk_secret=True):
         if zk_secret:
             account = self.secrets['services'][uid]
         else:
@@ -353,14 +356,15 @@ class Bootstrapper(object):
         iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
         iamcli.create_service_account(uid, public_key=pubkey_pem, exist_ok=True)
 
-        # TODO fine-grained permissions for service accounts
-        iamcli.add_user_to_group(uid, 'superusers')
+        # TODO fine-grained permissions for all service accounts
+        if superuser:
+            iamcli.add_user_to_group(uid, 'superusers')
 
         return account
 
     def create_agent_service_accounts(self):
         for svc in self.agent_services:
-            self.create_service_account(svc)
+            self.create_service_account(svc, superuser=True)
 
     def _consensus(self, path, value, acl=None):
         if value is not None:
@@ -386,23 +390,77 @@ class Bootstrapper(object):
         if acl:
             self.zk.set_acls(path, acl)
 
-    def mesos_acls(self):
+    def mesos_zk_acls(self):
         acl = None
         if self.opts.config['zk_acls_enabled']:
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_mesos_master', all=True)]
         self.ensure_zk_path('/mesos', acl=acl)
 
-    def marathon_acls(self):
+    def marathon_zk_acls(self):
         acl = None
         if self.opts.config['zk_acls_enabled']:
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_marathon', all=True)]
         self.ensure_zk_path('/marathon', acl=acl)
 
-    def metronome_acls(self):
+    def marathon_iam_acls(self):
+        if self.opts.config['security'] == 'permissive':
+            permissive_acls = [
+                ('dcos:mesos:master:framework', 'create'),
+                ('dcos:mesos:master:reservation', 'create'),
+                ('dcos:mesos:master:reservation', 'delete'),
+                ('dcos:mesos:master:volume', 'create'),
+                ('dcos:mesos:master:volume', 'delete'),
+                ('dcos:mesos:master:task', 'create')]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(permissive_acls, 'dcos_marathon')
+
+        elif self.opts.config['security'] == 'strict':
+            # Can only register with 'slave_public' role,
+            # only create volumes/reservations in that role,
+            # only destroy volumes/reservations created by 'dcos_marathon',
+            # only run tasks as linux user 'nobody',
+            # but can create apps in any folder/namespace.
+            strict_acls = [
+                ('dcos:mesos:master:framework:role:slave_public', 'create'),
+                ('dcos:mesos:master:reservation:role:slave_public', 'create'),
+                ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:volume:role:slave_public', 'create'),
+                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:master:task:app_id', 'create')
+                ]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(strict_acls, 'dcos_marathon')
+
+    def metronome_zk_acls(self):
         acl = None
         if self.opts.config['zk_acls_enabled']:
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_metronome', all=True)]
         self.ensure_zk_path('/metronome', acl=acl)
+
+    def metronome_iam_acls(self):
+        if self.opts.config['security'] == 'permissive':
+            permissive_acls = [
+                ('dcos:mesos:master:framework', 'create'),
+                ('dcos:mesos:master:task', 'create')]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(permissive_acls, 'dcos_metronome')
+
+        elif self.opts.config['security'] == 'strict':
+            # Can only register with '*' role,
+            # only run tasks as linux user 'nobody',
+            # but can create jobs in any folder/namespace.
+            strict_acls = [
+                ('dcos:mesos:master:framework:role:*', 'create'),
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:master:task:app_id', 'create')
+                ]
+
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli.create_acls(strict_acls, 'dcos_metronome')
 
     def cosmos_acls(self):
         acl = None
@@ -1050,7 +1108,7 @@ def dcos_ca(b, opts):
 def dcos_mesos_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-    b.mesos_acls()
+    b.mesos_zk_acls()
 
     b.write_mesos_master_env(opts.rundir + '/etc/mesos-master')
 
@@ -1063,6 +1121,13 @@ def dcos_mesos_master(b, opts):
     b.create_agent_secrets(opts.zk_agent_digest)
 
     b.create_agent_service_accounts()
+
+    # If permissive security is enabled, create the 'dcos_anonymous' account.
+    if opts.config['security'] == 'permissive':
+        # TODO(greggomann): add proper ACLs for 'dcos_anonymous'.
+        # For now, we make dcos_anonymous a superuser, so security-ignorant scripts/frameworks
+        # can still access Mesos endpoints and register however they like.
+        b.create_service_account('dcos_anonymous', superuser=True)
 
 
 def dcos_mesos_slave(b, opts):
@@ -1117,7 +1182,7 @@ def dcos_mesos_slave_public(b, opts):
 def dcos_marathon(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-    b.marathon_acls()
+    b.marathon_zk_acls()
 
     if opts.config['zk_acls_enabled']:
         # Must be run after create_master_secrets.
@@ -1148,16 +1213,19 @@ def dcos_marathon(b, opts):
 
     # For framework authentication.
     if opts.config['framework_authentication_enabled']:
-        b.create_service_account('dcos_marathon')
+        b.create_service_account('dcos_marathon', superuser=False)
         svc_acc_creds_fn = opts.rundir + '/etc/marathon/service_account.json'
         b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
+
+    # IAM ACLs must be created after the service account.
+    b.marathon_iam_acls()
 
 
 def dcos_metronome(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-    b.metronome_acls()
+    b.metronome_zk_acls()
 
     # For libmesos scheduler SSL.
     if opts.config['ssl_enabled']:
@@ -1181,19 +1249,22 @@ def dcos_metronome(b, opts):
 
     # For framework authentication.
     if opts.config['framework_authentication_enabled']:
-        b.create_service_account('dcos_metronome')
+        b.create_service_account('dcos_metronome', superuser=False)
         svc_acc_creds_fn = opts.rundir + '/etc/metronome/service_account.json'
         b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_metronome')
 
     shutil.chown(opts.rundir + '/etc/metronome', user='dcos_metronome')
 
+    # IAM ACLs must be created after the service account.
+    b.metronome_iam_acls()
+
 
 def dcos_mesos_dns(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    b.create_service_account('dcos_mesos_dns')
+    b.create_service_account('dcos_mesos_dns', superuser=True)
 
     if opts.config['ssl_enabled']:
         path = opts.rundir + '/pki/CA/certs/ca.crt'
@@ -1211,7 +1282,7 @@ def dcos_adminrouter(b, opts):
 
     b.cluster_id()
 
-    b.create_service_account('dcos_adminrouter')
+    b.create_service_account('dcos_adminrouter', superuser=True)
 
     extra_san = []
     internal_lb = os.getenv('INTERNAL_MASTER_LB_DNSNAME')
@@ -1332,7 +1403,7 @@ def dcos_erlang_service_master(servicename, b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    b.create_service_account('dcos_{}_master'.format(servicename))
+    b.create_service_account('dcos_{}_master'.format(servicename), superuser=True)
 
     user = 'dcos_' + servicename
 
@@ -1403,7 +1474,7 @@ def dcos_signal(b, opts):
     b.create_master_secrets()
 
     b.cluster_id()
-    b.create_service_account('dcos_signal_service')
+    b.create_service_account('dcos_signal_service', superuser=True)
 
     svc_acc_creds_fn = opts.rundir + '/etc/signal-service/service_account.json'
     b.write_service_account_credentials('dcos_signal_service', svc_acc_creds_fn)
@@ -1414,14 +1485,14 @@ def dcos_3dt_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    b.create_service_account('dcos_3dt_master')
+    b.create_service_account('dcos_3dt_master', superuser=True)
     svc_acc_creds_fn = opts.rundir + '/etc/3dt/master_service_account.json'
     b.write_service_account_credentials('dcos_3dt_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
 
     # 3dt agent secrets are needed for it to contact the 3dt master
     b.create_agent_secrets(opts.zk_agent_digest)
-    b.create_service_account('dcos_3dt_agent')
+    b.create_service_account('dcos_3dt_agent', superuser=True)
 
 
 def dcos_3dt_agent(b, opts):
@@ -1434,7 +1505,7 @@ def dcos_3dt_agent(b, opts):
 def dcos_history(b, opts):
     b.create_master_secrets()
 
-    b.create_service_account('dcos_history_service')
+    b.create_service_account('dcos_history_service', superuser=True)
 
     svc_acc_creds_fn = opts.rundir + '/etc/history-service/service_account.json'
     b.write_service_account_credentials('dcos_history_service', svc_acc_creds_fn)

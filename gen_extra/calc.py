@@ -12,25 +12,19 @@ def validate_customer_key(customer_key):
 
 
 def calculate_ssl_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_ssl_support_downgrade(security):
-    if security == 'strict':
-        return 'false'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'true'
+    return {
+        'strict': 'false',
+        'permissive': 'true',
+        'disabled': 'true'
+        }[security]
 
 
 def calculate_adminrouter_master_enforce_https(security):
@@ -58,37 +52,35 @@ def calculate_adminrouter_master_default_scheme(security):
 
 
 def calculate_firewall_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'false'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_mesos_authenticate_http(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
-# TODO(adam): DCOS-9027: Enable authz in permissive mode with default permissive ACLs.
 def calculate_mesos_authz_enforced(security):
-    if security == 'strict':
-        return 'true'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
-    elif security == 'permissive':
-        return 'false'
 
-    elif security == 'disabled':
-        return 'false'
+def calculate_mesos_elevate_unknown_users(security):
+    return {
+        'strict': 'false',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_mesos_authorizer(mesos_authz_enforced):
@@ -100,47 +92,35 @@ def calculate_mesos_authorizer(mesos_authz_enforced):
 
 
 def calculate_framework_authentication_required(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'false'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_agent_authentication_required(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'false'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_framework_authentication_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_agent_authn_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_mesos_classic_authenticator(framework_authentication_enabled, agent_authn_enabled):
@@ -151,47 +131,35 @@ def calculate_mesos_classic_authenticator(framework_authentication_enabled, agen
 
 
 def calculate_default_task_user(security):
-    if security == 'strict':
-        return 'nobody'
-
-    elif security == 'permissive':
-        return 'root'
-
-    elif security == 'disabled':
-        return 'root'
+    return {
+        'strict': 'nobody',
+        'permissive': 'root',
+        'disabled': 'root'
+        }[security]
 
 
 def calculate_marathon_https_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def calculate_marathon_extra_args(security):
-    if security == 'strict':
-        return '--disable_http'
-
-    elif security == 'permissive':
-        return ''
-
-    elif security == 'disabled':
-        return ''
+    return {
+        'strict': '--disable_http',
+        'permissive': '',
+        'disabled': ''
+        }[security]
 
 
 def calculate_zk_acls_enabled(security):
-    if security == 'strict':
-        return 'true'
-
-    elif security == 'permissive':
-        return 'true'
-
-    elif security == 'disabled':
-        return 'false'
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
 
 
 def empty(s):
@@ -267,12 +235,15 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
     return "JVMFLAGS=-Dzookeeper.DigestAuthenticationProvider.superDigest=" + digest
 
 
-def calculate_mesos_enterprise_isolation(mesos_isolation):
-    return ','.join([
+def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
+    isolation = ','.join([
         mesos_isolation,
         'com_mesosphere_MetricsIsolatorModule',
         'com_mesosphere_dcos_SecretsIsolator'
     ])
+    if ssl_enabled == 'true':
+        isolation += ',com_mesosphere_dcos_SSLExecutorIsolator'
+    return isolation
 
 
 def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
@@ -291,10 +262,12 @@ def calculate_exhibitor_admin_password_enabled(exhibitor_admin_password):
     return 'true'
 
 
-def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable):
+def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable, ssl_enabled):
     hooks = 'com_mesosphere_dcos_SecretsHook'
+    if ssl_enabled == 'true':
+        hooks += ',com_mesosphere_dcos_SSLExecutorHook'
     if dcos_remove_dockercfg_enable == 'true':
-        hooks += ", com_mesosphere_dcos_RemoverHook"
+        hooks += ",com_mesosphere_dcos_RemoverHook"
     return hooks
 
 
@@ -383,6 +356,7 @@ entry = {
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
         'mesos_agent_authorizer': calculate_mesos_authorizer,
+        'mesos_elevate_unknown_users': calculate_mesos_elevate_unknown_users,
         'mesos_hooks': calculate_mesos_enterprise_hooks,
         'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
         'firewall_enabled': calculate_firewall_enabled,
