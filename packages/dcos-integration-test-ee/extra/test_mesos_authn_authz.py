@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 pytestmark = [
     pytest.mark.security,
-    pytest.mark.usefixtures("iam_verify_and_reset")
+    pytest.mark.usefixtures("iam_verify_and_reset_")
 ]
 
 
@@ -38,11 +38,11 @@ def get_mesos_endpoints(mesos_url):
     return endpoints
 
 
-def run_task(superuser):
+def run_task(superuser_):
     app = MarathonApp(sleep_app_definition("mesos-authz-%s" % str(uuid.uuid4())))
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser_.authheader)
     r.raise_for_status()
-    app.wait(check_health=False, headers=superuser.authheader)
+    app.wait(check_health=False, headers=superuser_.authheader)
 
 
 @pytest.mark.xfail(
@@ -50,7 +50,7 @@ def run_task(superuser):
     reason='Mesos authN is disabled in security-disabled mode and unknown requests are elevated in permissive mode.',
     strict=True
 )
-def test_mesos_endpoint_authn(superuser):
+def test_mesos_endpoint_authn(superuser_):
     """Test that Mesos endpoints behave as expected with respect to authentication"""
 
     def get_unauthenticated(url):
@@ -59,7 +59,7 @@ def test_mesos_endpoint_authn(superuser):
 
     def get_authenticated(url):
         ''' Performs a Bouncer-authenticated `GET` of `path` '''
-        return requests.get(url, headers=superuser.authheader)
+        return requests.get(url, headers=superuser_.authheader)
 
     def request(url, do_authed, master):
         _get = get_authenticated if do_authed else get_unauthenticated
@@ -133,15 +133,15 @@ class TestMesosAuthz:
         ("/containers", {"target": ["agent"]}),
         ("/monitor/statistics", {"target": ["agent"]})
     ])
-    def test_mesos_endpoint_authz(self, superuser, peter, path, endpoint_info):
+    def test_mesos_endpoint_authz(self, superuser_, peter_, path, endpoint_info):
         """Test that Mesos endpoints behave as expected with respect to
         authorization"""
 
         def request(url, authorized):
             if authorized:
-                r = requests.get(url, headers=superuser.authheader)
+                r = requests.get(url, headers=superuser_.authheader)
             else:
-                r = requests.get(url, headers=peter.authheader)
+                r = requests.get(url, headers=peter_.authheader)
 
             log.debug(
                 'Got %s with %s request for endpoint %s. Response: \n%s',
@@ -177,15 +177,15 @@ class TestMesosAuthz:
             'targets': ['master']
         })
     ])
-    def test_mesos_endpoint_authz_filtering(self, superuser, peter, path, endpoint_info):
+    def test_mesos_endpoint_authz_filtering(self, superuser_, peter_, path, endpoint_info):
         """Test that Mesos endpoints which perform authorization-based filtering
         behave as expected with respect to authorization"""
 
         def request(url, authorized, filtered_field):
             if authorized:
-                r = requests.get(url, headers=superuser.authheader)
+                r = requests.get(url, headers=superuser_.authheader)
             else:
-                r = requests.get(url, headers=peter.authheader)
+                r = requests.get(url, headers=peter_.authheader)
 
             log.debug(
                 'Got %s with %s request for endpoint %s. Response: \n%s',
@@ -213,19 +213,19 @@ class TestMesosAuthz:
             log.info('Test Mesos %s endpoint: %s', target, path)
             for authorized in [False, True]:
                 if 'bootstrap_function' in endpoint_info:
-                    endpoint_info['bootstrap_function'](superuser)
+                    endpoint_info['bootstrap_function'](superuser_)
 
                 request(urls[target] + path,
                         authorized=authorized,
                         filtered_field=endpoint_info['filtered_field'])
 
-    def test_mesos_weights_endpoint_authz(self, superuser, peter):
+    def test_mesos_weights_endpoint_authz(self, superuser_, peter_):
         """Test that Mesos weights-related endpoints perform authorization
         correctly"""
 
         def set_weight(weight, authorized):
             url = str(Url('', host=dcos.masters[0], port=5050))
-            headers = superuser.authheader if authorized else peter.authheader
+            headers = superuser_.authheader if authorized else peter_.authheader
             data = '[{"role": "test-weights-role", "weight": ' + str(weight) + '}]'
             r = requests.put(url + '/weights', headers=headers, data=data)
 
@@ -244,7 +244,7 @@ class TestMesosAuthz:
 
         def check_weight(weight, authorized):
             url = str(Url('', host=dcos.masters[0], port=5050))
-            headers = superuser.authheader if authorized else peter.authheader
+            headers = superuser_.authheader if authorized else peter_.authheader
             r = requests.get(url + '/weights', headers=headers)
 
             log.debug(
@@ -282,7 +282,7 @@ class TestMesosAuthz:
         set_weight(1.0, authorized=True)
         check_weight(1.0, authorized=True)
 
-    def test_mesos_reservation_volume_endpoints_authz(self, superuser, peter):
+    def test_mesos_reservation_volume_endpoints_authz(self, superuser_, peter_):
         """Test that Mesos reservation and volume endpoints perform authorization
         correctly. A dynamic reservation is made for disk, a persistent volume is
         created with the reservation, and then both are destroyed"""
@@ -290,7 +290,7 @@ class TestMesosAuthz:
         # Get a valid agent ID.
         r = requests.get(
             Url('/mesos/master/state'),
-            headers=superuser.authheader
+            headers=superuser_.authheader
         )
         assert r.status_code == 200
 
@@ -307,9 +307,9 @@ class TestMesosAuthz:
         def post(path, authorized, data, principal):
             url = str(Url('', host=dcos.masters[0], port=5050))
             if authorized:
-                headers = superuser.authheader
+                headers = superuser_.authheader
             else:
-                headers = peter.authheader
+                headers = peter_.authheader
 
             prepped_data = copy.copy(data).replace('#PRINCIPAL#', principal)
             r = requests.post(url + path, headers=headers, data=prepped_data)
@@ -359,19 +359,19 @@ class TestMesosAuthz:
                 }
             ]'''
 
-        post('/reserve', False, reservation_data, peter.uid)
-        post('/reserve', True, reservation_data, superuser.uid)
+        post('/reserve', False, reservation_data, peter_.uid)
+        post('/reserve', True, reservation_data, superuser_.uid)
 
-        post('/create-volumes', False, volume_data, peter.uid)
-        post('/create-volumes', True, volume_data, superuser.uid)
+        post('/create-volumes', False, volume_data, peter_.uid)
+        post('/create-volumes', True, volume_data, superuser_.uid)
 
-        # Once the volume has been created we use the superuser's principal, since
+        # Once the volume has been created we use the superuser_'s principal, since
         # this is the principal that's been associated with the created volume.
-        post('/destroy-volumes', False, volume_data, superuser.uid)
-        post('/destroy-volumes', True, volume_data, superuser.uid)
+        post('/destroy-volumes', False, volume_data, superuser_.uid)
+        post('/destroy-volumes', True, volume_data, superuser_.uid)
 
-        post('/unreserve', False, reservation_data, superuser.uid)
-        post('/unreserve', True, reservation_data, superuser.uid)
+        post('/unreserve', False, reservation_data, superuser_.uid)
+        post('/unreserve', True, reservation_data, superuser_.uid)
 
     @pytest.mark.parametrize(("target", "url"), [
         ('master', str(Url('', host=dcos.masters[0], port=5050))),
@@ -383,14 +383,14 @@ class TestMesosAuthz:
         '/files/download?path=/#TARGET#/log',
         '/files/browse?path=/#TARGET#/log'
     ])
-    def test_mesos_files_endpoints_authz(self, superuser, peter, target, url, path):
+    def test_mesos_files_endpoints_authz(self, superuser_, peter_, target, url, path):
         """Test that Mesos files endpoints perform authorization correctly"""
 
         def get(path, authorized, target, url):
             if authorized:
-                headers = superuser.authheader
+                headers = superuser_.authheader
             else:
-                headers = peter.authheader
+                headers = peter_.authheader
 
             r = requests.get(url + path.replace('#TARGET#', target), headers=headers)
 
@@ -410,7 +410,7 @@ class TestMesosAuthz:
         for authorized in [True, False]:
             get(path, authorized, target, url)
 
-    def test_mesos_quota_endpoint_authz(self, superuser, peter):
+    def test_mesos_quota_endpoint_authz(self, superuser_, peter_):
         """Test that Mesos master's '/quota' endpoint performs authorization correctly"""
 
         master_host = str(Url('', host=dcos.masters[0], port=5050))
@@ -498,8 +498,8 @@ class TestMesosAuthz:
         for request_function in (post, get, delete):
             for authorized in (False, True):
                 if authorized:
-                    headers = superuser.authheader
+                    headers = superuser_.authheader
                 else:
-                    headers = peter.authheader
+                    headers = peter_.authheader
 
                 request_function(authorized, headers)

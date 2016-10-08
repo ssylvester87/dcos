@@ -1,72 +1,87 @@
 """
 Test authorization behavior of various components.
+Note: requests to the cluster fixture uses super by default
 """
-
-
 import logging
 import uuid
 
+import ee_helpers
 
 import pytest
-import requests
-
-from dcostests import CAUrl, dcos, IAMUrl, Url
-from dcostests.marathon import MarathonApp, sleep_app_definition
 
 
 log = logging.getLogger(__name__)
 
-
 pytestmark = [pytest.mark.security]
+
+AUTHENTICATED_USERS_ENDPOINTS = [
+    '/capabilities',
+    '/navstar/lashup/key']
+
+
+@pytest.fixture(scope='module')
+def peter_cluster(cluster, peter):
+    return cluster.get_user_session(peter)
+
+
+@pytest.fixture(scope='module')
+def noauth_cluster(cluster):
+    return cluster.get_user_session(None)
+
+
+@pytest.fixture
+def set_user_permission(cluster):
+    def set_permission(rid, uid, action):
+        rid = rid.replace('/', '%252F')
+        # Create ACL if it does not yet exist.
+        r = cluster.iam.put('/acls/{}'.format(rid), json={'description': 'jope'})
+        assert r.status_code == 201 or r.status_code == 409
+        # Set the permission triplet.
+        r = cluster.iam.put('/acls/{}/users/{}/{}'.format(rid, uid, action))
+        r.raise_for_status()
+    return set_permission
 
 
 class TestAdminRouterOpsEndpoints:
 
     @pytest.mark.usefixtures("iam_verify_and_reset")
-    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints)
-    def test_ops_endpoints_three_auth_states(self, endpoint, peter, superuser):
+    @pytest.mark.parametrize("endpoint", ee_helpers.OPS_ENDPOINTS)
+    def test_three_auth_states(self, endpoint, cluster, peter_cluster, noauth_cluster):
 
-        url = str(Url(endpoint))
         # Test anonymous auth state.
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
         # Test unprivileged.
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
         # Test as superuser.
-        r = requests.get(url, headers=superuser.authheader)
-        if '/ca/api/v2' in url:
+        r = cluster.get(endpoint)
+        if '/ca/api/v2' in endpoint:
             assert r.status_code == 405
             return
         assert r.status_code == 200
 
     @pytest.mark.usefixtures(
         "iam_verify_and_reset",
-        "with_peter_in_superuser_acl"
-        )
-    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints)
-    def test_superuser_acl(self, endpoint, peter):
-
-        url = str(Url(endpoint))
-        r = requests.get(url, headers=peter.authheader)
-        if '/ca/api/v2' in url:
+        "with_peter_in_superuser_acl")
+    @pytest.mark.parametrize("endpoint", ee_helpers.OPS_ENDPOINTS)
+    def test_superuser_acl(self, endpoint, peter_cluster):
+        r = peter_cluster.get(endpoint)
+        if '/ca/api/v2' in endpoint:
             assert r.status_code == 405
             return
         assert r.status_code == 200
 
     @pytest.mark.usefixtures(
         "iam_verify_and_reset",
-        "with_peter_in_superuser_group"
-        )
-    @pytest.mark.parametrize("endpoint", dcos.ops_endpoints)
-    def test_superuser_acl_through_superuser_group(self, endpoint, peter):
-
-        url = str(Url(endpoint))
-        r = requests.get(url, headers=peter.authheader)
-        if '/ca/api/v2' in url:
+        "with_peter_in_superuser_group")
+    @pytest.mark.parametrize("endpoint", ee_helpers.OPS_ENDPOINTS)
+    def test_superuser_acl_through_superuser_group(self, peter_cluster, endpoint):
+        r = peter_cluster.get(endpoint)
+        if '/ca/api/v2' in endpoint:
             assert r.status_code == 405
             return
         assert r.status_code == 200
@@ -75,123 +90,113 @@ class TestAdminRouterOpsEndpoints:
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestAdminRouterAuthenticatedUsersEndpoints:
 
-    @pytest.mark.parametrize("endpoint", dcos.authenticated_users_endpoints)
-    def test_two_auth_states(self, endpoint, peter):
-
+    @pytest.mark.parametrize("endpoint", AUTHENTICATED_USERS_ENDPOINTS)
+    def test_two_auth_states(self, endpoint, peter_cluster, noauth_cluster):
         # Test anonymous auth state.
-        r = requests.get(Url(endpoint))
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
-        headers = peter.authheader.copy()
+        headers = {}
         # Need to treat capabilities as a special case.
         if endpoint == '/capabilities':
             headers['Accept'] = \
                 'application/vnd.dcos.capabilities+json;charset=utf-8;version=v1'
 
         # Test unprivileged.
-        r = requests.get(Url(endpoint), headers=headers)
+        r = peter_cluster.get(endpoint, headers=headers)
         assert r.status_code == 200
 
 
 class TestAdminRouterServiceEndpoint:
 
-    def test_access_to_base_marathon(self, peter, superuser):
-        u = Url('/service/marathon/')
-        r = requests.get(u, headers=peter.authheader)
+    def test_access_to_base_marathon(self, cluster, peter_cluster, noauth_cluster):
+        endpoint = '/service/marathon/'
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
-        r = requests.get(u, headers=superuser.authheader)
+        r = cluster.get(endpoint)
         assert r.status_code == 200
-        r = requests.get(u)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-    def test_access_to_metronome(self, peter, superuser):
-        u = Url('/service/metronome/v1/jobs')
-        r = requests.get(u, headers=peter.authheader)
+    def test_access_to_metronome(self, cluster, peter_cluster, noauth_cluster):
+        endpoint = '/service/metronome/v1/jobs'
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
-        r = requests.get(u, headers=superuser.authheader)
+        r = cluster.get(endpoint)
         assert r.status_code == 200
-        r = requests.get(u)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-    def test_access_to_unknown_service(self, peter, superuser):
-        u = Url('/service/unknown/')
-        r = requests.get(u, headers=peter.authheader)
+    def test_access_to_unknown_service(self, cluster, peter_cluster, noauth_cluster):
+        endpoint = '/service/unknown/'
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
-        r = requests.get(u, headers=superuser.authheader)
+        r = cluster.get(endpoint)
         # An unknown service irritates the service endpoint.
         assert r.status_code == 500
-        r = requests.get(u)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestSecretsACLs:
-
-    def test_get_store_acl(self, peter):
-
+    def test_get_store_acl(self, peter_cluster):
         # TODO(JP): extend this test.
-        r = requests.get(Url('/secrets/v1/store'), headers=peter.authheader)
+        r = peter_cluster.get('/secrets/v1/store')
         assert r.status_code == 403
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestAdminRouterACLs:
 
-    def test_adminrouter_acs(self, superuser, peter):
+    def test_adminrouter_acs(self, set_user_permission, cluster, peter_cluster, noauth_cluster):
+        endpoint = '/users'
 
-        url = IAMUrl('/users')
-
-        r = requests.get(url)
+        r = noauth_cluster.iam.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.iam.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:acs',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.iam.get(endpoint)
         assert r.status_code == 200
 
     @pytest.mark.skip(reason="Disabled untill DCOS-8889 is addressed")
-    def test_adminrouter_ops_ca_ro(self, peter, superuser):
+    def test_adminrouter_ops_ca_ro(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
+        endpoint = '/certificates'
 
-        url = CAUrl('/certificates')
-
-        r = requests.get(url)
+        r = noauth_cluster.ca.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.ca.get(endpoint)
         assert r.status_code == 403
-
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:ca:ro',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.ca.get(endpoint)
         assert r.status_code == 405
 
-    def test_adminrouter_ops_ca_rw(self, peter, superuser):
+    def test_adminrouter_ops_ca_rw(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/newcert'
 
-        url = CAUrl('/newcert')
-
-        r = requests.get(url)
+        r = noauth_cluster.ca.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.ca.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:ca:rw',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
         data = {
             "request": {
@@ -200,231 +205,207 @@ class TestAdminRouterACLs:
                 "CN": "www.example.com"
                 }
             }
-        r = requests.post(url, json=data, headers=peter.authheader)
+        r = peter_cluster.ca.post(endpoint, json=data)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_system_health(self, peter, superuser):
+    def test_adminrouter_ops_system_health(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/system/health/v1'
 
-        url = Url('/system/health/v1')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:system-health',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_mesos(self, peter, superuser):
+    def test_adminrouter_ops_mesos(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
 
-        url = Url('/mesos')
+        endpoint = '/mesos'
 
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:mesos',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_package(self, peter, superuser):
+    def test_adminrouter_package(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/package/search'
 
-        url = Url('/package/search')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:package',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        headers = peter.authheader.copy()
-        headers.update({
+        headers = {
             'Accept': 'application/vnd.dcos.package.search-response+json;charset=utf-8;version=v1',
-            'Content-Type': 'application/vnd.dcos.package.search-request+json;charset=UTF-8;version=v1'
-            })
+            'Content-Type': 'application/vnd.dcos.package.search-request+json;charset=UTF-8;version=v1'}
 
-        r = requests.post(
-            Url('/package/search'),
+        r = peter_cluster.post(
+            '/package/search',
             json={},
-            headers=headers
-            )
+            headers=headers)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_exhibitor(self, peter, superuser):
+    def test_adminrouter_ops_exhibitor(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/exhibitor'
 
-        url = Url('/exhibitor')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:exhibitor',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_networking(self, peter, superuser):
+    def test_adminrouter_ops_networking(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
+        endpoint = '/networking/api/v1/vips'
 
-        url = Url('/networking/api/v1/vips')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:networking',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_slave(self, peter, superuser):
+    def test_adminrouter_ops_slave(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
         # Obtain a valid agent ID.
-        r = requests.get(
-            Url('/mesos/master/state'),
-            headers=superuser.authheader
-            )
+        r = cluster.get('/mesos/master/state')
         agent_ids = sorted(x['id'] for x in r.json()['slaves'])
         log.info('Obtained these agent IDs: %s', agent_ids)
 
-        url = Url('/agent/{}/slave%281%29/state.json'.format(agent_ids[0]))
-        r = requests.get(url)
+        endpoint = '/agent/{}/slave%281%29/state.json'.format(agent_ids[0])
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:slave',
-            uid=peter.uid,
+            uid=peter_cluster.web_auth_default_user.uid,
             action='full'
             )
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
         assert "id" in r.json()
 
-    def test_adminrouter_service_marathon(self, peter, superuser):
+    def test_adminrouter_service_marathon(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
+        endpoint = '/service/marathon/ui'
 
-        url = Url('/service/marathon/ui')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:service:marathon',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_metadata(self, peter, superuser):
+    def test_adminrouter_ops_metadata(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
+        endpoint = '/pkgpanda/active.buildinfo.full.json'
 
-        url = Url('/pkgpanda/active.buildinfo.full.json')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:metadata',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_historyservice(self, peter, superuser):
+    def test_adminrouter_ops_historyservice(self, cluster, set_user_permission, peter_cluster, noauth_cluster):
+        endpoint = '/dcos-history-service/'
 
-        url = Url('/dcos-history-service/')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:historyservice',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
-    def test_adminrouter_ops_mesos_dns(self, peter, superuser):
+    def test_adminrouter_ops_mesos_dns(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/mesos_dns/v1/config'
 
-        url = Url('/mesos_dns/v1/config')
-
-        r = requests.get(url)
+        r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 403
 
-        superuser.set_user_permission(
+        set_user_permission(
             rid='dcos:adminrouter:ops:mesos-dns',
-            uid=peter.uid,
-            action='full'
-            )
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
 
-        r = requests.get(url, headers=peter.authheader)
+        r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestMarathonAppDeployment:
 
-    def test_anonymous_sleep_app(self):
-        app = MarathonApp(sleep_app_definition("anonymous-%s" % str(uuid.uuid4())))
-        r = app.deploy()
+    def test_anonymous_sleep_app(self, noauth_cluster):
+        app = ee_helpers.sleep_app_definition("anonymous-%s" % str(uuid.uuid4()))
+        r = noauth_cluster.marathon.post('/apps', json=app)
         assert r.status_code == 401
 
-    def test_peter_sleep_app(self, peter):
-        app = MarathonApp(sleep_app_definition("peter-%s" % str(uuid.uuid4())))
-        r = app.deploy(headers=peter.authheader)
+    def test_peter_sleep_app(self, cluster, peter_cluster):
+        app = ee_helpers.sleep_app_definition("peter-%s" % str(uuid.uuid4()))
+        r = peter_cluster.marathon.post('/apps', json=app)
         assert r.status_code == 403
 
-    def test_superuser_sleep_app(self, superuser):
-        app = MarathonApp(sleep_app_definition("super-%s" % str(uuid.uuid4())))
-        r = app.deploy(headers=superuser.authheader)
-        r.raise_for_status()
-        app.wait(check_health=False, headers=superuser.authheader)
+    def test_superuser_sleep_app(self, cluster):
+        app = ee_helpers.sleep_app_definition("super-%s" % str(uuid.uuid4()))
+        with cluster.marathon.deploy_and_cleanup(app, check_health=False):
+            assert True

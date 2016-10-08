@@ -13,10 +13,10 @@ import requests
 from dcostests import dcos, Url
 
 
-def test_if_all_mesos_agents_have_registered(superuser):
+def test_if_all_mesos_agents_have_registered(superuser_):
     url = Url('/mesos/master/state')
 
-    r = requests.get(url, headers=superuser.authheader)
+    r = requests.get(url, headers=superuser_.authheader)
     assert r.status_code == 200
     data = r.json()
 
@@ -24,7 +24,7 @@ def test_if_all_mesos_agents_have_registered(superuser):
     assert agent_ips == dcos.agents
 
 
-def test_if_all_mesos_masters_have_registered(superuser):
+def test_if_all_mesos_masters_have_registered(superuser_):
     zk = kazoo.client.KazooClient(hosts=dcos.zk_hostports, read_only=True)
     master_ips = []
 
@@ -39,10 +39,10 @@ def test_if_all_mesos_masters_have_registered(superuser):
     assert sorted(master_ips) == dcos.masters
 
 
-def test_if_zookeeper_cluster_is_up(superuser):
+def test_if_zookeeper_cluster_is_up(superuser_):
     r = requests.get(
         Url('/exhibitor/exhibitor/v1/cluster/status'),
-        headers=superuser.authheader
+        headers=superuser_.authheader
         )
     assert r.status_code == 200
 
@@ -56,10 +56,10 @@ def test_if_zookeeper_cluster_is_up(superuser):
     assert zks_leaders == 1
 
 
-def test_if_all_exhibitors_are_in_sync(superuser):
+def test_if_all_exhibitors_are_in_sync(superuser_):
     r = requests.get(
         Url('/exhibitor/exhibitor/v1/cluster/status'),
-        headers=superuser.authheader
+        headers=superuser_.authheader
         )
     assert r.status_code == 200
 
@@ -74,10 +74,10 @@ def test_if_all_exhibitors_are_in_sync(superuser):
         assert correct_data == tested_data
 
 
-def test_if_history_service_is_getting_data(superuser):
+def test_if_history_service_is_getting_data(superuser_):
     r = requests.get(
         Url('/dcos-history-service/history/last'),
-        headers=superuser.authheader
+        headers=superuser_.authheader
         )
     assert r.status_code == 200
     # Make sure some basic fields are present from state-summary which the DCOS

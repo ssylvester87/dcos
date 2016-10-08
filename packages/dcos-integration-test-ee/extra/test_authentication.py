@@ -57,12 +57,12 @@ def test_component_auth_direct_forged_token(url, forged_superuser_authheader):
 
 
 @pytest.mark.parametrize("url", component_urls)
-def test_component_auth_direct_peter(url, peter):
+def test_component_auth_direct_peter(url, peter_):
 
     if 'teardown' in url:
-        r = requests.post(url, headers=peter.authheader, data={})
+        r = requests.post(url, headers=peter_.authheader, data={})
     else:
-        r = requests.get(url, headers=peter.authheader)
+        r = requests.get(url, headers=peter_.authheader)
     # Expect success or forbidden.
     try:
         r.raise_for_status()

@@ -1,19 +1,11 @@
 """
 Test Enterprise DC/OS Signal Service
+TODO: this test only differs from upstream in the services that it checks for, rather
+    find a method such that we do not need to duplicate so much code
 """
 import json
 import os
 import subprocess
-
-import pytest
-
-from dcostests import dcos
-
-
-# Add an adapter for legacy tests.
-@pytest.fixture
-def cluster():
-    return dcos
 
 
 def test_ee_signal_service(cluster):
@@ -126,17 +118,17 @@ def test_ee_signal_service(cluster):
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_node_units:
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(
-            cluster.agents + cluster.masters)
+            cluster.all_slaves + cluster.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in slave_units:
         total_key = "health-unit-dcos-{}-total".format(unit)
-        exp_data['diagnostics']['properties'][total_key] = len(cluster.private_agents)
+        exp_data['diagnostics']['properties'][total_key] = len(cluster.slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in public_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_agents)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.agents)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.all_slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
 
     # Check the entire hash of diagnostics data
