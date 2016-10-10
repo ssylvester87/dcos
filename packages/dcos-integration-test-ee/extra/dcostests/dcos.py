@@ -59,7 +59,8 @@ class _DCOS:
         '/networking/api/v1/vips',
         '/pkgpanda/active.buildinfo.full.json',
         '/secrets/v1/store',
-        '/system/health/v1'
+        '/system/health/v1',
+        '/pkgpanda/active/',
         ]
 
     # TODO(greggomann): Automatically populate this list.
@@ -77,7 +78,8 @@ class _DCOS:
         "dcos:superuser",
         "dcos:adminrouter:ops:system-health",
         "dcos:adminrouter:ops:ca:rw",
-        "dcos:adminrouter:ops:networking"
+        "dcos:adminrouter:ops:networking",
+        "dcos:adminrouter:ops:pkgpanda",
         ]
 
     # Endpoints that are expected to be accessible by all authenticated users,
