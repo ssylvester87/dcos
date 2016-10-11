@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import copy
 import logging
 import os
 import sys
@@ -9,9 +10,7 @@ import subprocess
 from dcos_internal_utils import bootstrap
 from dcos_internal_utils import exhibitor
 from pkgpanda.actions import apply_service_configuration
-
-
-from pkgpanda.actions import apply_service_configuration
+from pkgpanda.util import load_string
 
 
 log = logging.getLogger(__name__)
@@ -35,6 +34,23 @@ def main():
     os.environ.pop('NO_PROXY', None)
     os.environ.pop('no_proxy', None)
 
+    # Try getting ENABLE_CHECK_TIME out of /opt/mesosphere/bin/check-time.env,
+    # pass it through the check-time call
+    check_time_env = load_string('/opt/mesosphere/etc/check_time.env')
+    if check_time_env:
+        split = check_time_env.split('=')
+        if len(split) > 2:
+            raise NotImplementedError("check_time.env had more than one key-value pair in it")
+        assert split[0] == 'ENABLE_CHECK_TIME', 'Expected to find one key, ENABLE_CHECK_TIME " \
+            "being set. Found: {}'.format(split[0])
+        enable_check_time = split[1]
+        log.info('Setting ENABLE_CHECK_TIME to {}'.format(enable_check_time))
+    else:
+        log.info('check_time.env is empty setting ENABLE_CHECK_TIME set to false')
+        enable_check_time = 'false'
+
+    check_time_env = copy.deepcopy(os.environ)
+    check_time_env['ENABLE_CHECK_TIME'] = enable_check_time
     subprocess.check_call('/opt/mesosphere/bin/check-time')
 
     exhibitor.wait(opts.master_count)
