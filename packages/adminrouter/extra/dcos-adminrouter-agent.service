@@ -18,6 +18,6 @@ EnvironmentFile=/opt/mesosphere/etc/adminrouter.env
 EnvironmentFile=-/run/dcos/etc/adminrouter.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-adminrouter-agent
 ExecStart=$PKG_PATH/nginx/sbin/nginx -c $PKG_PATH/nginx/conf/nginx.agent.conf
-ExecReload=/usr/bin/kill -HUP \$MAINPID
+ExecReload=/usr/bin/kill -HUP $MAINPID
 KillSignal=SIGQUIT
 KillMode=mixed
