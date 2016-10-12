@@ -21,12 +21,6 @@ from dcostests import AuthedUser, dcos, IAMUrl, SuperUser, Url
 log = logging.getLogger(__name__)
 
 
-# These test for this option only exists upstream, but nested
-# conftest.py's cannot instantiate options
-def pytest_addoption(parser):
-        parser.addoption('--resiliency', action='store_true')
-
-
 @pytest.fixture(scope="session", autouse=True)
 def use_custom_ca():
     for m in ['get', 'post', 'put', 'delete', 'patch', 'head', 'options']:
