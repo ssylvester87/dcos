@@ -735,45 +735,38 @@ class Bootstrapper(object):
         if not keytool:
             raise Exception('keytool not found')
 
-        dirpath = os.path.dirname(os.path.abspath(ts_fn))
-        with utils.Directory(dirpath) as d:
-            with d.lock():
-                # don't rewrite truststore if it already exists
-                if os.path.exists(ts_fn):
-                    return
+        cmd = [
+            keytool,
+            '-importkeystore',
+            '-noprompt',
+            '-srckeystore',
+            '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
+            '-srcstorepass', 'changeit',
+            '-deststorepass', 'changeit',
+            '-destkeystore', ts_fn
+        ]
 
-                cmd = [
-                    keytool,
-                    '-importkeystore',
-                    '-noprompt',
-                    '-srckeystore',
-                    '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
-                    '-srcstorepass', 'changeit',
-                    '-deststorepass', 'changeit',
-                    '-destkeystore', ts_fn
-                ]
+        log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+        if proc.wait() != 0:
+            raise Exception('keytool failed')
 
-                log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
-                proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-                if proc.wait() != 0:
-                    raise Exception('keytool failed')
+        cmd = [
+            keytool,
+            '-import',
+            '-noprompt',
+            '-trustcacerts',
+            '-alias', 'dcos_root_ca',
+            '-file', ca_fn,
+            '-keystore', ts_fn,
+            '-storepass', 'changeit',
+        ]
+        log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
+        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+        if proc.wait() != 0:
+            raise Exception('keytool failed')
 
-                cmd = [
-                    keytool,
-                    '-import',
-                    '-noprompt',
-                    '-trustcacerts',
-                    '-alias', 'dcos_root_ca',
-                    '-file', ca_fn,
-                    '-keystore', ts_fn,
-                    '-storepass', 'changeit',
-                ]
-                log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
-                proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-                if proc.wait() != 0:
-                    raise Exception('keytool failed')
-
-                os.chmod(ts_fn, 0o644)
+        os.chmod(ts_fn, 0o644)
 
     def service_auth_token(self, uid, exp=None):
         iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -872,10 +865,6 @@ def _write_file(path, data, mode):
     dirpath = os.path.dirname(os.path.abspath(path))
     with utils.Directory(dirpath) as d:
         with d.lock():
-            # don't overwrite existing files
-            if os.path.exists(path):
-                return
-
             umask_original = os.umask(0)
             try:
                 flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
@@ -1203,6 +1192,7 @@ def dcos_marathon(b, opts):
 
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
+        # file also used by the adminrouter /ca/cacerts.jks endpoint
         ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
         b.write_truststore(ts, ca)
 
@@ -1239,7 +1229,7 @@ def dcos_metronome(b, opts):
         b.write_CA_certificate(filename=ca)
 
         # For Metronome UI/API SSL.
-        ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
+        ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
         b.write_truststore(ts, ca)
 
         env = opts.rundir + '/etc/metronome/tls.env'
@@ -1462,7 +1452,7 @@ def dcos_cosmos(b, opts):
     ca = opts.rundir + '/pki/CA/certs/ca.crt'
     b.write_CA_certificate(filename=ca)
 
-    ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
+    ts = opts.rundir + '/pki/CA/certs/cacerts_cosmos.jks'
     b.write_truststore(ts, ca)
 
     env = opts.rundir + '/etc/cosmos.env'
