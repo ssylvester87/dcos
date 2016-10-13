@@ -4,16 +4,15 @@ Test Bouncer's LDAP features.
 
 import logging
 from collections import OrderedDict
-from textwrap import dedent
 
 import pytest
 import requests
 
 from dcostests import IAMUrl
 
+from test_util.helpers import session_tempfile
 
 log = logging.getLogger(__name__)
-
 
 pytestmark = [pytest.mark.security]
 
@@ -21,8 +20,6 @@ pytestmark = [pytest.mark.security]
 class DirectoryBackend:
     """Base class that directory definition classes must inherit from."""
 
-    # Class attributes required to be defined in child classes.
-    config = None
     _user_credentials = {}
 
     def credentials(self, user):
@@ -48,85 +45,231 @@ class ADS1(DirectoryBackend):
         ('lookup-dn', 'cn=lookupuser,cn=Users,dc=mesosphere,dc=com'),
         ('lookup-password', 'pw-l00kup'),
         ('group-search', {
-            'search-filter-template': '(&(objectclass=group)(sAMAccountName=%(groupname)s))',
+            'search-filter-template':
+            '(&(objectclass=group)(sAMAccountName=%(groupname)s))',
             'search-base': 'cn=Users,dc=mesosphere,dc=com'
-            }),
+        }),
         ('user-search', {
             'search-filter-template': '(sAMAccountName=%(username)s)',
             'search-base': 'cn=Users,dc=mesosphere,dc=com'
-            })
-        ])
+        })
+    ])
 
     _user_credentials = {
         'john1': {'uid': 'john1', 'password': 'pw-john1'},
         'john2': {'uid': 'john2', 'password': 'pw-john2'},
         'john3': {'uid': 'john4', 'password': 'pw-john3'},
+    }
+
+
+class FreeIPAClient:
+
+    def __init__(self, host, username, password):
+        self._host = host
+
+        # perform login and store the authentication cookies
+        self._login(username, password)
+
+        self.ca_cert = None
+        self.ca_cert_file = None
+
+        # get and store the CA certificate from the server
+        self._set_ca()
+
+    def _set_ca(self):
+        query = {
+            'id': 0,
+            'method':
+            'cert_show',
+            'params': [['1'], {'version': '2.156'}]
         }
+        # we cannot verify the SSL certificates yet as we don't have
+        # them yet. That is the point of this function
+        r = self._json_rpc(query, should_verify=False)
+        certjson = r.json()
+        self.ca_cert = '' \
+            + '-----BEGIN CERTIFICATE-----\n' \
+            + certjson['result']['result']['certificate'] + '\n' \
+            + '-----END CERTIFICATE-----\n'
+        self.ca_cert_file = session_tempfile(self.ca_cert.encode())
+
+    def _login(self, username, password):
+        """
+        Log into freeIPA instance and store the resulting cookies
+        """
+        headers = {
+            'Referer': 'https://' + self._host + '/ipa',
+            'Accept': 'text/plain'
+        }
+        creds = {'user': username, 'password': password}
+        # since we need to log in before we can
+        # obtain the cert, we have no choice but to set
+        # verify=False
+        r = requests.post(
+            'https://' + self._host + '/ipa/session/login_password',
+            headers=headers,
+            data=creds,
+            verify=False
+        )
+        r.raise_for_status()
+        self._cookies = r.cookies
+
+    def add_group(self, group):
+        """
+        Add a group with the given name to freeIPA.
+        """
+        query = {
+            "id": 0,
+            "method": "group_add",
+            "params": [
+                [
+                    group
+                ],
+                {
+                    "all": False,
+                    "external": False,
+                    "no_members": False,
+                    "nonposix": False,
+                    "raw": False,
+                    "version": "2.156"
+                }
+            ]
+        }
+        self._json_rpc(query)
+
+    def add_user(self, username, password):
+        """
+        Add a user with the given username and password to freeIPA.
+        """
+        realm = "FREEIPA.MARATHON.L4LB.THISDCOS.DIRECTORY"
+        query = {
+            "id": 0,
+            "method": "user_add",
+            "params": [
+                [
+                    username
+                ],
+                {
+                    "all": False,
+                    "cn": username.capitalize() + " Test",
+                    "displayname": username.capitalize() + " Test",
+                    "gecos": username.capitalize() + " Test",
+                    "givenname": username.capitalize(),
+                    "initials": "MT",
+                    "krbprincipalname": username + "@" + realm,
+                    "no_members": False,
+                    "noprivate": False,
+                    "random": False,
+                    "raw": False,
+                    "sn": "Test",
+                    "userpassword": password,
+                    "version": "2.156"
+                }
+            ]
+        }
+        self._json_rpc(query)
+
+    def add_group_members(self, group, members):
+        """
+        Add the given list of members (a list of strings) to
+        the group with the given name.
+        """
+        query = {
+            "id": 0,
+            "method": "group_add_member",
+            "params": [
+                [
+                    group
+                ],
+                {
+                    "all": False,
+                    "no_members": False,
+                    "raw": False,
+                    "user": members,
+                    "version": "2.156"
+                }
+            ]
+        }
+        self._json_rpc(query)
+
+    def delete_user(self, username):
+        query = {
+            "id": 0,
+            "method": "user_del",
+            "params": [
+                [
+                    [
+                        username
+                    ]
+                ],
+                {
+                    "continue": False,
+                    "version": "2.156"
+                }
+            ]
+        }
+        self._json_rpc(query)
+
+    def _json_rpc(self, query, should_verify=True):
+        """
+        Perform a JSON-RPC POST against the freeIPA service,
+        injecting the given query dictionary appropriately.
+
+        Returns: The response to the JSON-RPC request.
+        """
+
+        headers = {
+            'Referer': 'https://' + self._host + '/ipa',
+            'Accept': 'application/json'
+        }
+        url = 'https://' + self._host + '/ipa/session/json'
+
+        verify = False
+        if should_verify:
+            verify = self.ca_cert_file
+
+        r = requests.post(
+            url,
+            headers=headers,
+            cookies=self._cookies,
+            json=query,
+            verify=verify
+        )
+        r.raise_for_status()
+        return r
 
 
 class FreeIPA(DirectoryBackend):
-    """
-    This requires availability of the freeIPA demo at ipa.demo1.freeipa.org.
-
-    The freeIPA demos supports LDAPS on port 636.
-
-    The configuration implies verification of the server certificate against a
-    CA cert chain. The CA cert has been downloaded manually from the demo UI
-    at https://ipa.demo1.freeipa.org/ipa/ui/#/e/cert/details/1
-    """
-
-    _ca_certs = dedent("""
-        -----BEGIN CERTIFICATE-----
-        MIIDnTCCAoWgAwIBAgIBATANBgkqhkiG9w0BAQsFADA8MRowGAYDVQQKDBFERU1P
-        MS5GUkVFSVBBLk9SRzEeMBwGA1UEAwwVQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4X
-        DTE0MDYwNDEwMzQwNVoXDTM0MDYwNDEwMzQwNVowPDEaMBgGA1UECgwRREVNTzEu
-        RlJFRUlQQS5PUkcxHjAcBgNVBAMMFUNlcnRpZmljYXRlIEF1dGhvcml0eTCCASIw
-        DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALX0IpLxvJ4/chzIdt597mUzOErw
-        K8UGga3t/Aspf1x+/+iUqulU+sa4LIn5zXbYAQRNM4eh4VwkW2u6FUr3Dpvsu4rJ
-        eEFOYmkcbIfTmM56hFMgBdKam9Txf/Yg+9zYk7LND5pvrCpDbEnO147NAnYryEa4
-        +PHQeTH+h8WNbXhrpKEOrWQS1TUdKVdzKOW/UQEpUadWjOHO0jaz3mvr7WgZ4jtB
-        G2nT/jXLLdxdKfHFR5NfIZqrCUYcdVah21SFK3Jr79ZGsxhewvAPsyemJ3etY46h
-        aqU8c2L8aaKvlJlRc2axVmsUSxWC0hazCBI/PI71bQrxzgcJaHOoQx78uaMCAwEA
-        AaOBqTCBpjAfBgNVHSMEGDAWgBQlv+uoMsiGBvVjMQrl7Q4HK3H1UjAPBgNVHRMB
-        Af8EBTADAQH/MA4GA1UdDwEB/wQEAwIBxjAdBgNVHQ4EFgQUJb/rqDLIhgb1YzEK
-        5e0OBytx9VIwQwYIKwYBBQUHAQEENzA1MDMGCCsGAQUFBzABhidodHRwOi8vaXBh
-        LmRlbW8xLmZyZWVpcGEub3JnOjgwL2NhL29jc3AwDQYJKoZIhvcNAQELBQADggEB
-        AAQxoZNrwd0Zy64aLp7qib6CIvYmzhNm8isZDek9vrgmgQ2AJQ1T3CXSqfNkYz6z
-        +qufLPxRvDz555b2giU33wBlWW73wTlSm8OcPsVdglfjH7SdEs/hvkvHKJXB14tJ
-        SdDB4FDcH1WR8PDgwxiaVK+74OgZ2uf9AX/VcaxvgKrla+fveNZpXhvVwuZ1llQT
-        HLfjgoVUBdPvxLmszjeuLRQ9E6YeYUsog6sV8BylFrlGY0Ft9MmXZZw6darhlOfC
-        xrfgPM4UB6S2dyaPslP3ivTUKFGqi9DTmu9ipHYJwJBP/Ea0yNZN94+5aCKxwCAF
-        FGBbIc59FVGTGUo01C7/6t8=
-        -----END CERTIFICATE-----
-        """)
-
-    config = OrderedDict([
-        ('host', 'ipa.demo1.freeipa.org'),
-        ('port', 636),
-        ('enforce-starttls', True),
-        ('use-ldaps', True),
-        ('lookup-dn', 'uid=employee,cn=users,cn=compat,dc=demo1,dc=freeipa,dc=org'),
-        ('lookup-password', 'Secret123'),
-        ('user-search', {
-            'search-filter-template': '(uid=%(username)s)',
-            'search-base': 'cn=users,cn=compat,dc=demo1,dc=freeipa,dc=org'
-            }),
-        ('ca-certs', _ca_certs),
-        ])
 
     _user_credentials = {
         'manager': {'uid': 'manager', 'password': 'Secret123'},
-        }
+    }
+
+    def __init__(self, host, ca_cert):
+        dc = ','.join(['dc=' + level for level in host.split('.')])
+        self.config = OrderedDict([
+            ('host', host),
+            ('port', 636),
+            ('enforce-starttls', True),
+            ('use-ldaps', True),
+            ('lookup-dn', 'uid=employee,cn=users,cn=compat,' + dc),
+            ('lookup-password', 'Secret123'),
+            ('user-search', {
+                'search-filter-template': '(uid=%(username)s)',
+                'search-base': 'cn=users,cn=compat,' + dc
+            }),
+            ('ca-certs', ca_cert),
+        ])
 
 
-def set_config(directory_backend, superuser):
+def set_config(config, superuser):
     """
     Submit `directory_backend.config` as current DC/OS LDAP configuration.
     """
-    log.info("Set LDAP config: %s", directory_backend.config)
+    log.info("Set LDAP config: %s", config)
     r = requests.put(
         IAMUrl('/ldap/config'),
-        json=directory_backend.config,
+        json=config,
         headers=superuser.auth_header
         )
     r.raise_for_status()
@@ -150,17 +293,144 @@ def remove_config(superuser):
 @pytest.yield_fixture()
 def ads1(superuser):
     d = ADS1()
-    set_config(d, superuser)
+    set_config(d.config, superuser)
     yield d
     remove_config(superuser)
 
 
-@pytest.yield_fixture()
-def freeipa(superuser):
-    d = FreeIPA()
-    set_config(d, superuser)
-    yield d
-    remove_config(superuser)
+@pytest.yield_fixture(scope="session")
+def freeipa(superuser, cluster):
+    """
+    The freeipa fixture starts and populates a freeIPA container
+    running on marathon in the DC/OS cluster under test. It destroys
+    the application when the tests have finished.
+    """
+
+    # start the freeIPA application on marathon
+    # and clean it up once the tests complete
+    with cluster.marathon.deploy_and_cleanup(
+            _freeipa_marathon_definition(),
+            timeout=1200):
+        # the hostname of the freeIPA server
+        host = "freeipa.marathon.l4lb.thisdcos.directory"
+
+        # connect to freeIPA using a requests wrapper
+        client = FreeIPAClient(
+            host,
+            username='admin',
+            password='Secret123'
+        )
+
+        # create users and groups for tests
+        client.add_user("manager", "Secret123")
+        client.add_user("employee", "Secret123")
+        client.add_group("employees")
+        client.add_group_members("employees", ["manager", "employee"])
+
+        # configure bouncer to use freeIPA as backend
+        d = FreeIPA(host, client.ca_cert)
+        set_config(d.config, superuser)
+        yield d
+        # remove freeIPA config from bouncer
+        remove_config(superuser)
+
+
+def _freeipa_marathon_definition():
+    """
+    Returns the appropriate marathon app definition as a dictionary
+    ready to be marshalled to JSON.
+    """
+
+    ipa_url = "https://freeipa.marathon.l4lb.thisdcos.directory/ipa"
+    referer = ipa_url
+    login_url = ipa_url + "/session/login_password"
+    headers = [
+        "Content-Type:application/x-www-form-urlencoded",
+        "Accept:text/plain"
+    ]
+    curl_cmd = "curl {opts} {headers} {url}".format(
+        opts="-fk --referer '{referer}' --data '{data}' -XPOST".format(
+            referer=referer,
+            data="user=admin&password=Secret123"
+        ),
+        headers=' '.join(["-H '{}'".format(header) for header in headers]),
+        url=login_url
+    )
+    return {
+        "id": "/freeipa",
+        "env": {
+            "IPA_SERVER_INSTALL_OPTS": ' '.join([
+                "--ds-password=Secret123",
+                "--admin-password=Secret123",
+                "--realm=FREEIPA.MARATHON.L4LB.THISDCOS.DIRECTORY",
+                "--domain=freeipa.marathon.l4lb.thisdcos.directory",
+                "--hostname=freeipa.marathon.l4lb.thisdcos.directory",
+                "--unattended",
+                "--no-host-dns"
+            ])
+        },
+        "instances": 1,
+        "cpus": 1,
+        "mem": 4096,
+        "maxLaunchDelaySeconds": 3600,
+        "container": {
+            "docker": {
+                "image": "mesosphere/freeipa-server:4.3",
+                "privileged": True,
+                "parameters": [
+                    {
+                        "key": "hostname",
+                        "value": "freeipa.marathon.l4lb.thisdcos.directory"
+                    }
+                ],
+                "portMappings": [
+                    {
+                        "containerPort": 80,
+                        "protocol": "tcp",
+                        "name": "http",
+                        "servicePort": 80,
+                        "labels": {
+                            "VIP_0": "/freeipa:80"
+                        }
+                    },
+                    {
+                        "containerPort": 636,
+                        "protocol": "tcp",
+                        "name": "ldaps",
+                        "servicePort": 636,
+                        "labels": {
+                            "VIP_1": "/freeipa:636"
+                        }
+                    },
+                    {
+                        "containerPort": 443,
+                        "protocol": "tcp",
+                        "name": "https",
+                        "servicePort": 443,
+                        "labels": {
+                            "VIP_2": "/freeipa:443"
+                        }
+                    }
+                ],
+                "network": "USER"
+            }
+        },
+        "healthChecks": [
+            {
+                "protocol": "COMMAND",
+                "command": {
+                    "value": curl_cmd
+                },
+                "gracePeriodSeconds": 900,
+                "intervalSeconds": 10,
+                "timeoutSeconds": 10,
+                "maxConsecutiveFailures": 1
+            }
+        ],
+        "ipAddress": {
+            "networkName": "dcos"
+        }
+    }
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
@@ -239,7 +509,6 @@ class TestADS1:
 class TestFreeIPA:
 
     def test_configtester(self, freeipa, superuser):
-
         r = requests.post(
             IAMUrl('/ldap/config/test'),
             json=freeipa.credentials('manager'),
@@ -249,7 +518,11 @@ class TestFreeIPA:
         assert r.json()['code'] == 'TEST_PASSED'
 
     def test_authentication_delegation(self, freeipa):
-
+        """
+        check that bouncer delegates authentication to the
+        configured freeipa authentication service and responds
+        with an appropriate DCOS authentication token
+        """
         r = requests.post(
             IAMUrl('/auth/login'),
             json=freeipa.credentials('manager')
