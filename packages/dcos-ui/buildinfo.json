@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "https://github.com/dcos/dcos-ui.git",
-    "ref": "2f4cd2b2a20dd0a3f21b14aa5eb1d240042a41b2",
-    "ref_origin": "master"
+    "ref": "3a03770217757163c1fd24d51fb83cd9f18104d7",
+    "ref_origin": "orlandohohmeier/fix/DCOS-10807-pod-task-path-handling"
   }
 }
