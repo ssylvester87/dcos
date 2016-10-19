@@ -138,6 +138,14 @@ def calculate_default_task_user(security):
         }[security]
 
 
+def calculate_marathon_authn_enabled(security):
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
+
+
 def calculate_marathon_https_enabled(security):
     return {
         'strict': 'true',
@@ -363,6 +371,7 @@ entry = {
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'default_task_user': calculate_default_task_user,
+        'marathon_authn_enabled': calculate_marathon_authn_enabled,
         'marathon_https_enabled': calculate_marathon_https_enabled,
         'marathon_extra_args': calculate_marathon_extra_args,
         'zk_acls_enabled': calculate_zk_acls_enabled,
