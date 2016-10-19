@@ -50,10 +50,10 @@ class TestHttpHttpsConfig:
         reason='AR must not serve /mesos/ over HTTP in strict-security mode.',
         strict=True
     )
-    def test_mesos_path_http(self, superuser_):
+    def test_mesos_path_http(self, superuser):
         r = requests.get(
             Url('/mesos/', scheme='http'),
-            headers=superuser_.authheader,
+            headers=superuser.auth_header,
             allow_redirects=False
             )
         assert r.status_code == 200
@@ -64,7 +64,7 @@ class TestHttpHttpsConfig:
         reason='AR is only expected to redirect non-root paths from HTTP to HTTPS in strict mode.',
         strict=True
     )
-    def test_mesos_path_http_https_redirect(self, superuser_):
+    def test_mesos_path_http_https_redirect(self, superuser):
         r = requests.get(
             Url('/mesos/', scheme='http'),
             allow_redirects=False
@@ -74,7 +74,7 @@ class TestHttpHttpsConfig:
 
         r = requests.get(
             Url('/mesos/', scheme='http'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert '<html' in r.text
@@ -103,78 +103,78 @@ class TestResourceAvailability:
         r = requests.get(Url('/dcos-metadata/dcos-version.json'))
         assert r.status_code == 200
 
-    def test_ui_config(self, superuser_):
+    def test_ui_config(self, superuser):
         r = requests.get(
             Url('/dcos-metadata/ui-config.json'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert 'uiConfiguration' in r.json()
 
-    def test_dcos_history_service_api(self, superuser_):
+    def test_dcos_history_service_api(self, superuser):
         r = requests.get(
             Url('/dcos-history-service/ping'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert 'pong' == r.text
 
-    def test_marathon_ui(self, superuser_):
+    def test_marathon_ui(self, superuser):
         r = requests.get(
             Url('/service/marathon/ui/'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert len(r.text) > 100
         assert '<title>Marathon</title>' in r.text
 
-    def test_legacy_marathon_endpoint(self, superuser_):
+    def test_legacy_marathon_endpoint(self, superuser):
         r = requests.get(
             Url('/marathon/ui/'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert len(r.text) > 100
         assert '<title>Marathon</title>' in r.text
 
-    def test_mesos_ui(self, superuser_):
-        r = requests.get(Url('/mesos'), headers=superuser_.authheader)
+    def test_mesos_ui(self, superuser):
+        r = requests.get(Url('/mesos'), headers=superuser.auth_header)
         assert r.status_code == 200
         assert len(r.text) > 100
         assert '<title>Mesos</title>' in r.text
 
-    def test_mesos_dns_api(self, superuser_):
+    def test_mesos_dns_api(self, superuser):
         r = requests.get(
             Url('/mesos_dns/v1/version'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
         assert data["Service"] == 'Mesos-DNS'
 
-    def test_pkgpanda_metadata(self, superuser_):
+    def test_pkgpanda_metadata(self, superuser):
         r = requests.get(
             Url('/pkgpanda/active.buildinfo.full.json'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
         assert 'mesos' in data
         assert len(data) > 5  # (prozlach) We can try to put minimal number of pacakages required
 
-    def test_exhibitor_api(self, superuser_):
+    def test_exhibitor_api(self, superuser):
         r = requests.get(
             Url('/exhibitor/exhibitor/v1/cluster/list'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
         assert data["port"] > 0
 
-    def test_exhibitor_ui(self, superuser_):
+    def test_exhibitor_ui(self, superuser):
         r = requests.get(
             Url('/exhibitor'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert '<html' in r.text
@@ -212,14 +212,14 @@ def test_agents_endpoint_unknown_agent():
 @retrying.retry(wait_fixed=2000,
                 retry_on_result=lambda r: r is False,
                 retry_on_exception=lambda _: False)
-def test_agents_endpoint_all_agents(superuser_):
+def test_agents_endpoint_all_agents(superuser):
 
     # Get currently known agents. This request is served through Admin Router
     # straight from Mesos (no AdminRouter-based caching is involved).
 
     r = requests.get(
         Url('/mesos/master/state'),
-        headers=superuser_.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
     agent_ids = sorted(x['id'] for x in r.json()['slaves'])
@@ -239,7 +239,7 @@ def test_agents_endpoint_all_agents(superuser_):
             )
 
         for p in paths:
-            r = requests.get(Url(p), headers=superuser_.authheader)
+            r = requests.get(Url(p), headers=superuser.auth_header)
 
             # Retry in that case.
             if r.status_code == 404:

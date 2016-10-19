@@ -143,7 +143,7 @@ class TestAdminRouterServiceEndpoint:
 class TestSecretsACLs:
     def test_get_store_acl(self, peter_cluster):
         # TODO(JP): extend this test.
-        r = peter_cluster.get('/secrets/v1/store')
+        r = peter_cluster.secrets.get('store')
         assert r.status_code == 403
 
 
@@ -408,4 +408,4 @@ class TestMarathonAppDeployment:
     def test_superuser_sleep_app(self, cluster):
         app = ee_helpers.sleep_app_definition("super-%s" % str(uuid.uuid4()))
         with cluster.marathon.deploy_and_cleanup(app, check_health=False):
-            assert True
+            pass

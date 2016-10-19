@@ -8,7 +8,8 @@ OPS_ENDPOINTS = [
     '/networking/api/v1/vips',
     '/pkgpanda/active.buildinfo.full.json',
     '/secrets/v1/store',
-    '/system/health/v1']
+    '/system/health/v1',
+    'pkgpanda/active/']
 
 
 def sleep_app_definition(uid):

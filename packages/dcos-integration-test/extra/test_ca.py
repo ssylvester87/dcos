@@ -34,7 +34,7 @@ def test_if_CA_cert_was_loaded():
 
 
 @pytest.mark.skip(reason="Disabled till DCOS-8889 is addressed")
-def test_if_CA_can_list_issued_certs(superuser_):
+def test_if_CA_can_list_issued_certs(superuser):
     data = {
         "request": {
             "hosts": ["www.example.com"],
@@ -45,14 +45,14 @@ def test_if_CA_can_list_issued_certs(superuser_):
     r = requests.post(
         CAUrl('/newcert'),
         json=data,
-        headers=superuser_.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
 
     r = requests.post(
         CAUrl('/certificates'),
         json={"authority_key_id": "", "serial": "", "expired_ok": False},
-        headers=superuser_.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
 
@@ -66,7 +66,7 @@ def test_if_CA_can_list_issued_certs(superuser_):
     # returned certificate is the one that was signed by CA just a moment ago.
 
 
-def test_if_CA_can_create_cert(superuser_):
+def test_if_CA_can_create_cert(superuser):
     p = {"request": {"hosts": ["www.example.com"],
                      "names": [{"C": "US",
                                 "ST": "California",
@@ -74,7 +74,7 @@ def test_if_CA_can_create_cert(superuser_):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = requests.post(CAUrl('/newcert'), json=p, headers=superuser_.authheader)
+    r = requests.post(CAUrl('/newcert'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()
@@ -85,7 +85,7 @@ def test_if_CA_can_create_cert(superuser_):
     assert 'PRIVATE KEY' in data['result']['private_key']
 
 
-def test_if_CA_can_create_csr(superuser_):
+def test_if_CA_can_create_csr(superuser):
     p = {"request": {"hosts": ["www.example.com"],
                      "names": [{"C": "US",
                                 "ST": "California",
@@ -95,7 +95,7 @@ def test_if_CA_can_create_csr(superuser_):
                      "CN": "www.example.com"}}
     r = requests.post(CAUrl('/newkey'), json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/newkey'), json=p, headers=superuser_.authheader)
+    r = requests.post(CAUrl('/newkey'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()
@@ -107,7 +107,7 @@ def test_if_CA_can_create_csr(superuser_):
     assert 'PRIVATE KEY' in data['result']['private_key']
 
 
-def test_if_CA_can_create_cert_from_csr(superuser_):
+def test_if_CA_can_create_cert_from_csr(superuser):
     p = {"certificate_request": """-----BEGIN CERTIFICATE REQUEST-----
 MIICqjCCAZICAQAwZTEXMBUGA1UEAwwOd3d3LnBvdGF0by5jb20xFTATBgNVBAoM
 DFBvdGF0bywgSW5jLjELMAkGA1UEBhMCREUxEzARBgNVBAgMClBvdGF0b2xhbmQx
@@ -127,7 +127,7 @@ hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 -----END CERTIFICATE REQUEST-----"""}
     r = requests.post(CAUrl('/sign'), json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/sign'), json=p, headers=superuser_.authheader)
+    r = requests.post(CAUrl('/sign'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()

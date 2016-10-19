@@ -119,7 +119,7 @@ class FreeIPA(DirectoryBackend):
         }
 
 
-def set_config(directory_backend, superuser_):
+def set_config(directory_backend, superuser):
     """
     Submit `directory_backend.config` as current DC/OS LDAP configuration.
     """
@@ -127,20 +127,20 @@ def set_config(directory_backend, superuser_):
     r = requests.put(
         IAMUrl('/ldap/config'),
         json=directory_backend.config,
-        headers=superuser_.authheader
+        headers=superuser.auth_header
         )
     r.raise_for_status()
     assert r.status_code == 200
 
 
-def remove_config(superuser_):
+def remove_config(superuser):
     """
     Remove current DC/OS LDAP configuration.
     """
     log.info("Remove current LDAP config")
     r = requests.delete(
         IAMUrl('/ldap/config'),
-        headers=superuser_.authheader
+        headers=superuser.auth_header
         )
     if not r.status_code == 204:
         assert r.status_code == 400
@@ -148,35 +148,35 @@ def remove_config(superuser_):
 
 
 @pytest.yield_fixture()
-def ads1(superuser_):
+def ads1(superuser):
     d = ADS1()
-    set_config(d, superuser_)
+    set_config(d, superuser)
     yield d
-    remove_config(superuser_)
+    remove_config(superuser)
 
 
 @pytest.yield_fixture()
-def freeipa(superuser_):
+def freeipa(superuser):
     d = FreeIPA()
-    set_config(d, superuser_)
+    set_config(d, superuser)
     yield d
-    remove_config(superuser_)
+    remove_config(superuser)
 
 
-@pytest.mark.usefixtures("iam_verify_and_reset_")
+@pytest.mark.usefixtures("iam_verify_and_reset")
 class TestADS1:
 
-    def test_configtester(self, ads1, superuser_):
+    def test_configtester(self, ads1, superuser):
 
         r = requests.post(
             IAMUrl('/ldap/config/test'),
             json=ads1.credentials('john1'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
 
-    def test_authentication_delegation(self, superuser_, ads1):
+    def test_authentication_delegation(self, superuser, ads1):
 
         r = requests.post(
             IAMUrl('/auth/login'),
@@ -192,7 +192,7 @@ class TestADS1:
         # executing this test.
         r = requests.get(
             IAMUrl('/users'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
 
@@ -201,12 +201,12 @@ class TestADS1:
         users = {d['uid']: d for d in r.json()['array']}
         assert users['john1']['is_remote'] is True
 
-    def test_groupimport(self, ads1, superuser_):
+    def test_groupimport(self, ads1, superuser):
 
         r = requests.post(
             IAMUrl('/ldap/importgroup'),
             json={"groupname": "johngroup"},
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -216,7 +216,7 @@ class TestADS1:
         # and labeled as remote users.
         r = requests.get(
             IAMUrl('/users'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         l = r.json()['array']
@@ -228,22 +228,22 @@ class TestADS1:
         # the expected set of members.
         r = requests.get(
             IAMUrl('/groups/johngroup/users'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         l = r.json()['array']
         assert set((d['user']['uid'] for d in l)) == set(john_uids)
 
 
-@pytest.mark.usefixtures("iam_verify_and_reset_")
+@pytest.mark.usefixtures("iam_verify_and_reset")
 class TestFreeIPA:
 
-    def test_configtester(self, freeipa, superuser_):
+    def test_configtester(self, freeipa, superuser):
 
         r = requests.post(
             IAMUrl('/ldap/config/test'),
             json=freeipa.credentials('manager'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'

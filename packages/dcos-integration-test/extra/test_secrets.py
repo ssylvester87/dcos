@@ -71,8 +71,7 @@ def test_if_secrets_get_wrongsecret(cluster):
 
 def test_if_secrets_put_secret(cluster):
     # FIXME: this test leaves state behind and fails on rerun
-    data = {"value": "anewsecret"}
-    r = cluster.secrets.put('/secret/default/anewpath', json=data)
+    r = cluster.secrets.put('/secret/default/anewpath', json={'value': 'anewsecret'})
     assert r.status_code == 201
 
 
@@ -95,8 +94,7 @@ def test_if_secrets_list_secret(cluster):
 
 def test_if_secrets_put_secret_exists(cluster):
     # FIXME: test relies on previous test: NO
-    data = {"value": "anewsecret"}
-    r = cluster.secrets.put('/secret/default/anewpath', json=data)
+    r = cluster.secrets.put('/secret/default/anewpath', json={'value': 'anewsecret'})
     assert r.status_code == 409
 
 
@@ -145,8 +143,7 @@ def test_if_secrets_seal_and_auto_unseal(cluster):
 
     # Unseal store with superuser privileges by just passing
     # still encrypted unseal key to auto-unseal endpoint
-    data = {'key': resp['keys'][0]}
-    r = cluster.secrets.put('/auto-unseal/default', json=data)
+    r = cluster.secrets.put('/auto-unseal/default', json={'key': resp['keys'][0]})
     assert r.status_code == 200
 
     # Store should not be sealed

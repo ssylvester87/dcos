@@ -108,7 +108,7 @@ class TestIAMLoginEndpointBehavior:
         assert r.json()['code'] == "ERR_INVALID_CREDENTIALS"
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
-    def test_post_superuser__credentials_verify_token_cookies_in_resp(self):
+    def test_post_superuser_credentials_verify_token_cookies_in_resp(self):
         r = requests.post(
             self.login_url,
             json={'uid': dcos.su_uid, 'password': dcos.su_password}
@@ -197,10 +197,10 @@ class TestIAMInvalidAuthHeader:
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
-@pytest.mark.usefixtures("iam_verify_and_reset_")
+@pytest.mark.usefixtures("iam_verify_and_reset")
 class TestIAMUserGroupCRUD:
 
-    def test_create_user_account_log_in_delete(self, superuser_):
+    def test_create_user_account_log_in_delete(self, superuser):
 
         # Specify user details.
         uid = 'test-user-1'
@@ -212,7 +212,7 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             user_url,
             json={'description': description, 'password': password},
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -224,20 +224,20 @@ class TestIAMUserGroupCRUD:
         assert 'token' in d
 
         # Verify that user appears in collection.
-        r = requests.get(IAMUrl('/users'), headers=superuser_.authheader)
+        r = requests.get(IAMUrl('/users'), headers=superuser.auth_header)
         uids = [o['uid'] for o in r.json()['array']]
         assert uid in uids
 
         # Delete user.
-        r = requests.delete(user_url, headers=superuser_.authheader)
+        r = requests.delete(user_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that user does not appear in collection anymore.
-        r = requests.get(IAMUrl('/users'), headers=superuser_.authheader)
+        r = requests.get(IAMUrl('/users'), headers=superuser.auth_header)
         uids = [o['uid'] for o in r.json()['array']]
         assert uid not in uids
 
-    def test_create_service_account_log_in_delete(self, superuser_):
+    def test_create_service_account_log_in_delete(self, superuser):
 
         # Specify service details.
         uid = 'test-service-1'
@@ -249,7 +249,7 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             service_url,
             json={'description': description, 'secret': sharedsecret},
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -273,24 +273,24 @@ class TestIAMUserGroupCRUD:
         # Verify that service appears in collection.
         r = requests.get(
             IAMUrl('/users?type=service'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         uids = [o['uid'] for o in r.json()['array']]
         assert uid in uids
 
         # Delete service.
-        r = requests.delete(service_url, headers=superuser_.authheader)
+        r = requests.delete(service_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that service does not appear in collection anymore.
         r = requests.get(
             IAMUrl('/users?type=service'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         uids = [o['uid'] for o in r.json()['array']]
         assert uid not in uids
 
-    def test_group_membership(self, superuser_, peter_):
+    def test_group_membership(self, superuser, peter):
         # Create group.
         gid = 'test-group-1'
         description = 'Group A'
@@ -298,39 +298,39 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             group_url,
             json={'description': description},
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
         # Verify that group appears in collection.
         r = requests.get(
             IAMUrl('/groups'),
-            headers=superuser_.authheader
+            headers=superuser.auth_header
             )
         gids = [o['gid'] for o in r.json()['array']]
         assert gid in gids
 
-        # Put peter_ into group.
+        # Put peter into group.
         r = requests.put(
-            IAMUrl('/groups/%s/users/%s' % (gid, peter_.uid)),
-            headers=superuser_.authheader
+            IAMUrl('/groups/%s/users/%s' % (gid, peter.uid)),
+            headers=superuser.auth_header
             )
         assert r.status_code == 204
 
         # Confirm membership.
         r = requests.get(
-            IAMUrl('/users/%s/groups' % peter_.uid),
-            headers=superuser_.authheader
+            IAMUrl('/users/%s/groups' % peter.uid),
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         l = r.json()['array']
         assert l[0]['group']['gid'] == gid
 
         # Delete group.
-        r = requests.delete(group_url, headers=superuser_.authheader)
+        r = requests.delete(group_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that group does not appear in collection anymore.
-        r = requests.get(IAMUrl('/groups'), headers=superuser_.authheader)
+        r = requests.get(IAMUrl('/groups'), headers=superuser.auth_header)
         gids = [o['gid'] for o in r.json()['array']]
         assert gid not in gids
