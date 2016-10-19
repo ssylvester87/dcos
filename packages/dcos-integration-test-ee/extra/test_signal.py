@@ -109,6 +109,8 @@ def test_ee_signal_service(cluster):
         'adminrouter-agent-service',
         'adminrouter-agent-reload-service',
         'adminrouter-agent-reload-timer',
+        'docker-gc-service',
+        'docker-gc-timer',
         'logrotate-agent-service',
         'logrotate-agent-timer',
         'rexray-service']
