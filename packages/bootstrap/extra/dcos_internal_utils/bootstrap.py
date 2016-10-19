@@ -735,6 +735,12 @@ class Bootstrapper(object):
         if not keytool:
             raise Exception('keytool not found')
 
+        try:
+            os.remove(ts_fn)
+            log.info("Removed existing TrustStore file: %s", ts_fn)
+        except FileNotFoundError:
+            log.info("TrustStore file does not yet exist: %s", ts_fn)
+
         cmd = [
             keytool,
             '-importkeystore',
