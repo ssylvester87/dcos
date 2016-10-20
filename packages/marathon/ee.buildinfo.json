@@ -8,12 +8,12 @@
     },
     "marathon-plugins": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.0/plugins.zip",
-      "sha1": "a0719fed689f3e910d10ac958a57f787fc206f4b"
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.2/plugins.zip",
+      "sha1": "838f72e250bb403b5abd9d6c3261dbb548cb26eb"
     },
     "marathon-plugin-conf": {
       "kind": "url",
-      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.0/plugin-conf.json",
+      "url": "https://downloads.mesosphere.com/marathon-plugins/marathon-dcos-plugins/1.1.2/plugin-conf.json",
       "sha1": "ad1af05322b6adff27f0c8fd0edbde763327be6f"
     }
   },
