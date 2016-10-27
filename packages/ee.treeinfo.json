@@ -2,6 +2,7 @@
   "variants": {
     "adminrouter": "ee",
     "dcos-ui": "ee",
+    "dcos-integration-test": "ee",
     "marathon": "ee",
     "metronome": "ee",
     "dcos-signal": "ee",

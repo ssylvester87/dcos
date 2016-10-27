@@ -2,7 +2,6 @@
   "requires": [
     "boto",
     "dcos-image-deps",
-    "dcos-integration-test",
     "dnspython",
     "openssl",
     "pytest",

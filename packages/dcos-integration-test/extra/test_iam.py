@@ -212,7 +212,7 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             user_url,
             json={'description': description, 'password': password},
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -224,16 +224,16 @@ class TestIAMUserGroupCRUD:
         assert 'token' in d
 
         # Verify that user appears in collection.
-        r = requests.get(IAMUrl('/users'), headers=superuser.authheader)
+        r = requests.get(IAMUrl('/users'), headers=superuser.auth_header)
         uids = [o['uid'] for o in r.json()['array']]
         assert uid in uids
 
         # Delete user.
-        r = requests.delete(user_url, headers=superuser.authheader)
+        r = requests.delete(user_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that user does not appear in collection anymore.
-        r = requests.get(IAMUrl('/users'), headers=superuser.authheader)
+        r = requests.get(IAMUrl('/users'), headers=superuser.auth_header)
         uids = [o['uid'] for o in r.json()['array']]
         assert uid not in uids
 
@@ -249,7 +249,7 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             service_url,
             json={'description': description, 'secret': sharedsecret},
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -273,19 +273,19 @@ class TestIAMUserGroupCRUD:
         # Verify that service appears in collection.
         r = requests.get(
             IAMUrl('/users?type=service'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         uids = [o['uid'] for o in r.json()['array']]
         assert uid in uids
 
         # Delete service.
-        r = requests.delete(service_url, headers=superuser.authheader)
+        r = requests.delete(service_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that service does not appear in collection anymore.
         r = requests.get(
             IAMUrl('/users?type=service'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         uids = [o['uid'] for o in r.json()['array']]
         assert uid not in uids
@@ -298,14 +298,14 @@ class TestIAMUserGroupCRUD:
         r = requests.put(
             group_url,
             json={'description': description},
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
         # Verify that group appears in collection.
         r = requests.get(
             IAMUrl('/groups'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         gids = [o['gid'] for o in r.json()['array']]
         assert gid in gids
@@ -313,24 +313,24 @@ class TestIAMUserGroupCRUD:
         # Put peter into group.
         r = requests.put(
             IAMUrl('/groups/%s/users/%s' % (gid, peter.uid)),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 204
 
         # Confirm membership.
         r = requests.get(
             IAMUrl('/users/%s/groups' % peter.uid),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         l = r.json()['array']
         assert l[0]['group']['gid'] == gid
 
         # Delete group.
-        r = requests.delete(group_url, headers=superuser.authheader)
+        r = requests.delete(group_url, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Verify that group does not appear in collection anymore.
-        r = requests.get(IAMUrl('/groups'), headers=superuser.authheader)
+        r = requests.get(IAMUrl('/groups'), headers=superuser.auth_header)
         gids = [o['gid'] for o in r.json()['array']]
         assert gid not in gids

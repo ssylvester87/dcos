@@ -127,7 +127,7 @@ def set_config(directory_backend, superuser):
     r = requests.put(
         IAMUrl('/ldap/config'),
         json=directory_backend.config,
-        headers=superuser.authheader
+        headers=superuser.auth_header
         )
     r.raise_for_status()
     assert r.status_code == 200
@@ -140,7 +140,7 @@ def remove_config(superuser):
     log.info("Remove current LDAP config")
     r = requests.delete(
         IAMUrl('/ldap/config'),
-        headers=superuser.authheader
+        headers=superuser.auth_header
         )
     if not r.status_code == 204:
         assert r.status_code == 400
@@ -171,7 +171,7 @@ class TestADS1:
         r = requests.post(
             IAMUrl('/ldap/config/test'),
             json=ads1.credentials('john1'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
@@ -192,7 +192,7 @@ class TestADS1:
         # executing this test.
         r = requests.get(
             IAMUrl('/users'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
 
@@ -206,7 +206,7 @@ class TestADS1:
         r = requests.post(
             IAMUrl('/ldap/importgroup'),
             json={"groupname": "johngroup"},
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 201
 
@@ -216,7 +216,7 @@ class TestADS1:
         # and labeled as remote users.
         r = requests.get(
             IAMUrl('/users'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         l = r.json()['array']
@@ -228,7 +228,7 @@ class TestADS1:
         # the expected set of members.
         r = requests.get(
             IAMUrl('/groups/johngroup/users'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         l = r.json()['array']
@@ -243,7 +243,7 @@ class TestFreeIPA:
         r = requests.post(
             IAMUrl('/ldap/config/test'),
             json=freeipa.credentials('manager'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'

@@ -60,9 +60,9 @@ def test_component_auth_direct_forged_token(url, forged_superuser_authheader):
 def test_component_auth_direct_peter(url, peter):
 
     if 'teardown' in url:
-        r = requests.post(url, headers=peter.authheader, data={})
+        r = requests.post(url, headers=peter.auth_header, data={})
     else:
-        r = requests.get(url, headers=peter.authheader)
+        r = requests.get(url, headers=peter.auth_header)
     # Expect success or forbidden.
     try:
         r.raise_for_status()

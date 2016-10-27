@@ -53,7 +53,7 @@ class TestHttpHttpsConfig:
     def test_mesos_path_http(self, superuser):
         r = requests.get(
             Url('/mesos/', scheme='http'),
-            headers=superuser.authheader,
+            headers=superuser.auth_header,
             allow_redirects=False
             )
         assert r.status_code == 200
@@ -74,7 +74,7 @@ class TestHttpHttpsConfig:
 
         r = requests.get(
             Url('/mesos/', scheme='http'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert '<html' in r.text
@@ -106,7 +106,7 @@ class TestResourceAvailability:
     def test_ui_config(self, superuser):
         r = requests.get(
             Url('/dcos-metadata/ui-config.json'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert 'uiConfiguration' in r.json()
@@ -114,7 +114,7 @@ class TestResourceAvailability:
     def test_dcos_history_service_api(self, superuser):
         r = requests.get(
             Url('/dcos-history-service/ping'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert 'pong' == r.text
@@ -122,7 +122,7 @@ class TestResourceAvailability:
     def test_marathon_ui(self, superuser):
         r = requests.get(
             Url('/service/marathon/ui/'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert len(r.text) > 100
@@ -131,14 +131,14 @@ class TestResourceAvailability:
     def test_legacy_marathon_endpoint(self, superuser):
         r = requests.get(
             Url('/marathon/ui/'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert len(r.text) > 100
         assert '<title>Marathon</title>' in r.text
 
     def test_mesos_ui(self, superuser):
-        r = requests.get(Url('/mesos'), headers=superuser.authheader)
+        r = requests.get(Url('/mesos'), headers=superuser.auth_header)
         assert r.status_code == 200
         assert len(r.text) > 100
         assert '<title>Mesos</title>' in r.text
@@ -146,7 +146,7 @@ class TestResourceAvailability:
     def test_mesos_dns_api(self, superuser):
         r = requests.get(
             Url('/mesos_dns/v1/version'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
@@ -155,7 +155,7 @@ class TestResourceAvailability:
     def test_pkgpanda_metadata(self, superuser):
         r = requests.get(
             Url('/pkgpanda/active.buildinfo.full.json'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
@@ -165,7 +165,7 @@ class TestResourceAvailability:
     def test_exhibitor_api(self, superuser):
         r = requests.get(
             Url('/exhibitor/exhibitor/v1/cluster/list'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         data = r.json()
@@ -174,7 +174,7 @@ class TestResourceAvailability:
     def test_exhibitor_ui(self, superuser):
         r = requests.get(
             Url('/exhibitor'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
         assert '<html' in r.text
@@ -219,7 +219,7 @@ def test_agents_endpoint_all_agents(superuser):
 
     r = requests.get(
         Url('/mesos/master/state'),
-        headers=superuser.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
     agent_ids = sorted(x['id'] for x in r.json()['slaves'])
@@ -239,7 +239,7 @@ def test_agents_endpoint_all_agents(superuser):
             )
 
         for p in paths:
-            r = requests.get(Url(p), headers=superuser.authheader)
+            r = requests.get(Url(p), headers=superuser.auth_header)
 
             # Retry in that case.
             if r.status_code == 404:

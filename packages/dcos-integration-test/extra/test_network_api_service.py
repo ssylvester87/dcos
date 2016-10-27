@@ -67,10 +67,10 @@ def test_network_api_vips(superuser):
     app_name = 'test-network-api-vips-{}'.format(uuid.uuid4().hex)
     app_def = app_definition(app_name, app_ip, app_port)
     app = MarathonApp(app_def)
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser.auth_header)
     logging.info(r.text)
     assert r.ok
-    endpoints = app.wait(headers=superuser.authheader)
+    endpoints = app.wait(headers=superuser.auth_header)
     logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
 
     @retrying.retry(wait_fixed=1000,
@@ -96,10 +96,10 @@ def test_network_api_named_vips(superuser):
     app_name = 'id{}'.format(uuid.uuid4().hex)[1:10]
     app_def = app_definition(app_name, app_name, app_port)
     app = MarathonApp(app_def)
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser.auth_header)
     logging.info(r.text)
     assert r.ok
-    endpoints = app.wait(headers=superuser.authheader)
+    endpoints = app.wait(headers=superuser.auth_header)
     logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
 
     @retrying.retry(wait_fixed=1000,

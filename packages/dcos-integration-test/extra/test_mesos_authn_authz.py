@@ -40,9 +40,9 @@ def get_mesos_endpoints(mesos_url):
 
 def run_task(superuser):
     app = MarathonApp(sleep_app_definition("mesos-authz-%s" % str(uuid.uuid4())))
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser.auth_header)
     r.raise_for_status()
-    app.wait(check_health=False, headers=superuser.authheader)
+    app.wait(check_health=False, headers=superuser.auth_header)
 
 
 @pytest.mark.xfail(
@@ -59,7 +59,7 @@ def test_mesos_endpoint_authn(superuser):
 
     def get_authenticated(url):
         ''' Performs a Bouncer-authenticated `GET` of `path` '''
-        return requests.get(url, headers=superuser.authheader)
+        return requests.get(url, headers=superuser.auth_header)
 
     def request(url, do_authed, master):
         _get = get_authenticated if do_authed else get_unauthenticated
@@ -139,9 +139,9 @@ class TestMesosAuthz:
 
         def request(url, authorized):
             if authorized:
-                r = requests.get(url, headers=superuser.authheader)
+                r = requests.get(url, headers=superuser.auth_header)
             else:
-                r = requests.get(url, headers=peter.authheader)
+                r = requests.get(url, headers=peter.auth_header)
 
             log.debug(
                 'Got %s with %s request for endpoint %s. Response: \n%s',
@@ -183,9 +183,9 @@ class TestMesosAuthz:
 
         def request(url, authorized, filtered_field):
             if authorized:
-                r = requests.get(url, headers=superuser.authheader)
+                r = requests.get(url, headers=superuser.auth_header)
             else:
-                r = requests.get(url, headers=peter.authheader)
+                r = requests.get(url, headers=peter.auth_header)
 
             log.debug(
                 'Got %s with %s request for endpoint %s. Response: \n%s',
@@ -225,7 +225,7 @@ class TestMesosAuthz:
 
         def set_weight(weight, authorized):
             url = str(Url('', host=dcos.masters[0], port=5050))
-            headers = superuser.authheader if authorized else peter.authheader
+            headers = superuser.auth_header if authorized else peter.auth_header
             data = '[{"role": "test-weights-role", "weight": ' + str(weight) + '}]'
             r = requests.put(url + '/weights', headers=headers, data=data)
 
@@ -244,7 +244,7 @@ class TestMesosAuthz:
 
         def check_weight(weight, authorized):
             url = str(Url('', host=dcos.masters[0], port=5050))
-            headers = superuser.authheader if authorized else peter.authheader
+            headers = superuser.auth_header if authorized else peter.auth_header
             r = requests.get(url + '/weights', headers=headers)
 
             log.debug(
@@ -290,7 +290,7 @@ class TestMesosAuthz:
         # Get a valid agent ID.
         r = requests.get(
             Url('/mesos/master/state'),
-            headers=superuser.authheader
+            headers=superuser.auth_header
         )
         assert r.status_code == 200
 
@@ -307,9 +307,9 @@ class TestMesosAuthz:
         def post(path, authorized, data, principal):
             url = str(Url('', host=dcos.masters[0], port=5050))
             if authorized:
-                headers = superuser.authheader
+                headers = superuser.auth_header
             else:
-                headers = peter.authheader
+                headers = peter.auth_header
 
             prepped_data = copy.copy(data).replace('#PRINCIPAL#', principal)
             r = requests.post(url + path, headers=headers, data=prepped_data)
@@ -388,9 +388,9 @@ class TestMesosAuthz:
 
         def get(path, authorized, target, url):
             if authorized:
-                headers = superuser.authheader
+                headers = superuser.auth_header
             else:
-                headers = peter.authheader
+                headers = peter.auth_header
 
             r = requests.get(url + path.replace('#TARGET#', target), headers=headers)
 
@@ -498,8 +498,8 @@ class TestMesosAuthz:
         for request_function in (post, get, delete):
             for authorized in (False, True):
                 if authorized:
-                    headers = superuser.authheader
+                    headers = superuser.auth_header
                 else:
-                    headers = peter.authheader
+                    headers = peter.auth_header
 
                 request_function(authorized, headers)
