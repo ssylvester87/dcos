@@ -27,26 +27,26 @@ class TestAccessControlMarathon:
         assert r.status_code == 401
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
-    def test_peter_access(self, peter):
-        r = requests.get(Url('/service/marathon'), headers=peter.authheader)
+    def test_peteraccess(self, peter):
+        r = requests.get(Url('/service/marathon'), headers=peter.auth_header)
         assert r.status_code == 403
 
     def test_su_access(self, superuser):
-        r = requests.get(Url('/service/marathon'), headers=superuser.authheader)
+        r = requests.get(Url('/service/marathon'), headers=superuser.auth_header)
         assert r.status_code == 200
 
     def test_wu_access_service_marathon_with_perm(self, peter, superuser):
         # Verify that Peter cannot access.
-        r = requests.get(Url('/service/marathon'), headers=peter.authheader)
+        r = requests.get(Url('/service/marathon'), headers=peter.auth_header)
         assert r.status_code == 403
 
         # Add peter to ACL, with action full.
         u = IAMUrl('/acls/dcos:adminrouter:service:marathon/users/%s/full' % peter.uid)
-        r = requests.put(url=u, headers=superuser.authheader)
+        r = requests.put(url=u, headers=superuser.auth_header)
         assert r.status_code == 204
 
         # Attempt to access again.
-        r = requests.get(Url('/service/marathon/'), headers=peter.authheader)
+        r = requests.get(Url('/service/marathon/'), headers=peter.auth_header)
         assert r.status_code == 200
 
 
@@ -64,7 +64,7 @@ class TestErrorPages:
         assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
     def test_permdenied_html_body(self, peter):
-        r = requests.get(IAMUrl('/users'), headers=peter.authheader)
+        r = requests.get(IAMUrl('/users'), headers=peter.auth_header)
         assert r.status_code == 403
         assert '<html>' in r.text
         assert '</html>' in r.text
@@ -85,8 +85,8 @@ class TestCookieAuth:
 
     def test_access_with_auth_cookie(self, superuser, peter):
 
-        wucookie = {'dcos-acs-auth-cookie': peter.authcookie}
-        sucookie = {'dcos-acs-auth-cookie': superuser.authcookie}
+        wucookie = {'dcos-acs-auth-cookie': peter.auth_cookie}
+        sucookie = {'dcos-acs-auth-cookie': superuser.auth_cookie}
 
         # Super user has access.
         r = requests.get(IAMUrl('/users'), cookies=sucookie)
@@ -99,14 +99,14 @@ class TestCookieAuth:
     def test_access_with_both_cookie_and_auth_header(self, superuser, peter):
         """Existence of Authorization header overrides auth cookie."""
 
-        sucookie = {'dcos-acs-auth-cookie': superuser.authcookie}
+        sucookie = {'dcos-acs-auth-cookie': superuser.auth_cookie}
         invalidauthheader = {'Authorization': 'token=wrong-token'}
 
         # Set valid auth header and invalid cookie: must succeed.
         r = requests.get(
             IAMUrl('/users'),
             cookies=sucookie,
-            headers=superuser.authheader
+            headers=superuser.auth_header
             )
         assert r.status_code == 200
 
@@ -123,7 +123,7 @@ class TestCookieAuth:
         r = requests.get(
             IAMUrl('/users'),
             cookies=sucookie,
-            headers=peter.authheader
+            headers=peter.auth_header
             )
         assert r.status_code == 403
 

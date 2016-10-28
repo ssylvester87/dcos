@@ -1,16 +1,16 @@
 {
-  "docker": "golang:1.6",
+  "docker": "golang:1.7",
   "sources" : {
     "3dt": {
       "kind": "git",
       "git": "git@github.com:dcos/3dt.git",
-      "ref": "c071aabec05e100b6a194ee9ead77982aed30489",
+      "ref": "cc7a19f9c9c062745f313fe0e221cddba3feb5e7",
       "ref_origin": "master"
     },
     "3dt-enterprise": {
       "kind": "git",
       "git": "git@github.com:mesosphere/3dt-enterprise.git",
-      "ref": "c676c1e90e008c2de5f1a011ae914d86e05cf2df",
+      "ref": "e27e2fac7d4ca17259977d28b927bc142db27999",
       "ref_origin": "master"
     }
   },

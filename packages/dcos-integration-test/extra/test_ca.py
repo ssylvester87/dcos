@@ -45,14 +45,14 @@ def test_if_CA_can_list_issued_certs(superuser):
     r = requests.post(
         CAUrl('/newcert'),
         json=data,
-        headers=superuser.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
 
     r = requests.post(
         CAUrl('/certificates'),
         json={"authority_key_id": "", "serial": "", "expired_ok": False},
-        headers=superuser.authheader
+        headers=superuser.auth_header
         )
     assert r.status_code == 200
 
@@ -74,7 +74,7 @@ def test_if_CA_can_create_cert(superuser):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = requests.post(CAUrl('/newcert'), json=p, headers=superuser.authheader)
+    r = requests.post(CAUrl('/newcert'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()
@@ -95,7 +95,7 @@ def test_if_CA_can_create_csr(superuser):
                      "CN": "www.example.com"}}
     r = requests.post(CAUrl('/newkey'), json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/newkey'), json=p, headers=superuser.authheader)
+    r = requests.post(CAUrl('/newkey'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()
@@ -127,7 +127,7 @@ hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 -----END CERTIFICATE REQUEST-----"""}
     r = requests.post(CAUrl('/sign'), json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/sign'), json=p, headers=superuser.authheader)
+    r = requests.post(CAUrl('/sign'), json=p, headers=superuser.auth_header)
     assert r.status_code == 200
 
     data = r.json()

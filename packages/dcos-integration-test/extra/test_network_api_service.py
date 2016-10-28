@@ -67,10 +67,10 @@ def test_network_api_vips(superuser):
     app_name = 'test-network-api-vips-{}'.format(uuid.uuid4().hex)
     app_def = app_definition(app_name, app_ip, app_port)
     app = MarathonApp(app_def)
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser.auth_header)
     logging.info(r.text)
     assert r.ok
-    endpoints = app.wait(headers=superuser.authheader)
+    endpoints = app.wait(headers=superuser.auth_header)
     logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
 
     @retrying.retry(wait_fixed=1000,
@@ -96,10 +96,10 @@ def test_network_api_named_vips(superuser):
     app_name = 'id{}'.format(uuid.uuid4().hex)[1:10]
     app_def = app_definition(app_name, app_name, app_port)
     app = MarathonApp(app_def)
-    r = app.deploy(headers=superuser.authheader)
+    r = app.deploy(headers=superuser.auth_header)
     logging.info(r.text)
     assert r.ok
-    endpoints = app.wait(headers=superuser.authheader)
+    endpoints = app.wait(headers=superuser.auth_header)
     logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
 
     @retrying.retry(wait_fixed=1000,
@@ -130,6 +130,7 @@ def test_network_api_named_vips(superuser):
             rv = x.get('port', '') == app_port
             rv = rv and x.get('ip', '') == app_ip
             rv = rv and x.get('protocol', '') == 'tcp'
+            rv = rv and x.get('name', '') == '{}.marathon'.format(app_name)
             return rv
         return wait_for_networking_api_up(app_host, app_port, is_named_vip)
 
