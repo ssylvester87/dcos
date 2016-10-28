@@ -8,7 +8,7 @@
   ],
   "single_source": {
     "kind": "url_extract",
-    "url": "https://pypi.python.org/packages/source/p/pyjwkest/pyjwkest-1.1.7.tar.gz",
-    "sha1": "3fe74644921bdbf68ab3fe7e8dbf740929b6da1d"
+    "url": "https://pypi.python.org/packages/c2/06/7b7114b016ed187261168b896801ea1f625cfbb02de557184cbfd10d0c92/pyjwkest-1.3.1.tar.gz",
+    "sha1": "b75e41d9e0ae5ce3e3a21c15eb316228aa73fcbc"
   }
 }
