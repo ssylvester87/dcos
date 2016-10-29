@@ -4,8 +4,8 @@
       "vault": {
           "kind": "git",
           "git": "git@github.com:mesosphere/vault.git",
-          "ref": "1f6a19e12ac3e03c276f778a0c1c8e587ae0fda1",
-          "ref_origin": "v0.5.3-zkfix"
+          "ref": "1011e3ff4ba508ad9e99971d565d3857edf35db5",
+          "ref_origin": "gpaul/DCOS-10874"
       }
   },
   "username": "dcos_vault"
