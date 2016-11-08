@@ -1,7 +1,7 @@
 #!/bin/bash
 
 pushd "/pkg/src/xmlsec1"
-./configure "--prefix=$PKG_PATH" --with-libxml=/opt/mesosphere --with-libxslt=/opt/mesosphere
+./configure "--prefix=$PKG_PATH" --with-libxml=/opt/mesosphere --with-libxslt=/opt/mesosphere --with-openssl=/opt/mesosphere
 make
 make install
 

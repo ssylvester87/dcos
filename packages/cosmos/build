@@ -11,7 +11,7 @@ envsubst '$PKG_PATH' < /pkg/extra/cosmos.sh > "$cosmos_wrapper"
 chmod +x "$cosmos_wrapper"
 
 cp -rp /pkg/src/cosmos/cosmos-*-one-jar.jar "${PKG_PATH}/usr/cosmos.jar"
-sudo chmod -R o+r "${PKG_PATH}/usr"
+chmod -R o+r "${PKG_PATH}/usr"
 
 cosmos_service="${PKG_PATH}/dcos.target.wants_master/dcos-cosmos.service"
 mkdir -p $(dirname "$cosmos_service")
