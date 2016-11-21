@@ -1,14 +1,18 @@
 {
-  "requires": ["openssl", "libevent", "curl"],
-  "single_source" : {
-    "kind": "git",
-    "git": "https://github.com/mesosphere/mesos",
-    "ref": "d5746045ac740d5f28f238dc55ec95c89d2b7cd9",
-    "ref_origin" : "dcos-mesos-1.0.x-837bb4e"
-  },
   "environment": {
     "JAVA_LIBRARY_PATH": "/opt/mesosphere/lib",
     "MESOS_NATIVE_JAVA_LIBRARY": "/opt/mesosphere/lib/libmesos.so"
   },
-  "state_directory": true
+  "requires": [
+    "openssl",
+    "libevent",
+    "curl"
+  ],
+  "state_directory": true,
+  "single_source": {
+    "git": "git@github.com:mesosphere/mesos.git",
+    "ref": "7095755b8f8899ddc0c493209d2cbad90e29d5e8",
+    "kind": "git",
+    "ref_origin": "dcos-pkg-builder-mesos-b5c11a2e"
+  }
 }
