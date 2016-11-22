@@ -651,7 +651,6 @@ package:
           "paths": [
             "/profiler/start",
             "/profiler/stop",
-            "/api/v1",
             "/api/v1/executor"
           ]
         }
