@@ -334,5 +334,6 @@ class _DCOS:
         self._wait_for_srouter_slaves_endpoints()
         self._wait_for_metronome()
 
+
 # Instantiate singleton.
 dcos = _DCOS()
