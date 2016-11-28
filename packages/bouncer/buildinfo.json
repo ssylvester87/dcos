@@ -24,13 +24,13 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "c18ea72527cd51fb7b27dcc50f2c8a2f16e88422",
-      "ref_origin": "dcos/1.8"
+      "ref": "b14a8d330761f86712960378f5d1cea5a1e4a551",
+      "ref_origin": "dcos/1.9"
     },
     "python3-saml": {
       "kind": "git",
       "git": "git@github.com:onelogin/python3-saml.git",
-      "ref": "3659de8e4e9a11ec0683764b53e88acae6b2976b",
+      "ref": "054f8e686df2405376c60d4d289c8e8b144e83f8",
       "ref_origin": "master"
     },
     "jsonschema": {
@@ -50,20 +50,20 @@
     },
     "oic": {
       "kind": "git",
-      "git": "git@github.com:mesosphere/pyoidc.git",
-      "ref": "8d48ba9cd808eae3cc7956c78950b33271735d0b",
-      "ref_origin": "jp/fix-authncode-basicauth"
+      "git": "git@github.com:rohe/pyoidc.git",
+      "ref": "85514e6400a62e812d7dea968eba3738983312da",
+      "ref_origin": "master"
     },
     "pycryptodome": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/source/p/pycryptodome/pycryptodome-3.4.tar.gz",
-      "sha1": "83472713d5fbde17ac886229691dda022ed57e51"
+      "url": "https://pypi.python.org/packages/45/ef/4514a01be3d8f5383cd12fc5612ffd8a2508ac7e7ff6bde2da708e71c9a3/pycryptodome-3.4.3.tar.gz",
+      "sha1": "1be4c06e91f22fc0b566e019e0a5278b6a0208bb"
     },
     "ldap3": {
       "kind": "git",
-      "git": "git@github.com:jgehrcke/ldap3.git",
-      "ref": "3535dfdb484fd9da1f09e31e02a2623b9c43e91e",
-      "ref_origin": "patch-certfile"
+      "git": "git@github.com:cannatag/ldap3.git",
+      "ref": "a8e97fa6b3814e1339c90b2665f7338f1e4ca123",
+      "ref_origin": "master"
     },
     "pyasn1": {
       "kind": "url",
@@ -72,8 +72,8 @@
     },
     "lxml": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/09/f3/c41293bc181b8c727cc485339dc57af653dae6d17d4c8dbf0cbac53cb4aa/lxml-3.6.1.tar.gz",
-      "sha1": "a37f3f77de191a490642d01250cf5e72153fb0b0"
+      "url": "https://pypi.python.org/packages/4f/3f/cf6daac551fc36cddafa1a71ed48ea5fd642e5feabd3a0d83b8c3dfd0cb4/lxml-3.6.4.tar.gz",
+      "sha1": "51fcf2a9a1499909f986c0663b4703406a4a12cc"
     },
     "xmlsec": {
       "kind": "url_extract",
@@ -87,13 +87,13 @@
     },
     "pycparser": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/6d/31/666614af3db0acf377876d48688c5d334b6e493b96d21aa7d332169bee50/pycparser-2.14.tar.gz",
-      "sha1": "922162bad4aa8503988035506c1c65bbf8690ba4"
+      "url": "https://pypi.python.org/packages/be/64/1bb257ffb17d01f4a38d7ce686809a736837ad4371bcc5c42ba7a715c3ac/pycparser-2.17.tar.gz",
+      "sha1": "afc1f70c6fce0e196dece88d6da3b8d5b2af6297"
     },
     "cffi": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/83/3c/00b553fd05ae32f27b3637f705c413c4ce71290aa9b4c4764df694e906d9/cffi-1.7.0.tar.gz",
-      "sha1": "d8033f34e17c0c51bb834b27f6e8c59fc24ae72c"
+      "url": "https://pypi.python.org/packages/a1/32/e3d6c3a8b5461b903651dd6ce958ed03c093d2e00128e3f33ea69f1d7965/cffi-1.9.1.tar.gz",
+      "sha1": "16265a4b305d433fb9089b19278502e904b0cb43"
     },
     "idna": {
       "kind": "url",
