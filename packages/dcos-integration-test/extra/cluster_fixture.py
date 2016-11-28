@@ -34,7 +34,7 @@ def make_cluster_fixture():
     cluster_config = load_json('/opt/mesosphere/etc/bootstrap-config.json')
 
     if cluster_config['ssl_enabled']:
-        cluster_args['dcos_uri'] = cluster_args['dcos_uri'].replace('http', 'https')
+        cluster_args['dcos_url'] = cluster_args['dcos_url'].replace('http', 'https')
 
     if cluster_config['security'] == 'strict':
         cluster_args['default_os_user'] = 'nobody'
