@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import pytest
 from cluster_fixture import make_cluster_fixture
 from jwt.utils import base64url_decode, base64url_encode
+
 from test_util.helpers import DcosUser
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
