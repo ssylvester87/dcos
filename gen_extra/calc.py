@@ -1,7 +1,8 @@
 import hashlib
 from base64 import b64encode
 
-from gen.calc import validate_one_of, validate_true_false
+from gen.calc import validate_true_false
+from gen.internals import validate_one_of
 
 
 def validate_customer_key(customer_key):
