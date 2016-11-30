@@ -256,6 +256,10 @@ class FreeIPA(DirectoryBackend):
                 'search-filter-template': '(uid=%(username)s)',
                 'search-base': 'cn=users,cn=compat,' + dc
             }),
+            ('group-search', {
+                'search-filter-template': '(cn=%(groupname)s)',
+                'search-base': 'cn=groups,cn=compat,' + dc
+            }),
             ('ca-certs', ca_cert),
         ])
 
@@ -494,3 +498,36 @@ class TestFreeIPA:
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
+
+    def test_groupimport(self, freeipa, superuser):
+
+        r = requests.post(
+            IAMUrl('/ldap/importgroup'),
+            json={"groupname": "employees"},
+            headers=superuser.auth_header
+            )
+        assert r.status_code == 201
+
+        expected_uids = ('manager', 'employee')
+
+        # Verify users have been (implicitly) imported
+        # and labeled as remote users.
+        r = requests.get(
+            IAMUrl('/users'),
+            headers=superuser.auth_header
+            )
+        r.raise_for_status()
+        l = r.json()['array']
+        users = {d['uid']: d for d in l}
+        for uid in expected_uids:
+            assert users[uid]['is_remote'] is True
+
+        # Verify that a group with gid `employees` exists
+        # and that it has the expected set of members.
+        r = requests.get(
+            IAMUrl('/groups/employees/users'),
+            headers=superuser.auth_header
+            )
+        r.raise_for_status()
+        l = r.json()['array']
+        assert set((d['user']['uid'] for d in l)) == set(expected_uids)
