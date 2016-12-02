@@ -10,26 +10,13 @@ package:
       ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
       iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
 {% endswitch %}
-      collector:
-        http_profiler: false
-
-        node:
-          poll_period: 15
-
-        mesos_agent:
-          poll_period: 15
-          port: 5051
 {% switch ssl_enabled %}
 {% case "false" %}
-          request_protocol: http
 {% case "true" %}
+      collector:
+        node:
           request_protocol: https
 {% endswitch %}
-
-      producers:
-        http:
-          port: 9000
-
   - path: /etc/adminrouter-extras.env
     content: |
       ADMINROUTER_ACTIVATE_AUTH_MODULE=true
