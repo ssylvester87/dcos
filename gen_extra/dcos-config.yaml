@@ -727,11 +727,7 @@ package:
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
 {% endswitch %}
-{% switch marathon_authn_enabled %}
-{% case "true" %}
-{% case "false" %}
-      PLUGIN_AUTHN_MODE=disabled
-{% endswitch %}
+      PLUGIN_AUTHN_MODE="{{ marathon_authn_mode }}"
 {% switch marathon_https_enabled %}
 {% case "true" %}
       TLS_ENABLED=true
@@ -861,7 +857,7 @@ package:
         "agent_authentication_required": {{ agent_authentication_required }},
         "framework_authentication_enabled": {{ framework_authentication_enabled }},
         "agent_authn_enabled": {{ agent_authn_enabled }},
-        "marathon_authn_enabled": {{ marathon_authn_enabled }},
+        "marathon_authn_mode": {{ marathon_authn_mode }},
         "marathon_https_enabled": {{ marathon_https_enabled }},
         "marathon_extra_args": "{{ marathon_extra_args }}",
         "zk_acls_enabled": {{ zk_acls_enabled }}
