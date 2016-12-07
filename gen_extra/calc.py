@@ -343,7 +343,6 @@ entry = {
         'ui_banner_dismissible': 'null'
     },
     'must': {
-        'oauth_enabled': 'false',
         'oauth_available': 'false',
         'zk_super_digest_jvmflags': calculate_zk_super_digest_jvmflags,
         'zk_agent_digest': calculate_zk_agent_digest,
