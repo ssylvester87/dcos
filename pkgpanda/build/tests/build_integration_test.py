@@ -154,6 +154,7 @@ def test_bootstrap(tmpdir):
             './active/url_extract-tar',
             './active/url_extract-zip',
             './active/variant',
+            './active/variant-dep',
             './active/single_source',
             './active/single_source_extra',
             './bin/',
@@ -171,6 +172,7 @@ def test_bootstrap(tmpdir):
             'single_source': {'pkginfo.json', 'buildinfo.full.json'},
             'single_source_extra': {'pkginfo.json', 'buildinfo.full.json'},
             'variant': {'pkginfo.json', 'buildinfo.full.json'},
+            'variant-dep': {'pkginfo.json', 'buildinfo.full.json'},
             'base': {
                 'base',
                 'bin/',
