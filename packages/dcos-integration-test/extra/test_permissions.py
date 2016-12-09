@@ -225,6 +225,23 @@ class TestAdminRouterACLs:
         r = peter_cluster.get(endpoint)
         assert r.status_code == 200
 
+    def test_adminrouter_ops_system_metrics(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
+        endpoint = '/system/v1/metrics/v0'
+
+        r = noauth_cluster.get(endpoint)
+        assert r.status_code == 403
+
+        r = peter_cluster.get(endpoint)
+        assert r.status_code == 403
+
+        set_user_permission(
+            rid='dcos:adminrouter:ops:system-metrics',
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full')
+
+        r = peter_cluster.get(endpoint)
+        assert r.status_code == 200
+
     def test_adminrouter_ops_mesos(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
 
         endpoint = '/mesos'
