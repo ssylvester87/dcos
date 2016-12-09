@@ -20,11 +20,6 @@ AUTHENTICATED_USERS_ENDPOINTS = [
 
 
 @pytest.fixture(scope='module')
-def peter_cluster(cluster, peter):
-    return cluster.get_user_session(peter)
-
-
-@pytest.fixture(scope='module')
 def noauth_cluster(cluster):
     return cluster.get_user_session(None)
 
