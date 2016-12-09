@@ -357,6 +357,7 @@ entry = {
         'ui_organization': 'true',
         'ui_external_links': 'true',
         'ui_branding': 'true',
+        'ui_telemetry_metadata': ',"metadata":{\'openBuild\': false}',
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
