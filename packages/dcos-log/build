@@ -38,6 +38,7 @@ cat <<EOF | tee $slave_service $slave_public_service
 [Unit]
 Description=DC/OS Log service agent: DC/OS logging service
 [Service]
+PermissionsStartOnly=True
 EnvironmentFile=/opt/mesosphere/environment
 Restart=always
 StartLimitInterval=0
