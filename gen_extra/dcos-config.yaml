@@ -748,8 +748,8 @@ package:
 {% endswitch %}
   - path: /etc_master/metronome-extras
     content: |
-      METRONOME_MESOS_USER={{ default_task_user }}
-      PLUGIN_AUTHN_MODE={{ marathon_authn_mode }}
+      METRONOME_MESOS_USER="{{ default_task_user }}"
+      PLUGIN_AUTHN_MODE="{{ marathon_authn_mode }}"
 {% switch framework_authentication_enabled %}
 {% case "true" %}
       METRONOME_MESOS_AUTHENTICATION_PRINCIPAL=dcos_metronome
