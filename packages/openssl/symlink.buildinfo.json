@@ -1,0 +1,10 @@
+{
+  "single_source" : {
+    "kind": "url_extract",
+    "url": "https://openssl.org/source/openssl-1.0.2j.tar.gz",
+    "sha1": "bdfbdb416942f666865fa48fe13c2d0e588df54f"
+  },
+  "docker": "dcos/dcos-builder:openssl_dockerdir-latest",
+  "build_script": "symlink.build.sh"
+}
+

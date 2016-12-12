@@ -3,5 +3,6 @@
     "kind": "url_extract",
     "url": "https://openssl.org/source/openssl-1.0.2k.tar.gz",
     "sha1": "5f26a624479c51847ebd2f22bb9f84b3b44dcb44"
-  }
+  },
+  "docker": "dcos/dcos-builder:openssl_dockerdir-latest"
 }
