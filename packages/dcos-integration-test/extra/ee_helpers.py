@@ -1,3 +1,8 @@
+from pkgpanda.util import load_json
+
+
+dcos_config = load_json('/opt/mesosphere/etc/bootstrap-config.json')
+
 OPS_ENDPOINTS = [
     '/acs/api/v1/users/',
     '/dcos-history-service/',

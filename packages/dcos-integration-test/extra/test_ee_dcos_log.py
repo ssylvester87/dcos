@@ -5,10 +5,14 @@ import pytest
 
 import requests
 
+from ee_helpers import dcos_config
+
 
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.security]
+strict_only = pytest.mark.skipif(dcos_config['security'] != 'strict',
+                                 reason='Tests must have to run on a cluster in strict mode')
+pytestmark = [strict_only]
 
 
 @pytest.fixture(scope='module')
