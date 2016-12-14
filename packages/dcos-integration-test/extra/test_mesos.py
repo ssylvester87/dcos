@@ -7,6 +7,7 @@ import requests
 from test_util.marathon import get_test_app
 from test_util.recordio import Decoder, Encoder
 
+
 def post(url, headers, json=None, data=None, stream=False):
     r = requests.post(url, headers=headers, json=json, data=data, stream=stream)
     logging.info(
@@ -19,10 +20,12 @@ def post(url, headers, json=None, data=None, stream=False):
     assert r.status_code == 200
     return r
 
+
 def test_if_marathon_app_can_be_debugged(cluster):
     # Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
     # then an empty data chunk to indicate end-of-stream.
-    def _input_streamer(encoder, nested_container_id, input_data):
+    def _input_streamer(nested_container_id):
+        encoder = Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
         message = {
             'type': 'ATTACH_CONTAINER_INPUT',
             'attach_container_input': {
@@ -38,7 +41,7 @@ def test_if_marathon_app_can_be_debugged(cluster):
                     'type': 'DATA',
                     'data': {
                         'type': 'STDIN',
-                        'data': input_data}}}}
+                        'data': 'meow'}}}}
         yield encoder.encode(message)
 
         # Place an empty string to indicate EOF to the server and push
@@ -113,8 +116,7 @@ def test_if_marathon_app_can_be_debugged(cluster):
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked'
     }
-    encoder = Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
-    post(agent_v1_url, input_headers, data=_input_streamer(encoder, nested_container_id, 'meow'))
+    post(agent_v1_url, input_headers, data=_input_streamer(nested_container_id))
 
     # Verify the streamed output from the launch session
     decoder = Decoder(lambda s: json.loads(s.decode("UTF-8")))
