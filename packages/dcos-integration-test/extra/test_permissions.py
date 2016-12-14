@@ -229,7 +229,7 @@ class TestAdminRouterACLs:
         endpoint = '/system/v1/metrics/v0'
 
         r = noauth_cluster.get(endpoint)
-        assert r.status_code == 403
+        assert r.status_code == 401
 
         r = peter_cluster.get(endpoint)
         assert r.status_code == 403
