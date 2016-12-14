@@ -1,4 +1,22 @@
 package:
+  - path: /etc/dcos-metrics-config.yaml
+    content: |
+{% switch security %}
+{% case "disabled" %}
+{% case "permissive" %}
+      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
+      iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
+{% case "strict" %}
+      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
+      iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
+{% endswitch %}
+{% switch ssl_enabled %}
+{% case "true" %}
+      collector:
+        node:
+          request_protocol: https
+{% case "false" %}
+{% endswitch %}
   - path: /etc/adminrouter-extras.env
     content: |
       ADMINROUTER_ACTIVATE_AUTH_MODULE=true
