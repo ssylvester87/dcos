@@ -8,6 +8,7 @@ from test_util.marathon import get_test_app
 from test_util.recordio import Decoder, Encoder
 
 
+# Wrapper to post, log, and validate return status
 def post(url, headers, json=None, data=None, stream=False):
     r = requests.post(url, headers=headers, json=json, data=data, stream=stream)
     logging.info(
@@ -21,34 +22,31 @@ def post(url, headers, json=None, data=None, stream=False):
     return r
 
 
+# Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
+# then an empty data chunk to indicate end-of-stream.
+def input_streamer(nested_container_id):
+    encoder = Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
+    message = {
+        'type': 'ATTACH_CONTAINER_INPUT',
+        'attach_container_input': {
+            'type': 'CONTAINER_ID',
+            'container_id': nested_container_id}}
+    yield encoder.encode(message)
+
+    message['attach_container_input'] = {
+        'type': 'PROCESS_IO',
+        'process_io': {
+            'type': 'DATA',
+            'data': {'type': 'STDIN', 'data': 'meow'}}}
+    yield encoder.encode(message)
+
+    # Place an empty string to indicate EOF to the server and push
+    # 'None' to our queue to indicate that we are done processing input.
+    message['attach_container_input']['process_io']['data']['data'] = ''
+    yield encoder.encode(message)
+
+
 def test_if_marathon_app_can_be_debugged(cluster):
-    # Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
-    # then an empty data chunk to indicate end-of-stream.
-    def _input_streamer(nested_container_id):
-        encoder = Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
-        message = {
-            'type': 'ATTACH_CONTAINER_INPUT',
-            'attach_container_input': {
-                'type': 'CONTAINER_ID',
-                'container_id': nested_container_id}}
-        yield encoder.encode(message)
-
-        message = {
-            'type': 'ATTACH_CONTAINER_INPUT',
-            'attach_container_input': {
-                'type': 'PROCESS_IO',
-                'process_io': {
-                    'type': 'DATA',
-                    'data': {
-                        'type': 'STDIN',
-                        'data': 'meow'}}}}
-        yield encoder.encode(message)
-
-        # Place an empty string to indicate EOF to the server and push
-        # 'None' to our queue to indicate that we are done processing input.
-        message['attach_container_input']['process_io']['data']['data'] = ''
-        yield encoder.encode(message)
-
     # Launch a basic marathon app (no image), so we can debug into it!
     # Cannot use deploy_and_cleanup because we must attach to a running app/task/container.
     app, test_uuid = get_test_app()
@@ -116,7 +114,7 @@ def test_if_marathon_app_can_be_debugged(cluster):
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked'
     }
-    post(agent_v1_url, input_headers, data=_input_streamer(nested_container_id))
+    post(agent_v1_url, input_headers, data=input_streamer(nested_container_id))
 
     # Verify the streamed output from the launch session
     decoder = Decoder(lambda s: json.loads(s.decode("UTF-8")))
