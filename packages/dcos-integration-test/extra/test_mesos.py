@@ -22,32 +22,33 @@ def test_if_marathon_app_can_be_debugged(cluster):
         return r
 
     def find_container_id(state, app_id):
-        if 'frameworks' in state:
-            for framework in state['frameworks']:
-                if 'tasks' in framework:
-                    for task in framework['tasks']:
-                        if 'id' in task and app_id in task['id']:
-                            if 'statuses' in task and 'container_status' in task['statuses'][0]:
-                                if 'container_id' in task['statuses'][0]['container_status']:
-                                    container_status = task['statuses'][0]['container_status']
-                                    if 'container_id' in container_status:
-                                        if 'value' in container_status['container_id']:
-                                            return container_status['container_id']['value']
+        container_id = None
+        for framework in state['frameworks']:
+            for task in framework['tasks']:
+                if app_id in task['id']:
+                    container_id = task['statuses'][0]['container_status']['container_id']['value']
+        if container_id is None:
+            raise Exception('Container ID not found in task status report for instance of app_id {}'.format(app_id))
+        return container_id
 
     def find_agent_id(state, app_id):
-        if 'frameworks' in state:
-            for framework in state['frameworks']:
-                if 'tasks' in framework:
-                    for task in framework['tasks']:
-                        if 'id' in task and app_id in task['id']:
-                            if 'slave_id' in task:
-                                return task['slave_id']
+        agent_id = None
+        for framework in state['frameworks']:
+            for task in framework['tasks']:
+                if app_id in task['id']:
+                    agent_id = task['slave_id']
+        if agent_id is None:
+            raise Exception('Agent ID not found for instance of app_id {}'.format(app_id))
+        return agent_id
 
     def find_agent_hostname(state, agent_id):
-        if 'slaves' in state:
-            for agent in state['slaves']:
-                if 'id' in agent and agent['id'] == agent_id and 'hostname' in agent:
-                    return agent['hostname']
+        agent_hostname = None
+        for agent in state['slaves']:
+            if agent['id'] == agent_id:
+                agent_hostname = agent['hostname']
+        if agent_hostname is None:
+            raise Exception('Agent hostname not found for agent_id {}'.format(agent_id))
+        return agent_hostname_
 
     # Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
     # then an empty data chunk to indicate end-of-stream.
