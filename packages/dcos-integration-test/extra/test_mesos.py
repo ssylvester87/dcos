@@ -48,7 +48,7 @@ def test_if_marathon_app_can_be_debugged(cluster):
                 agent_hostname = agent['hostname']
         if agent_hostname is None:
             raise Exception('Agent hostname not found for agent_id {}'.format(agent_id))
-        return agent_hostname_
+        return agent_hostname
 
     # Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
     # then an empty data chunk to indicate end-of-stream.
