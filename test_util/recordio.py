@@ -18,10 +18,8 @@ header of 4 bytes to directly encode an unsigned 32 bit
 length.
 """
 
-from test_util.errors import DCOSException
 
-
-class Encoder(object):
+class Encoder():
     """Encode an arbitray message type into a 'RecordIO' message.
 
        This class encapsulates the process of encoding an
@@ -59,13 +57,12 @@ class Encoder(object):
         s = self.serialize(message)
 
         if not isinstance(s, bytes):
-            raise DCOSException("Calling 'serialize(message)' must"
-                                " return a 'bytes' object")
+            raise Exception("Calling 'serialize(message)' must return a 'bytes' object")
 
         return bytes(str(len(s)) + "\n", "UTF-8") + s
 
 
-class Decoder(object):
+class Decoder():
     """Decode a 'RecordIO' message back to an arbitrary message type.
 
        This class encapsulates the process of decoding a message
@@ -111,10 +108,10 @@ class Decoder(object):
         """
 
         if not isinstance(data, bytes):
-            raise DCOSException("Parameter 'data' must of of type 'bytes'")
+            raise Exception("Parameter 'data' must of of type 'bytes'")
 
         if self.state == self.FAILED:
-            raise DCOSException("Decoder is in a FAILED state")
+            raise Exception("Decoder is in a FAILED state")
 
         records = []
 
@@ -128,10 +125,8 @@ class Decoder(object):
                     self.length = int(self.buffer.decode("UTF-8"))
                 except Exception as exception:
                     self.state = self.FAILED
-                    raise DCOSException("Failed to decode length"
-                                        "'{buffer}': {error}"
-                                        .format(buffer=self.buffer,
-                                                error=exception))
+                    raise Exception("Failed to decode length '{buffer}': {error}"
+                                    .format(buffer=self.buffer, error=exception))
 
                 self.buffer = bytes("", "UTF-8")
                 self.state = self.RECORD
