@@ -53,13 +53,22 @@ def test_if_marathon_app_can_be_debugged(cluster):
     # Creates and yields the initial ATTACH_CONTAINER_INPUT message, then a data message,
     # then an empty data chunk to indicate end-of-stream.
     def _input_streamer(encoder, nested_container_id, input_data):
-        message = {'type': 'ATTACH_CONTAINER_INPUT', 'attach_container_input': {'type': 'CONTAINER_ID'}}
-        message['attach_container_input']['container_id'] = nested_container_id
+        message = {
+            'type': 'ATTACH_CONTAINER_INPUT',
+            'attach_container_input': {
+                'type': 'CONTAINER_ID',
+                'container_id': nested_container_id}}
         yield encoder.encode(message)
 
-        message = {'type': 'ATTACH_CONTAINER_INPUT', 'attach_container_input': {'type': 'PROCESS_IO'}}
-        message['attach_container_input']['process_io'] = {'type': 'DATA', 'data': {'type': 'STDIN'}}
-        message['attach_container_input']['process_io']['data']['data'] = input_data
+        message = {
+            'type': 'ATTACH_CONTAINER_INPUT',
+            'attach_container_input': {
+                'type': 'PROCESS_IO',
+                'process_io': {
+                    'type': 'DATA',
+                    'data': {
+                        'type': 'STDIN',
+                        'data': input_data}}}}
         yield encoder.encode(message)
 
         # Place an empty string to indicate EOF to the server and push
@@ -87,8 +96,9 @@ def test_if_marathon_app_can_be_debugged(cluster):
     logging.debug('Located %s with containerID %s on agent %s', test_app_id, container_id, agent_hostname)
 
     # Prepare nested container id data
-    nested_container_id = {'value': 'debug-%s' % str(uuid.uuid4())}
-    nested_container_id['parent'] = {'value': '%s' % container_id}
+    nested_container_id = {
+        'value': 'debug-%s' % str(uuid.uuid4()),
+        'parent': {'value': '%s' % container_id}}
 
     # Launch debug session and attach to output stream of debug container
     output_headers = {
@@ -96,14 +106,17 @@ def test_if_marathon_app_can_be_debugged(cluster):
         'Accept': 'application/json+recordio',
         'Connection': 'keep-alive'
     }
-    lncs_data = {'type': 'LAUNCH_NESTED_CONTAINER_SESSION', 'launch_nested_container_session': {}}
-    lncs_data['launch_nested_container_session']['command'] = {'value': 'cat'}
-    lncs_data['launch_nested_container_session']['container_id'] = nested_container_id
+    lncs_data = {
+        'type': 'LAUNCH_NESTED_CONTAINER_SESSION',
+        'launch_nested_container_session': {
+            'command': {'value': 'cat'},
+            'container_id': nested_container_id}}
     launch_output = post(agent_v1_url, output_headers, json=lncs_data, stream=True)
 
     # Attach to output stream of nested container
-    attach_out_data = {'type': 'ATTACH_CONTAINER_OUTPUT', 'attach_container_output': {}}
-    attach_out_data['attach_container_output']['container_id'] = nested_container_id
+    attach_out_data = {
+        'type': 'ATTACH_CONTAINER_OUTPUT',
+        'attach_container_output': {'container_id': nested_container_id}}
     attached_output = post(agent_v1_url, output_headers, json=attach_out_data, stream=True)
 
     # Attach to input stream of debug container and stream a message
@@ -118,24 +131,18 @@ def test_if_marathon_app_can_be_debugged(cluster):
 
     # Verify the streamed output from the launch session
     decoder = Decoder(lambda s: json.loads(s.decode("UTF-8")))
-    try:
-        for chunk in launch_output.iter_content():
-            for r in decoder.decode(chunk):
-                if r['type'] == 'DATA':
-                    logging.debug('Extracted data chunk: %s', r['data'])
-                    assert r['data']['data'] == 'meow'
-    except:
-        assert '' == 'Error parsing the output stream'
+    for chunk in launch_output.iter_content():
+        for r in decoder.decode(chunk):
+            if r['type'] == 'DATA':
+                logging.debug('Extracted data chunk: %s', r['data'])
+                assert r['data']['data'] == 'meow', 'Output did not match expected'
 
     # Verify the message from the attached output stream
-    try:
-        for chunk in attached_output.iter_content():
-            for r in decoder.decode(chunk):
-                if r['type'] == 'DATA':
-                    logging.debug('Extracted data chunk: %s', r['data'])
-                    assert r['data']['data'] == 'meow'
-    except:
-        assert '' == 'Error parsing the output stream'
+    for chunk in attached_output.iter_content():
+        for r in decoder.decode(chunk):
+            if r['type'] == 'DATA':
+                logging.debug('Extracted data chunk: %s', r['data'])
+                assert r['data']['data'] == 'meow', 'Output did not match expected'
 
     # Destroy the app and the task's containers now that we're done with it
     cluster.marathon.destroy_app(test_app_id)
