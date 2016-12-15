@@ -259,7 +259,10 @@ package:
 {% endswitch %}
         ]
       }
-  - path: /etc/dcos-log-config.json
+  - path: /etc/dcos-log-extra.env
+    content: |
+      DCOS_LOG_CONFIG_PATH=/opt/mesosphere/etc/dcos-log-config-ee.json
+  - path: /etc/dcos-log-config-ee.json
     content: |
       {
 {% switch ssl_enabled %}
