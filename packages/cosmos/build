@@ -28,6 +28,7 @@ PermissionsStartOnly=True
 User=dcos_cosmos
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=/opt/mesosphere/etc/proxy.env
+EnvironmentFile=/opt/mesosphere/etc/cosmos.env
 EnvironmentFile=/opt/mesosphere/etc/cosmos
 EnvironmentFile=-/run/dcos/etc/cosmos.env
 ExecStartPre=/bin/ping -c1 ready.spartan

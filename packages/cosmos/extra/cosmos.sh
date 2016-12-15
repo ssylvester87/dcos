@@ -25,7 +25,10 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
           -com.mesosphere.cosmos.marathonUri=${MARATHON_URI} \
           -com.mesosphere.cosmos.mesosMasterUri=${MESOSMASTER_URI} \
           -com.mesosphere.cosmos.zookeeperUri=${ZOOKEEPER_URI} \
-          -com.mesosphere.cosmos.dataDir=/var/lib/dcos/cosmos
+          -com.mesosphere.cosmos.dataDir=/var/lib/dcos/cosmos \
+          ${COSMOS_STAGED_PACKAGE_STORAGE_URI_FLAG} \
+          ${COSMOS_PACKAGE_STORAGE_URI_FLAG}
+
 else
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
