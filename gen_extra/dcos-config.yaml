@@ -857,7 +857,7 @@ package:
         "agent_authentication_required": {{ agent_authentication_required }},
         "framework_authentication_enabled": {{ framework_authentication_enabled }},
         "agent_authn_enabled": {{ agent_authn_enabled }},
-        "marathon_authn_mode": {{ marathon_authn_mode }},
+        "marathon_authn_mode": "{{ marathon_authn_mode }}",
         "marathon_https_enabled": {{ marathon_https_enabled }},
         "marathon_extra_args": "{{ marathon_extra_args }}",
         "zk_acls_enabled": {{ zk_acls_enabled }}
