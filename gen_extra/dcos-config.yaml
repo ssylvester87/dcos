@@ -1,5 +1,8 @@
 package:
-  - path: /etc/dcos-metrics-config.yaml
+  - path: /etc/dcos-metrics-extra.env
+    content: |
+      DCOS_METRICS_CONFIG_PATH=/opt/mesosphere/etc/dcos-metrics-config-ee.yaml
+  - path: /etc/dcos-metrics-config-ee.yaml
     content: |
 {% switch security %}
 {% case "disabled" %}
