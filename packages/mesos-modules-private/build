@@ -19,7 +19,6 @@ pushd build
  --with-mesos=/opt/mesosphere/active/mesos \
  --with-openssl=/opt/mesosphere/active/openssl \
  --with-glog=/opt/mesosphere/lib/mesos/3rdparty/include/glog \
- --with-boost=/opt/mesosphere/lib/mesos/3rdparty/include/boost \
  --prefix="$PKG_PATH"
 
 make -j$NUM_CORES
