@@ -226,7 +226,7 @@ class TestAdminRouterACLs:
         assert r.status_code == 200
 
     def test_adminrouter_ops_system_metrics(self, cluster, peter_cluster, noauth_cluster, set_user_permission):
-        endpoint = '/system/v1/metrics/v0'
+        endpoint = '/system/v1/metrics/v0/node'
 
         r = noauth_cluster.get(endpoint)
         assert r.status_code == 401
