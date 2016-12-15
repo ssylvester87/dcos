@@ -9,6 +9,8 @@ import ee_helpers
 
 import pytest
 
+from pkgpanda.util import load_json
+
 
 log = logging.getLogger(__name__)
 
@@ -402,6 +404,60 @@ class TestAdminRouterACLs:
 
         r = peter_cluster.get(endpoint)
         assert r.status_code == 200
+
+    def test_adminrouter_ops_cosmos_service(
+            self,
+            cluster,
+            peter_cluster,
+            noauth_cluster,
+            set_user_permission):
+        endpoint = '/cosmos/service/start'
+
+        r = noauth_cluster.post(endpoint)
+        assert r.status_code == 401
+
+        r = peter_cluster.post(endpoint)
+        assert r.status_code == 403
+
+        set_user_permission(
+            rid='dcos:adminrouter:package',
+            uid=peter_cluster.web_auth_default_user.uid,
+            action='full'
+        )
+
+        r = peter_cluster.post(
+            endpoint,
+            headers={
+                'Accept': (
+                    'application/vnd.dcos.service.start-response+json;'
+                    'charset=utf-8;version=v1'
+                ),
+                'Content-Type': (
+                    'application/vnd.dcos.service.start-request+json;'
+                    'charset=utf-8;version=v1'
+                )
+            },
+            json={
+                'packageName': 'cassandra'
+            }
+        )
+
+        user_config = load_json("/opt/mesosphere/etc/expanded.config.json")
+        if (user_config['cosmos_staged_package_storage_uri_flag'] and
+                user_config['cosmos_package_storage_uri_flag']):
+            # If persistent storage is enable in cosmos then Cosmos should
+            # return 400 because it is an bad request.
+            assert r.status_code == 400, 'status = {}, content = {}'.format(
+                r.status_code,
+                r.content
+            )
+        else:
+            # If persistent storage is not enabled the Cosmos should return a
+            # 501, not implemented.
+            assert r.status_code == 501, 'status = {}, content = {}'.format(
+                r.status_code,
+                r.content
+            )
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
