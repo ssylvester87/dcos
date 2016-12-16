@@ -17,7 +17,7 @@ package:
 {% case "false" %}
 {% case "true" %}
       collector:
-        node:
+        mesos_agent:
           request_protocol: https
 {% endswitch %}
   - path: /etc/adminrouter-extras.env
