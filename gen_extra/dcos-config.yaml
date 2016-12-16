@@ -4,18 +4,11 @@ package:
       DCOS_METRICS_CONFIG_PATH=/opt/mesosphere/etc/dcos-metrics-config-ee.yaml
   - path: /etc/dcos-metrics-config-ee.yaml
     content: |
-{% switch security %}
-{% case "disabled" %}
-{% case "permissive" %}
-      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
-      iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
-{% case "strict" %}
-      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
-      iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
-{% endswitch %}
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
+      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
+      iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
       collector:
         mesos_agent:
           request_protocol: https
