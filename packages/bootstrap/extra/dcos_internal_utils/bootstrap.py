@@ -99,13 +99,16 @@ class Bootstrapper(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def cluster_id(self, path='/var/lib/dcos/cluster-id'):
+    def cluster_id(self, path='/var/lib/dcos/cluster-id', readonly=False):
         dirpath = os.path.dirname(os.path.abspath(path))
         log.info('Opening {} for locking'.format(dirpath))
         with utils.Directory(dirpath) as d:
             log.info('Taking exclusive lock on {}'.format(dirpath))
             with d.lock():
-                zkid = str(uuid.uuid4()).encode('ascii')
+                if readonly:
+                    zkid = None
+                else:
+                    zkid = str(uuid.uuid4()).encode('ascii')
                 zkid = self._consensus('/cluster-id', zkid, ANYONE_READ)
                 zkid = zkid.decode('ascii')
 
@@ -1505,6 +1508,9 @@ def dcos_metrics_master(b, opts):
 
 def dcos_metrics_agent(b, opts):
     b.read_agent_secrets()
+
+    b.cluster_id(readonly=True)
+
     svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
     b.write_service_account_credentials('dcos_metrics_agent', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
