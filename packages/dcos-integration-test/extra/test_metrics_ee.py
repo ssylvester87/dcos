@@ -2,6 +2,8 @@ import pytest
 
 from dcostests import dcos
 
+from test_util.marathon import get_test_app
+
 
 @pytest.mark.xfail(
     dcos.config['security'] in ['disabled', 'permissive'],
@@ -36,16 +38,7 @@ def test_framework_principal_present(cluster):
             assert len(json_response['dimensions']['framework_principal']) != 0, ''
             '"framework_principal" length is 0'
 
-    marathon_config = {
-        # We call it '-2' in case it runs on the same host as the OSS test
-        "id": "/statsd-emitter-2",
-        "cmd": "/opt/mesosphere/bin/./statsd-emitter -debug",
-        "cpus": 0.5,
-        "mem": 128.0,
-        "instances": 1
-    }
-    with cluster.marathon.deploy_and_cleanup(marathon_config, check_health=False) as app_endpoints:
-        assert len(app_endpoints) == 1, 'The marathon app should have been deployed exactly once.'
-
+    test_app1, _ = get_test_app()
+    with cluster.marathon.deploy_and_cleanup(test_app1) as app_endpoints:
         for node in app_endpoints:
             framework_principal_present(node)
