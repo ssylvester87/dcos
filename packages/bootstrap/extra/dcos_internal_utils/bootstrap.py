@@ -77,16 +77,16 @@ class Bootstrapper(object):
         self.CA_certificate_filename = None
 
         self.agent_services = [
+            'dcos_3dt_agent',
+            'dcos_adminrouter_agent',
             'dcos_agent',
+            'dcos_log_agent',
             'dcos_mesos_agent',
             'dcos_mesos_agent_public',
-            'dcos_adminrouter_agent',
-            'dcos_3dt_agent',
+            'dcos_metrics_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
-            'dcos_spartan_agent',
-            'dcos_log_agent',
-            'dcos_metrics_agent'
+            'dcos_spartan_agent'
         ]
 
     def close(self):
@@ -215,12 +215,12 @@ class Bootstrapper(object):
         zk_creds = {}
         if self.opts.config['zk_acls_enabled']:
             service_account_zk_creds = [
-                'dcos_mesos_master',
-                'dcos_marathon',
-                'dcos_metronome',
-                'dcos_cosmos',
                 'dcos_bouncer',
                 'dcos_ca',
+                'dcos_cosmos',
+                'dcos_marathon',
+                'dcos_mesos_master',
+                'dcos_metronome',
                 'dcos_secrets',
                 'dcos_vault_default'
             ]
@@ -232,19 +232,19 @@ class Bootstrapper(object):
                 }
 
         master_service_accounts = [
+            'dcos_3dt_master',
             'dcos_adminrouter',
             'dcos_history_service',
+            'dcos_log_master',
             'dcos_marathon',
+            'dcos_mesos_dns',
+            'dcos_metrics_master',
             'dcos_metronome',
             'dcos_minuteman_master',
             'dcos_navstar_master',
-            'dcos_spartan_master',
             'dcos_networking_api_master',
             'dcos_signal_service',
-            'dcos_mesos_dns',
-            'dcos_3dt_master',
-            'dcos_log_master',
-            'dcos_metrics_master'
+            'dcos_spartan_master'
         ]
 
         if self.opts.config['security'] == 'permissive':
@@ -423,9 +423,10 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
                 ('dcos:mesos:master:reservation', 'delete'),
+                ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:master:volume', 'create'),
                 ('dcos:mesos:master:volume', 'delete'),
-                ('dcos:mesos:master:task', 'create')]
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(permissive_acls, 'dcos_marathon')
@@ -440,11 +441,11 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:framework:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
-                ('dcos:mesos:master:volume:role:slave_public', 'create'),
-                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
                 ('dcos:mesos:master:task:user:nobody', 'create'),
-                ('dcos:mesos:master:task:app_id', 'create')
-                ]
+                ('dcos:mesos:master:task:app_id', 'create'),
+                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:volume:role:slave_public', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(strict_acls, 'dcos_marathon')
@@ -470,9 +471,9 @@ class Bootstrapper(object):
             # but can create jobs in any folder/namespace.
             strict_acls = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
-                ('dcos:mesos:master:task:user:nobody', 'create'),
-                ('dcos:mesos:master:task:app_id', 'create')
-                ]
+                ('dcos:mesos:master:task:app_id', 'create'),
+                ('dcos:mesos:master:task:user:nobody', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(strict_acls, 'dcos_metronome')
@@ -1022,19 +1023,19 @@ def make_run_dirs(opts):
         opts.rundir,
         opts.rundir + '/etc',
         opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/dcos-ca',
         opts.rundir + '/etc/dcos-log',
+        opts.rundir + '/etc/dcos-metrics',
+        opts.rundir + '/etc/history-service',
         opts.rundir + '/etc/marathon',
         opts.rundir + '/etc/mesos',
         opts.rundir + '/etc/mesos-dns',
-        opts.rundir + '/etc/dcos-ca',
         opts.rundir + '/etc/metronome',
-        opts.rundir + '/etc/history-service',
         opts.rundir + '/etc/signal-service',
-        opts.rundir + '/etc/dcos-metrics',
-        opts.rundir + '/pki/tls/private',
-        opts.rundir + '/pki/tls/certs',
         opts.rundir + '/pki/CA/certs',
-        opts.rundir + '/pki/CA/private'
+        opts.rundir + '/pki/CA/private',
+        opts.rundir + '/pki/tls/certs',
+        opts.rundir + '/pki/tls/private'
     ]
 
     for d in dirs:

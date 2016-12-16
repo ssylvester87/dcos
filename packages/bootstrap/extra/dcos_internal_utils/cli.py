@@ -30,17 +30,17 @@ def noop(b, opts):
 
 
 bootstrappers = {
-    'dcos-adminrouter': dcos_adminrouter,
-    'dcos-signal': dcos_signal,
-    'dcos-oauth': dcos_oauth,
     'dcos-3dt': noop,
+    'dcos-adminrouter': dcos_adminrouter,
+    'dcos-bouncer': noop,
+    'dcos-cosmos': noop,
+    'dcos-log-agent': noop,
+    'dcos-log-master': noop,
     'dcos-marathon': noop,
     'dcos-mesos-master': noop,
-    'dcos-cosmos': noop,
     'dcos-metronome': noop,
-    'dcos-bouncer': noop,
-    'dcos-log-master': noop,
-    'dcos-log-agent': noop
+    'dcos-oauth': dcos_oauth,
+    'dcos-signal': dcos_signal
 }
 
 
