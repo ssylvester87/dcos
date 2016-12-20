@@ -5,12 +5,12 @@ import pytest
 
 import requests
 
-from ee_helpers import dcos_config
+from ee_helpers import bootstrap_config
 
 
 log = logging.getLogger(__name__)
 
-strict_only = pytest.mark.skipif(dcos_config['security'] != 'strict',
+strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
                                  reason='Tests must have to run on a cluster in strict mode')
 pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 

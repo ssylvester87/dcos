@@ -1,6 +1,6 @@
 import pytest
 
-from ee_helpers import dcos_config
+from ee_helpers import bootstrap_config
 
 
 @pytest.fixture()
@@ -31,7 +31,7 @@ def set_user_permission(cluster):
     return set_permission
 
 
-skip_security_disabled = pytest.mark.skipif(dcos_config['security'] == 'disabled', reason="security is disabled")
+skip_security_disabled = pytest.mark.skipif(bootstrap_config['security'] == 'disabled', reason="security is disabled")
 pytestmark = [skip_security_disabled, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
