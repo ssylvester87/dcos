@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import ee_helpers
@@ -50,5 +51,6 @@ def test_framework_principal_present(cluster):
 
     app = ee_helpers.sleep_app_definition("dcos-metrics-%s" % str(uuid.uuid4()))
     with cluster.marathon.deploy_and_cleanup(app, check_health=False) as endpoints:
+        time.sleep(60)  # dcos-metrics has a poll interval of 60 seconds so we have to wait until cache is filled
         for node in endpoints:
             framework_principal_present(node, cluster.web_auth_default_user)
