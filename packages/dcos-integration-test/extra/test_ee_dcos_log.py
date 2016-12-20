@@ -12,15 +12,9 @@ log = logging.getLogger(__name__)
 
 strict_only = pytest.mark.skipif(dcos_config['security'] != 'strict',
                                  reason='Tests must have to run on a cluster in strict mode')
-pytestmark = [strict_only]
+pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
-@pytest.fixture(scope='module')
-def peter_cluster(cluster, peter):
-    return cluster.get_user_session(peter)
-
-
-@pytest.mark.usefixtures("iam_verify_and_reset")
 def test_fine_grained_acls(cluster, peter_cluster):
     test_uuid = uuid.uuid4().hex
 
@@ -45,7 +39,6 @@ def test_fine_grained_acls(cluster, peter_cluster):
         assert peter_response.status_code == 403, 'Peter should not be able to read superuser logs'
 
 
-@pytest.mark.usefixtures("iam_verify_and_reset")
 def test_system_logs(cluster, peter_cluster):
     """ test system level logs. Only superuser or anyone with dcos:adminrouter:ops:system-logs must be able to
         access the logs.
