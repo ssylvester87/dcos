@@ -5,8 +5,8 @@ import pytest
 
 
 @pytest.mark.xfail(
-    ee_helpers.bootstrap_config['security'] in ['disabled', 'permissive'],
-    reason='framework_principal" should only be present in strict mode',
+    ee_helpers.dcos_config['security'] == 'disabled',
+    reason='framework_principal" should only be present in strict and permissive mode',
     strict=True
 )
 def test_framework_principal_present(cluster):
