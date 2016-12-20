@@ -300,13 +300,6 @@ def calculate_adminrouter_agent_port(security):
     return "61001"
 
 
-def calculate_dcos_log_auth_enabled(security):
-    if security in ('disabled', 'permissive'):
-        return 'false'
-    assert security == 'strict'
-    return 'true'
-
-
 entry = {
     'validate': [
         validate_bouncer_expiration_auth_token_days,
@@ -384,8 +377,7 @@ entry = {
         'zk_acls_enabled': calculate_zk_acls_enabled,
         'marathon_port': calculate_marathon_port,
         'adminrouter_master_port': calculate_adminrouter_master_port,
-        'adminrouter_agent_port': calculate_adminrouter_agent_port,
-        'dcos_log_auth_enabled': calculate_dcos_log_auth_enabled
+        'adminrouter_agent_port': calculate_adminrouter_agent_port
     }
 }
 

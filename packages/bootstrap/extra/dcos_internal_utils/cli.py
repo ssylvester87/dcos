@@ -34,8 +34,6 @@ bootstrappers = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-bouncer': noop,
     'dcos-cosmos': noop,
-    'dcos-log-agent': noop,
-    'dcos-log-master': noop,
     'dcos-marathon': noop,
     'dcos-mesos-master': noop,
     'dcos-metronome': noop,

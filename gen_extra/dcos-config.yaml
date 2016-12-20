@@ -264,10 +264,9 @@ package:
 {% switch ssl_enabled %}
 {% case "true" %}
         "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
-        "iam-config": "/run/dcos/etc/dcos-log/dcos_log_service_account.json",
 {% case "false" %}
 {% endswitch %}
-        "auth": {{ dcos_log_auth_enabled }}
+        "auth": {{ mesos_authz_enforced }}
       }
   - path: /etc_master/3dt_config.json
     content: |
