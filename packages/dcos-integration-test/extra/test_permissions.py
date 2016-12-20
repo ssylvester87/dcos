@@ -9,8 +9,6 @@ import ee_helpers
 
 import pytest
 
-from pkgpanda.util import load_json
-
 
 log = logging.getLogger(__name__)
 
@@ -442,9 +440,8 @@ class TestAdminRouterACLs:
             }
         )
 
-        user_config = load_json("/opt/mesosphere/etc/expanded.config.json")
-        if (user_config['cosmos_staged_package_storage_uri_flag'] and
-                user_config['cosmos_package_storage_uri_flag']):
+        if (ee_helpers.dcos_config['cosmos_staged_package_storage_uri_flag'] and
+                ee_helpers.dcos_config['cosmos_package_storage_uri_flag']):
             # If persistent storage is enable in cosmos then Cosmos should
             # return 400 because it is an bad request.
             assert r.status_code == 400, 'status = {}, content = {}'.format(
