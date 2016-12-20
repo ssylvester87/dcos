@@ -7,6 +7,8 @@ import json
 import os
 import subprocess
 
+from ee_helpers import dcos_config
+
 
 def test_ee_signal_service(cluster):
     """
@@ -54,7 +56,7 @@ def test_ee_signal_service(cluster):
 
     # Generic properties which are the same between all tracks
     generic_properties = {
-        'provider': cluster.provider,
+        'provider': dcos_config['provider'],
         'source': 'cluster',
         'clusterId': cluster_id,
         'customerKey': customer_key,
