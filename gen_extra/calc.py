@@ -47,7 +47,7 @@ def calculate_adminrouter_agent_enforce_https(security):
 def calculate_adminrouter_master_default_scheme(security):
     return {
         'strict': 'https://',
-        'permissive': 'http://',
+        'permissive': 'https://',
         'disabled': 'http://'
         }[security]
 
@@ -139,11 +139,11 @@ def calculate_default_task_user(security):
         }[security]
 
 
-def calculate_marathon_authn_enabled(security):
+def calculate_marathon_authn_mode(security):
     return {
-        'strict': 'true',
-        'permissive': 'true',
-        'disabled': 'false'
+        'strict': 'dcos/jwt',
+        'permissive': 'dcos/jwt+anonymous',
+        'disabled': 'disabled'
         }[security]
 
 
@@ -247,7 +247,6 @@ def calculate_zk_super_digest_jvmflags(zk_super_credentials):
 def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
     isolation = ','.join([
         mesos_isolation,
-        'com_mesosphere_MetricsIsolatorModule',
         'com_mesosphere_dcos_SecretsIsolator'
     ])
     if ssl_enabled == 'true':
@@ -301,6 +300,13 @@ def calculate_adminrouter_agent_port(security):
     return "61001"
 
 
+def calculate_dcos_log_auth_enabled(security):
+    if security in ('disabled', 'permissive'):
+        return 'false'
+    assert security == 'strict'
+    return 'true'
+
+
 entry = {
     'validate': [
         validate_bouncer_expiration_auth_token_days,
@@ -336,7 +342,6 @@ entry = {
         'ui_banner_dismissible': 'null'
     },
     'must': {
-        'oauth_enabled': 'false',
         'oauth_available': 'false',
         'zk_super_digest_jvmflags': calculate_zk_super_digest_jvmflags,
         'zk_agent_digest': calculate_zk_agent_digest,
@@ -352,6 +357,7 @@ entry = {
         'ui_organization': 'true',
         'ui_external_links': 'true',
         'ui_branding': 'true',
+        'ui_telemetry_metadata': '{"openBuild": false}',
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
@@ -372,13 +378,14 @@ entry = {
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
         'default_task_user': calculate_default_task_user,
-        'marathon_authn_enabled': calculate_marathon_authn_enabled,
+        'marathon_authn_mode': calculate_marathon_authn_mode,
         'marathon_https_enabled': calculate_marathon_https_enabled,
         'marathon_extra_args': calculate_marathon_extra_args,
         'zk_acls_enabled': calculate_zk_acls_enabled,
         'marathon_port': calculate_marathon_port,
         'adminrouter_master_port': calculate_adminrouter_master_port,
-        'adminrouter_agent_port': calculate_adminrouter_agent_port
+        'adminrouter_agent_port': calculate_adminrouter_agent_port,
+        'dcos_log_auth_enabled': calculate_dcos_log_auth_enabled
     }
 }
 

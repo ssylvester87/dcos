@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export GOPATH=/pkg:$GOPATH
-
 mkdir -p $PKG_PATH/bin
 mkdir -pv /pkg/src/github.com/hashicorp/
 mv /pkg/src/vault /pkg/src/github.com/hashicorp/

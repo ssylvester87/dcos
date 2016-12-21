@@ -33,7 +33,12 @@ def superuser(cluster):
     return cluster.web_auth_default_user
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
+def peter_cluster(cluster, peter):
+    return cluster.get_user_session(peter)
+
+
+@pytest.fixture(scope='session')
 def peter(cluster):
     """Provides a non-super user and deletes it after test
     This user can have its permissions changed by superuser

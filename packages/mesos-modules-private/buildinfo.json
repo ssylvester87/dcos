@@ -1,9 +1,9 @@
 {
-  "requires": ["mesos", "curl", "openssl"],
+  "requires": ["mesos", "curl", "openssl", "boost-libs"],
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "868a76f1ba27553feaf2a493835ee4cb6ca941bc",
+    "ref" : "1989f8693f6544884d932da758a578bd1f7a33cb",
     "ref_origin": "master"
   }
 }

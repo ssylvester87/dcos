@@ -77,14 +77,16 @@ class Bootstrapper(object):
         self.CA_certificate_filename = None
 
         self.agent_services = [
+            'dcos_3dt_agent',
+            'dcos_adminrouter_agent',
             'dcos_agent',
+            'dcos_log_agent',
             'dcos_mesos_agent',
             'dcos_mesos_agent_public',
-            'dcos_adminrouter_agent',
-            'dcos_3dt_agent',
+            'dcos_metrics_agent',
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
-            'dcos_spartan_agent',
+            'dcos_spartan_agent'
         ]
 
     def close(self):
@@ -97,13 +99,16 @@ class Bootstrapper(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def cluster_id(self, path='/var/lib/dcos/cluster-id'):
+    def cluster_id(self, path='/var/lib/dcos/cluster-id', readonly=False):
         dirpath = os.path.dirname(os.path.abspath(path))
         log.info('Opening {} for locking'.format(dirpath))
         with utils.Directory(dirpath) as d:
             log.info('Taking exclusive lock on {}'.format(dirpath))
             with d.lock():
-                zkid = str(uuid.uuid4()).encode('ascii')
+                if readonly:
+                    zkid = None
+                else:
+                    zkid = str(uuid.uuid4()).encode('ascii')
                 zkid = self._consensus('/cluster-id', zkid, ANYONE_READ)
                 zkid = zkid.decode('ascii')
 
@@ -210,14 +215,14 @@ class Bootstrapper(object):
         zk_creds = {}
         if self.opts.config['zk_acls_enabled']:
             service_account_zk_creds = [
-                'dcos_mesos_master',
-                'dcos_marathon',
-                'dcos_metronome',
-                'dcos_cosmos',
                 'dcos_bouncer',
                 'dcos_ca',
+                'dcos_cosmos',
+                'dcos_marathon',
+                'dcos_mesos_master',
+                'dcos_metronome',
                 'dcos_secrets',
-                'dcos_vault_default',
+                'dcos_vault_default'
             ]
             for account in service_account_zk_creds:
                 zk_creds[account] = {
@@ -227,17 +232,19 @@ class Bootstrapper(object):
                 }
 
         master_service_accounts = [
+            'dcos_3dt_master',
             'dcos_adminrouter',
             'dcos_history_service',
+            'dcos_log_master',
             'dcos_marathon',
+            'dcos_mesos_dns',
+            'dcos_metrics_master',
             'dcos_metronome',
             'dcos_minuteman_master',
             'dcos_navstar_master',
-            'dcos_spartan_master',
             'dcos_networking_api_master',
             'dcos_signal_service',
-            'dcos_mesos_dns',
-            'dcos_3dt_master'
+            'dcos_spartan_master'
         ]
 
         if self.opts.config['security'] == 'permissive':
@@ -316,6 +323,14 @@ class Bootstrapper(object):
         js = self._consensus(path, None)
         self.secrets['services'] = {
             'dcos_3dt_agent': json.loads(js.decode('ascii'))
+        }
+        return self.secrets
+
+    def read_dcos_log_secrets(self):
+        path = '/dcos/agent/secrets/services/dcos_log_agent'
+        js = self._consensus(path, None)
+        self.secrets['services'] = {
+            'dcos_log_agent': json.loads(js.decode('ascii'))
         }
         return self.secrets
 
@@ -408,9 +423,10 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
                 ('dcos:mesos:master:reservation', 'delete'),
+                ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:master:volume', 'create'),
                 ('dcos:mesos:master:volume', 'delete'),
-                ('dcos:mesos:master:task', 'create')]
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(permissive_acls, 'dcos_marathon')
@@ -425,11 +441,11 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:framework:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
-                ('dcos:mesos:master:volume:role:slave_public', 'create'),
-                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
                 ('dcos:mesos:master:task:user:nobody', 'create'),
-                ('dcos:mesos:master:task:app_id', 'create')
-                ]
+                ('dcos:mesos:master:task:app_id', 'create'),
+                ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
+                ('dcos:mesos:master:volume:role:slave_public', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(strict_acls, 'dcos_marathon')
@@ -455,9 +471,9 @@ class Bootstrapper(object):
             # but can create jobs in any folder/namespace.
             strict_acls = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
-                ('dcos:mesos:master:task:user:nobody', 'create'),
-                ('dcos:mesos:master:task:app_id', 'create')
-                ]
+                ('dcos:mesos:master:task:app_id', 'create'),
+                ('dcos:mesos:master:task:user:nobody', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(strict_acls, 'dcos_metronome')
@@ -1007,17 +1023,19 @@ def make_run_dirs(opts):
         opts.rundir,
         opts.rundir + '/etc',
         opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/dcos-ca',
+        opts.rundir + '/etc/dcos-log',
+        opts.rundir + '/etc/dcos-metrics',
+        opts.rundir + '/etc/history-service',
         opts.rundir + '/etc/marathon',
         opts.rundir + '/etc/mesos',
         opts.rundir + '/etc/mesos-dns',
-        opts.rundir + '/etc/dcos-ca',
         opts.rundir + '/etc/metronome',
-        opts.rundir + '/etc/history-service',
         opts.rundir + '/etc/signal-service',
-        opts.rundir + '/pki/tls/private',
-        opts.rundir + '/pki/tls/certs',
         opts.rundir + '/pki/CA/certs',
-        opts.rundir + '/pki/CA/private'
+        opts.rundir + '/pki/CA/private',
+        opts.rundir + '/pki/tls/certs',
+        opts.rundir + '/pki/tls/private'
     ]
 
     for d in dirs:
@@ -1477,6 +1495,28 @@ def dcos_signal(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_signal')
 
 
+def dcos_metrics_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.cluster_id()
+    b.create_service_account('dcos_metrics_master', superuser=True)
+
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    b.write_service_account_credentials('dcos_metrics_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
+
+
+def dcos_metrics_agent(b, opts):
+    b.read_agent_secrets()
+
+    b.cluster_id(readonly=True)
+
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    b.write_service_account_credentials('dcos_metrics_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
+
+
 def dcos_3dt_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
@@ -1514,6 +1554,23 @@ def dcos_history(b, opts):
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
 
 
+def dcos_log_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_log_master', superuser=True)
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-log/dcos_log_service_account.json'
+    b.write_service_account_credentials('dcos_log_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_log')
+
+
+def dcos_log_agent(b, opts):
+    b.read_dcos_log_secrets()
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-log/dcos_log_service_account.json'
+    b.write_service_account_credentials('dcos_log_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_log')
+
+
 bootstrappers = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-adminrouter-agent': dcos_adminrouter_agent,
@@ -1536,4 +1593,8 @@ bootstrappers = {
     'dcos-signal': dcos_signal,
     'dcos-spartan': dcos_spartan,
     'dcos-vault_default': dcos_vault_default,
+    'dcos-log-master': dcos_log_master,
+    'dcos-log-agent': dcos_log_agent,
+    'dcos-metrics-agent': dcos_metrics_agent,
+    'dcos-metrics-master': dcos_metrics_master
 }

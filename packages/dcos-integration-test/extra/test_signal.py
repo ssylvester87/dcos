@@ -7,6 +7,8 @@ import json
 import os
 import subprocess
 
+from ee_helpers import dcos_config
+
 
 def test_ee_signal_service(cluster):
     """
@@ -54,7 +56,7 @@ def test_ee_signal_service(cluster):
 
     # Generic properties which are the same between all tracks
     generic_properties = {
-        'provider': cluster.provider,
+        'provider': dcos_config['provider'],
         'source': 'cluster',
         'clusterId': cluster_id,
         'customerKey': customer_key,
@@ -75,12 +77,16 @@ def test_ee_signal_service(cluster):
         'bouncer-service',
         'ca-service',
         'cosmos-service',
+        'log-master-service',
+        'log-master-socket',
         'exhibitor-service',
         'history-service',
         'logrotate-master-service',
         'logrotate-master-timer',
         'marathon-service',
         'mesos-dns-service',
+        'metrics-master-service',
+        'metrics-master-socket',
         'mesos-master-service',
         'metronome-service',
         'networking_api-service',
@@ -111,8 +117,12 @@ def test_ee_signal_service(cluster):
         'adminrouter-agent-reload-timer',
         'docker-gc-service',
         'docker-gc-timer',
+        'log-agent-service',
+        'log-agent-socket',
         'logrotate-agent-service',
         'logrotate-agent-timer',
+        'metrics-agent-service',
+        'metrics-agent-socket',
         'rexray-service']
 
     for unit in master_units:
