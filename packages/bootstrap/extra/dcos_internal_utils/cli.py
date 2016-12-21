@@ -38,7 +38,9 @@ bootstrappers = {
     'dcos-mesos-master': noop,
     'dcos-cosmos': noop,
     'dcos-metronome': noop,
-    'dcos-bouncer': noop
+    'dcos-bouncer': noop,
+    'dcos-log-master': noop,
+    'dcos-log-agent': noop
 }
 
 

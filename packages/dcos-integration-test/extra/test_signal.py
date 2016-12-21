@@ -75,6 +75,8 @@ def test_ee_signal_service(cluster):
         'bouncer-service',
         'ca-service',
         'cosmos-service',
+        'log-master-service',
+        'log-master-socket',
         'exhibitor-service',
         'history-service',
         'logrotate-master-service',
@@ -111,6 +113,8 @@ def test_ee_signal_service(cluster):
         'adminrouter-agent-reload-timer',
         'docker-gc-service',
         'docker-gc-timer',
+        'log-agent-service',
+        'log-agent-socket',
         'logrotate-agent-service',
         'logrotate-agent-timer',
         'rexray-service']

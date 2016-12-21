@@ -85,6 +85,7 @@ class Bootstrapper(object):
             'dcos_minuteman_agent',
             'dcos_navstar_agent',
             'dcos_spartan_agent',
+            'dcos_log_agent'
         ]
 
     def close(self):
@@ -217,7 +218,7 @@ class Bootstrapper(object):
                 'dcos_bouncer',
                 'dcos_ca',
                 'dcos_secrets',
-                'dcos_vault_default',
+                'dcos_vault_default'
             ]
             for account in service_account_zk_creds:
                 zk_creds[account] = {
@@ -237,7 +238,8 @@ class Bootstrapper(object):
             'dcos_networking_api_master',
             'dcos_signal_service',
             'dcos_mesos_dns',
-            'dcos_3dt_master'
+            'dcos_3dt_master',
+            'dcos_log_master'
         ]
 
         if self.opts.config['security'] == 'permissive':
@@ -316,6 +318,14 @@ class Bootstrapper(object):
         js = self._consensus(path, None)
         self.secrets['services'] = {
             'dcos_3dt_agent': json.loads(js.decode('ascii'))
+        }
+        return self.secrets
+
+    def read_dcos_log_secrets(self):
+        path = '/dcos/agent/secrets/services/dcos_log_agent'
+        js = self._consensus(path, None)
+        self.secrets['services'] = {
+            'dcos_log_agent': json.loads(js.decode('ascii'))
         }
         return self.secrets
 
@@ -1007,6 +1017,7 @@ def make_run_dirs(opts):
         opts.rundir,
         opts.rundir + '/etc',
         opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/dcos-log',
         opts.rundir + '/etc/marathon',
         opts.rundir + '/etc/mesos',
         opts.rundir + '/etc/mesos-dns',
@@ -1514,6 +1525,23 @@ def dcos_history(b, opts):
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
 
 
+def dcos_log_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_log_master', superuser=True)
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-log/dcos_log_service_account.json'
+    b.write_service_account_credentials('dcos_log_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_log')
+
+
+def dcos_log_agent(b, opts):
+    b.read_dcos_log_secrets()
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-log/dcos_log_service_account.json'
+    b.write_service_account_credentials('dcos_log_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_log')
+
+
 bootstrappers = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-adminrouter-agent': dcos_adminrouter_agent,
@@ -1536,4 +1564,6 @@ bootstrappers = {
     'dcos-signal': dcos_signal,
     'dcos-spartan': dcos_spartan,
     'dcos-vault_default': dcos_vault_default,
+    'dcos-log-master': dcos_log_master,
+    'dcos-log-agent': dcos_log_agent
 }
