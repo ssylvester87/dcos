@@ -33,6 +33,16 @@ def set_user_permission(cluster):
     return set_permission
 
 
+@pytest.fixture
+def remove_user_permission(cluster):
+    def remove_permission(rid, uid, action):
+        rid = rid.replace('/', '%252F')
+        # Set the permission triplet.
+        r = cluster.iam.delete('/acls/{}/users/{}/{}'.format(rid, uid, action))
+        r.raise_for_status()
+    return remove_permission
+
+
 skip_security_disabled = pytest.mark.skipif(bootstrap_config['security'] == 'disabled', reason="security is disabled")
 pytestmark = [skip_security_disabled, pytest.mark.usefixtures("iam_verify_and_reset")]
 
@@ -107,3 +117,43 @@ def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set
     # /example-secure should NOT be viewable
     assert len(groups) == 1
     assert groups[0]['id'] == '/example'
+
+
+def test_cache_timeout_for_access_on_marathon_group_prefix(cluster, peter_cluster,
+                                                           set_user_permission,
+                                                           marathon_groups,
+                                                           remove_user_permission):
+    # admin router
+    set_user_permission(
+        rid='dcos:adminrouter:service:marathon',
+        uid=peter_cluster.web_auth_default_user.uid,
+        action='full')
+    # read example
+    set_user_permission(
+        rid='dcos:service:marathon:marathon:services:/example',
+        uid=peter_cluster.web_auth_default_user.uid,
+        action='read')
+    # t1 successful access
+    r = peter_cluster.marathon.get('/v2/groups')
+    groups = r.json().get('groups')
+    assert len(groups) == 1
+    assert groups[0]['id'] == '/example'
+
+    # remove access
+    remove_user_permission(
+        rid='dcos:service:marathon:marathon:services:/example',
+        uid=peter_cluster.web_auth_default_user.uid,
+        action='read')
+    # t2 successful access (even after remove based on cache)
+    r = peter_cluster.marathon.get('/v2/groups')
+    groups = r.json().get('groups')
+    # still in cache
+    assert len(groups) == 1
+    assert groups[0]['id'] == '/example'
+
+    # t3 cache expires and access is denied
+    time.sleep(6)
+    r = peter_cluster.marathon.get('/v2/groups')
+    groups = r.json().get('groups')
+    # /example-secure should NOT be viewable
+    assert groups is None
