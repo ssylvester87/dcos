@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from ee_helpers import bootstrap_config
 
@@ -96,6 +97,8 @@ def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set
         rid='dcos:service:marathon:marathon:services:/example',
         uid=peter_cluster.web_auth_default_user.uid,
         action='read')
+    # caching requires at least a 5 sec wait
+    time.sleep(6)
 
     # check access to group
     r = peter_cluster.marathon.get('/v2/groups')
