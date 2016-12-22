@@ -1,5 +1,6 @@
-import pytest
 import time
+
+import pytest
 
 from ee_helpers import bootstrap_config
 
