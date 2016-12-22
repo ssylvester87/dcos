@@ -119,19 +119,24 @@ def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set
     assert groups[0]['id'] == '/example'
 
 
-def test_cache_timeout_for_access_on_marathon_group_prefix(cluster, peter_cluster,
-                                                           set_user_permission,
-                                                           marathon_groups,
-                                                           remove_user_permission):
+def test_cache_timeout_for_access_on_marathon_group_prefix(
+        cluster,
+        peter_cluster,
+        set_user_permission,
+        marathon_groups,
+        remove_user_permission):
+    peter_uid = peter_cluster.web_auth_default_user.uid
+    marathon_example_group = 'dcos:service:marathon:marathon:services:/example'
+
     # admin router
     set_user_permission(
         rid='dcos:adminrouter:service:marathon',
-        uid=peter_cluster.web_auth_default_user.uid,
+        uid=peter_uid,
         action='full')
     # read example
     set_user_permission(
-        rid='dcos:service:marathon:marathon:services:/example',
-        uid=peter_cluster.web_auth_default_user.uid,
+        rid=marathon_example_group,
+        uid=peter_uid,
         action='read')
     # t1 successful access
     r = peter_cluster.marathon.get('/v2/groups')
@@ -141,8 +146,8 @@ def test_cache_timeout_for_access_on_marathon_group_prefix(cluster, peter_cluste
 
     # remove access
     remove_user_permission(
-        rid='dcos:service:marathon:marathon:services:/example',
-        uid=peter_cluster.web_auth_default_user.uid,
+        rid=marathon_example_group,
+        uid=peter_uid,
         action='read')
     # t2 successful access (even after remove based on cache)
     r = peter_cluster.marathon.get('/v2/groups')
@@ -155,5 +160,5 @@ def test_cache_timeout_for_access_on_marathon_group_prefix(cluster, peter_cluste
     time.sleep(6)
     r = peter_cluster.marathon.get('/v2/groups')
     groups = r.json().get('groups')
-    # /example-secure should NOT be viewable
+    # /example should NOT be viewable
     assert groups is None
