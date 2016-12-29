@@ -11,11 +11,11 @@ from ee_helpers import bootstrap_config
 log = logging.getLogger(__name__)
 
 strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
-                                 reason='Tests must have to run on a cluster in strict mode')
+                                 reason='Tests must have to run on a superuser_api_session in strict mode')
 pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
-def test_fine_grained_acls(cluster, peter_cluster):
+def test_fine_grained_acls(superuser_api_session, peter_api_session):
     test_uuid = uuid.uuid4().hex
 
     task_id = "integration-test-task-logs-{}".format(test_uuid)
@@ -28,35 +28,35 @@ def test_fine_grained_acls(cluster, peter_cluster):
         "cmd": "echo STDOUT_LOG; echo STDERR_LOG >&2;sleep 999"
     }
 
-    with cluster.marathon.deploy_and_cleanup(task_definition, check_health=False):
-        url = get_task_url(cluster, task_id)
-        task_stdout_response = cluster.get(url)
+    with superuser_api_session.marathon.deploy_and_cleanup(task_definition, check_health=False):
+        url = get_task_url(superuser_api_session, task_id)
+        task_stdout_response = superuser_api_session.get(url)
         check_response_ok(task_stdout_response)
         task_stdout = task_stdout_response.content.decode('utf-8', 'ignore')
         assert 'STDOUT_LOG' in task_stdout, 'Missing `STDOUT_LOG` in response. Got {}'.format(task_stdout)
 
-        peter_response = peter_cluster.get(url)
+        peter_response = peter_api_session.get(url)
         assert peter_response.status_code == 403, 'Peter should not be able to read superuser logs'
 
 
-def test_system_logs(cluster, peter_cluster):
+def test_system_logs(superuser_api_session, peter_api_session):
     """ test system level logs. Only superuser or anyone with dcos:adminrouter:ops:system-logs must be able to
         access the logs.
     """
     range_endpoint = 'v1/range/?limit=1'
     stream_endpoint = 'v1/stream/?skip_prev=1'
 
-    for node in cluster.masters + cluster.all_slaves:
-        response = cluster.logs.get(range_endpoint, node=node)
+    for node in superuser_api_session.masters + superuser_api_session.all_slaves:
+        response = superuser_api_session.logs.get(range_endpoint, node=node)
         check_response_ok(response)
 
-        response = cluster.logs.get(stream_endpoint, node=node, stream=True)
+        response = superuser_api_session.logs.get(stream_endpoint, node=node, stream=True)
         check_response_ok(response)
 
-        peter_response = peter_cluster.logs.get(range_endpoint, node=node)
+        peter_response = peter_api_session.logs.get(range_endpoint, node=node)
         assert peter_response.status_code == 403, 'Peter should not be able to get system logs'
 
-        peter_response = peter_cluster.logs.get(stream_endpoint, node=node, stream=True)
+        peter_response = peter_api_session.logs.get(stream_endpoint, node=node, stream=True)
         assert peter_response.status_code == 403, 'Peter should not be able to get system logs'
 
 
@@ -64,14 +64,14 @@ def check_response_ok(response: requests.models.Response):
     assert response.ok, 'Request {} returned response code {}'.format(response.url, response.status_code)
 
 
-def get_task_url(cluster, task_name, stream=False):
+def get_task_url(superuser_api_session, task_name, stream=False):
     """ The function returns a logging URL for a given task
-    :param cluster: cluster fixture
+    :param superuser_api_session: superuser_api_session fixture
     :param task_name: task name
     :param stream: use range or stream endpoint
     :return: url to get the logs for a task
     """
-    state_response = cluster.get('/mesos/state')
+    state_response = superuser_api_session.get('/mesos/state')
     check_response_ok(state_response)
 
     framework_id = None

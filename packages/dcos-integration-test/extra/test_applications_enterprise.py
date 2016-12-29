@@ -9,7 +9,7 @@ from dcostests import dcos
     dcos.config['security'] == 'strict',
     reason='Pods are not yet supported in strict security mode.'
 )
-def test_enterprise_if_marathon_pods_can_be_deployed_with_mesos_containerizer(cluster):
+def test_enterprise_if_marathon_pods_can_be_deployed_with_mesos_containerizer(superuser_api_session):
     """Marathon pods deployment integration test using the Mesos Containerizer
 
     This test verifies that a Marathon pod can be deployed.
@@ -38,6 +38,6 @@ def test_enterprise_if_marathon_pods_can_be_deployed_with_mesos_containerizer(cl
         'networks': [{'mode': 'host'}]
     }
 
-    with cluster.marathon.deploy_pod_and_cleanup(pod_definition):
+    with superuser_api_session.marathon.deploy_pod_and_cleanup(pod_definition):
         # Trivial app if it deploys, there is nothing else to check
         pass

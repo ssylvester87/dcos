@@ -10,9 +10,14 @@ import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend as crypto_backend
 
+from ee_helpers import bootstrap_config
+
 log = logging.getLogger(__name__)
 
-pytestmark = [pytest.mark.security]
+strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
+                                 reason='Tests must have to run on a cluster in strict mode')
+
+pytestmark = [pytest.mark.security, strict_only]
 
 SanEntry = namedtuple("SanEntry", ['type', 'val'])
 Netloc = namedtuple("Netloc", ["host", "port", "description", "expected_sans"])
@@ -28,18 +33,11 @@ marathon_san_entries = [SanEntry("dns", "marathon.mesos")]
 
 
 @pytest.fixture
-def ssl_cluster(cluster):
-    if cluster.config['security'] != 'strict':
-        pytest.skip("SSL/TLS tests skipped: strict security mode not expected")
-    return cluster
-
-
-@pytest.fixture
-def tls_netlocs(ssl_cluster):
+def tls_netlocs(superuser_api_session):
     """Generate Netlocs for every node in the cluster
     """
     netlocs = []
-    for host in ssl_cluster.masters:
+    for host in superuser_api_session.masters:
         ar_san_entries = [
             SanEntry("dns", host),
             SanEntry("ip", host)]
@@ -70,7 +68,7 @@ def tls_netlocs(ssl_cluster):
                 "Admin Router (master)",
                 common_san_entries + masters_san_entries + ar_san_entries)])
 
-    for host in ssl_cluster.all_slaves:
+    for host in superuser_api_session.all_slaves:
         netlocs.extend([
             Netloc(
                 host,
@@ -158,7 +156,7 @@ def test_cert_dns_names(tls_netlocs):
             assert expected_ip in ip_names
 
 
-def test_cert_hostname_verification(tls_netlocs, cluster):
+def test_cert_hostname_verification(tls_netlocs, superuser_api_session):
     """
     Note: the cryptography package does not expose OpenSSL's
     API for cert/hostname verification yet:
@@ -172,7 +170,7 @@ def test_cert_hostname_verification(tls_netlocs, cluster):
         ss = ssl.wrap_socket(
             s,
             cert_reqs=ssl.CERT_REQUIRED,
-            ca_certs=cluster.ca_cert_path,
+            ca_certs=superuser_api_session.ca_cert_path,
             do_handshake_on_connect=True)
         with s:
             ss.connect((netloc.host, netloc.port))
