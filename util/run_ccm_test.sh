@@ -4,8 +4,6 @@ set -euo pipefail
 set -x
 export TEST_ADD_ENV_DCOS_LOGIN_UNAME=testadmin
 export TEST_ADD_ENV_DCOS_LOGIN_PW=testpassword
-export TEST_ADD_ENV_DCOS_VARIANT=ee
-export TEST_ADD_ENV_DCOS_INTEGRATION_TESTS=true
 export TEST_ADD_ENV_PYTHONDONTWRITEBYTECODE="true"
 export TEST_ADD_ENV_PYTHONUNBUFFERED="true"
 export TEST_ADD_CONFIG=$PWD/add_config.yaml
