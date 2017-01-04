@@ -59,11 +59,6 @@ def tls_netlocs(superuser_api_session):
                 common_san_entries + masters_san_entries),
             Netloc(
                 host,
-                7443,
-                "Cosmos (master)",
-                common_san_entries + masters_san_entries),
-            Netloc(
-                host,
                 443,
                 "Admin Router (master)",
                 common_san_entries + masters_san_entries + ar_san_entries)])
