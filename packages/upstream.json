@@ -1,6 +1,6 @@
 {
   "kind": "git",
-  "git": "https://github.com/dcos/dcos",
-  "ref": "1b43ff7a0b9124db9439299b789f2e2dc3cc086c",
-  "ref_origin": "1.8.7"
+  "git": "https://github.com/mesosphere/dcos",
+  "ref": "6adf0c4128d9e33cb2489d81fa9f88b03d274745",
+  "ref_origin": "adam/fix-188"
 }
