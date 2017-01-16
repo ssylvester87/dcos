@@ -4,9 +4,11 @@ Test Enterprise DC/OS Network Api Service
 import logging
 import socket
 import uuid
+
 import pytest
 import requests
 import retrying
+
 from dcostests import dcos, marathon
 from dcostests.marathon import MarathonApp
 
