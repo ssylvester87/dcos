@@ -36,7 +36,7 @@ vault_config_template = """
 disable_mlock = true
 
 backend "zookeeper" {
-  address = "127.0.0.1:2181"
+  address = "%(zookeeper_addr)s"
   advertise_addr = "%(advertise_addr)s"
   path = "dcos/vault/default"
   %(znode_owner)s
@@ -553,6 +553,7 @@ class Bootstrapper(object):
             'znode_owner': znode_owner,
             'auth_info': auth_info,
             'advertise_addr': advertise_addr,
+            'zookeeper_addr': ZOOKEEPER_ADDR
         }
         cfg = vault_config_template % params
         cfg = cfg.strip() + '\n'
@@ -977,7 +978,6 @@ def parse_args():
         opts.zk_agent_digest = _verify_and_set_zk_creds(opts.zk_agent_digest, "ZooKeeper agent digest")
 
     if os.path.exists('/opt/mesosphere/etc/roles/master'):
-        zk_default = '127.0.0.1:2181'
         iam_default = 'http://127.0.0.1:8101'
         ca_default = 'http://127.0.0.1:8888'
     else:
@@ -994,7 +994,6 @@ def parse_args():
             # any other agent service
             leader = 'leader.mesos'
 
-        zk_default = leader + ':2181'
         if opts.config['ssl_enabled']:
             iam_default = 'https://' + leader
             ca_default = 'https://' + leader
@@ -1003,7 +1002,7 @@ def parse_args():
             ca_default = 'http://' + leader
 
     if not opts.zk:
-        opts.zk = zk_default
+        opts.zk = ZOOKEEPER_ADDR
     if not opts.iam_url:
         opts.iam_url = iam_default
     if not opts.ca_url:
