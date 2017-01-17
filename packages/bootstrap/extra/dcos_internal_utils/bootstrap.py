@@ -978,6 +978,7 @@ def parse_args():
         opts.zk_agent_digest = _verify_and_set_zk_creds(opts.zk_agent_digest, "ZooKeeper agent digest")
 
     if os.path.exists('/opt/mesosphere/etc/roles/master'):
+        zk_default = '127.0.0.1:2181'
         iam_default = 'http://127.0.0.1:8101'
         ca_default = 'http://127.0.0.1:8888'
     else:
@@ -994,6 +995,7 @@ def parse_args():
             # any other agent service
             leader = 'leader.mesos'
 
+        zk_default = leader + ':2181'
         if opts.config['ssl_enabled']:
             iam_default = 'https://' + leader
             ca_default = 'https://' + leader
@@ -1002,7 +1004,7 @@ def parse_args():
             ca_default = 'http://' + leader
 
     if not opts.zk:
-        opts.zk = ZOOKEEPER_ADDR
+        opts.zk = zk_default
     if not opts.iam_url:
         opts.iam_url = iam_default
     if not opts.ca_url:
