@@ -15,6 +15,14 @@ log = logging.getLogger(__name__)
 pytestmark = [pytest.mark.security]
 
 
+@pytest.fixture(scope='session')
+def noauth_cluster(cluster):
+    """The default cluster() fixture is authenticated as the superuser.
+    This fixture supports making requests as an unauthenticated entity.
+    """
+    return cluster.get_user_session(None)
+
+
 class DirectoryBackend:
     """Base class that directory definition classes must inherit from."""
 
@@ -499,12 +507,11 @@ class TestFreeIPA:
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
 
-    def test_groupimport(self, freeipa, superuser):
+    def test_groupimport(self, freeipa, cluster):
 
-        r = requests.post(
-            IAMUrl('/ldap/importgroup'),
-            json={"groupname": "employees"},
-            headers=superuser.auth_header
+        r = cluster.iam.post(
+            '/ldap/importgroup',
+            json={"groupname": "employees"}
             )
         assert r.status_code == 201
 
@@ -512,10 +519,7 @@ class TestFreeIPA:
 
         # Verify users have been (implicitly) imported
         # and labeled as remote users.
-        r = requests.get(
-            IAMUrl('/users'),
-            headers=superuser.auth_header
-            )
+        r = cluster.iam.get('/users')
         r.raise_for_status()
         l = r.json()['array']
         users = {d['uid']: d for d in l}
@@ -524,10 +528,7 @@ class TestFreeIPA:
 
         # Verify that a group with gid `employees` exists
         # and that it has the expected set of members.
-        r = requests.get(
-            IAMUrl('/groups/employees/users'),
-            headers=superuser.auth_header
-            )
+        r = cluster.iam.get('/groups/employees/users')
         r.raise_for_status()
         l = r.json()['array']
         assert set((d['user']['uid'] for d in l)) == set(expected_uids)
