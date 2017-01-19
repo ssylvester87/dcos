@@ -11,7 +11,7 @@ import pytest
 from api_session_fixture import make_session_fixture
 from jwt.utils import base64url_decode, base64url_encode
 
-from test_util.helpers import DcosUser
+from test_util.dcos_api_session import DcosUser
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -30,42 +30,41 @@ def superuser_api_session():
 
 @pytest.fixture(scope='session')
 def superuser(superuser_api_session):
-    return superuser_api_session.web_auth_default_user
+    return superuser_api_session.auth_user
 
 
 @pytest.fixture(scope='session')
-def noauth_api_session(superuser_api_session):
-    return superuser_api_session.get_user_session(None)
-
-
-@pytest.fixture(scope='session')
-def peter_api_session(superuser_api_session, peter):
-    return superuser_api_session.get_user_session(peter)
-
-
-@pytest.fixture(scope='session')
-def peter(superuser_api_session):
+def peter_api_session(superuser_api_session):
     """Provides a non-super user and deletes it after test
     This user can have its permissions changed by superuser
     to test authn/authz functions in DC/OS
     """
     uid = 'peter'
     password = 'peterpan'
-    p = DcosUser({'uid': uid, 'password': password})
-    p.uid = uid
-    p.password = password
+    peter = DcosUser({'uid': uid, 'password': password})
+    peter.uid = uid
+    peter.password = password
     description = 'An ordinarily weak Peter'
 
     new_user_json = {'description': description, 'password': password}
     user_endpoint = '/users/{}'.format(uid)
     superuser_api_session.iam.put(user_endpoint, json=new_user_json)
-    p.authenticate(superuser_api_session)
 
-    yield p
+    yield superuser_api_session.get_user_session(peter)
 
-    log.info('Delete user {}'.format(p.uid))
+    log.info('Delete user {}'.format(peter.uid))
     r = superuser_api_session.iam.delete(user_endpoint)
     r.raise_for_status()
+
+
+@pytest.fixture(scope='session')
+def peter(peter_api_session):
+    return peter_api_session.auth_user
+
+
+@pytest.fixture(scope='session')
+def noauth_api_session(superuser_api_session):
+    return superuser_api_session.get_user_session(None)
 
 
 @pytest.fixture()

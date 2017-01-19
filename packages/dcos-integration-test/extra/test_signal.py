@@ -19,7 +19,7 @@ def test_ee_signal_service(superuser_api_session):
     """
     dcos_version = os.getenv("DCOS_VERSION", "")
 
-    signal_config = load_json('/opt/mesosphere/etc/dcos-signal-config.json', 'r')
+    signal_config = load_json('/opt/mesosphere/etc/dcos-signal-config.json')
     signal_config.update(load_json('/opt/mesosphere/etc/dcos-signal-extra.json'))
 
     customer_key = signal_config.get('customer_key', 'CUSTOMER KEY NOT SET')

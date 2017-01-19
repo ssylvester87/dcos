@@ -103,11 +103,11 @@ def test_retrieve_server_cert_enforce_tls_1_2(tls_netlocs):
         assert cert_pem, 'Failed TLSv1_2 cert check for: {}'.format(str(netloc))
 
 
-def test_verify_server_cert_against_root_cert(tls_netlocs, cluster):
+def test_verify_server_cert_against_root_cert(tls_netlocs, superuser_api_session):
     for netloc in tls_netlocs:
         cert_pem = ssl.get_server_certificate(
             addr=(netloc.host, netloc.port),
-            ca_certs=cluster.ca_cert_path,
+            ca_certs=superuser_api_session.session.verify,
             ssl_version=ssl.PROTOCOL_SSLv23)
         assert cert_pem, 'Failed to verify cert against root for : {}'.format(str(netloc))
 
@@ -170,7 +170,7 @@ def test_cert_hostname_verification(tls_netlocs, superuser_api_session):
         ss = ssl.wrap_socket(
             s,
             cert_reqs=ssl.CERT_REQUIRED,
-            ca_certs=superuser_api_session.ca_cert_path,
+            ca_certs=superuser_api_session.session.verify,
             do_handshake_on_connect=True)
         with s:
             ss.connect((netloc.host, netloc.port))

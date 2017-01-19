@@ -3,22 +3,28 @@ import os
 
 from ee_helpers import bootstrap_config
 
-from test_util.cluster_api import ClusterApi, get_args_from_env
-from test_util.helpers import DcosUser, session_tempfile
+from test_util.dcos_api_session import DcosApiSession, DcosUser, get_args_from_env
+from test_util.helpers import session_tempfile
 
 
-class EnterpriseClusterApi(ClusterApi):
+class EnterpriseApiSession(DcosApiSession):
     @property
     def iam(self):
-        return self.get_client('acs/api/v1')
+        new = self.copy()
+        new.default_url = self.default_url.copy(path='acs/api/v1')
+        return new
 
     @property
     def secrets(self):
-        return self.get_client('secrets/v1')
+        new = self.copy()
+        new.default_url = self.default_url.copy(path='secrets/v1')
+        return new
 
     @property
     def ca(self):
-        return self.get_client('ca/api/v2')
+        new = self.copy()
+        new.default_url = self.default_url.copy(path='ca/api/v2')
+        return new
 
 
 def make_session_fixture():
@@ -30,7 +36,7 @@ def make_session_fixture():
     superuser = DcosUser(auth_json)
     superuser.uid = uid
     superuser.password = password
-    cluster_args['web_auth_default_user'] = superuser
+    cluster_args['auth_user'] = superuser
 
     if bootstrap_config['ssl_enabled']:
         cluster_args['dcos_url'] = cluster_args['dcos_url'].replace('http', 'https')
@@ -38,18 +44,17 @@ def make_session_fixture():
     if bootstrap_config['security'] == 'strict':
         cluster_args['default_os_user'] = 'nobody'
 
-    cluster_api = EnterpriseClusterApi(**cluster_args)
+    cluster_api = EnterpriseApiSession(**cluster_args)
 
     # If SSL enabled and no CA cert is given, then grab it
-    if bootstrap_config['ssl_enabled'] and not cluster_args['ca_cert_path']:
+    if bootstrap_config['ssl_enabled']:
         logging.info('Attempt to get CA bundle via CA HTTP API')
         r = cluster_api.post('ca/api/v2/info', json={'profile': ''}, verify=False)
 
         assert r.status_code == 200
         data = r.json()
         crt = data['result']['certificate']
-        ca_cert_path = session_tempfile(crt.encode())
-        cluster_api.ca_cert_path = ca_cert_path
+        cluster_api.session.verify = session_tempfile(crt.encode())
 
     cluster_api.wait_for_dcos()
 

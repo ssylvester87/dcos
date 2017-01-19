@@ -185,7 +185,7 @@ class TestAdminRouterACLs:
 
         set_user_permission(
             rid='dcos:adminrouter:ops:ca:rw',
-            uid=peter_api_session.web_auth_default_user.uid,
+            uid=peter_api_session.auth_user.uid,
             action='full')
 
         data = {
@@ -226,7 +226,7 @@ class TestAdminRouterACLs:
 
         set_user_permission(
             rid='dcos:adminrouter:ops:system-metrics',
-            uid=peter_api_session.web_auth_default_user.uid,
+            uid=peter_api_session.auth_user.uid,
             action='full')
 
         r = peter_api_session.get(endpoint)
@@ -415,7 +415,7 @@ class TestAdminRouterACLs:
 
         set_user_permission(
             rid='dcos:adminrouter:package',
-            uid=peter_api_session.web_auth_default_user.uid,
+            uid=peter_api_session.auth_user.uid,
             action='full'
         )
 
