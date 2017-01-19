@@ -25,7 +25,7 @@ def set_user_permission(cluster):
     def set_permission(rid, uid, action):
         rid = rid.replace('/', '%252F')
         # Create ACL if it does not yet exist.
-        r = cluster.iam.put('/acls/{}'.format(rid), json={'description': 'jope'})  # NOQA
+        r = cluster.iam.put('/acls/{}'.format(rid), json={'description': 'jope'})
         assert r.status_code == 201 or r.status_code == 409
         # Set the permission triplet.
         r = cluster.iam.put('/acls/{}/users/{}/{}'.format(rid, uid, action))
@@ -43,11 +43,11 @@ def remove_user_permission(cluster):
     return remove_permission
 
 
-skip_security_disabled = pytest.mark.skipif(bootstrap_config['security'] == 'disabled', reason="security is disabled")  # NOQA
-pytestmark = [skip_security_disabled, pytest.mark.usefixtures("iam_verify_and_reset")]  # NOQA
+skip_security_disabled = pytest.mark.skipif(bootstrap_config['security'] == 'disabled', reason="security is disabled")
+pytestmark = [skip_security_disabled, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
-def test_read_access_on_marathon_group(cluster, peter_cluster, set_user_permission, marathon_groups):   # NOQA
+def test_read_access_on_marathon_group(cluster, peter_cluster, set_user_permission, marathon_groups):
 
     # admin router
     set_user_permission(
@@ -73,7 +73,7 @@ def test_read_access_on_marathon_group(cluster, peter_cluster, set_user_permissi
     assert groups[1]['id'] == '/example-secure'
 
 
-def test_delete_denied_on_marathon_group(cluster, peter_cluster, set_user_permission, marathon_groups):   # NOQA
+def test_delete_denied_on_marathon_group(cluster, peter_cluster, set_user_permission, marathon_groups):
 
     # admin router
     set_user_permission(
@@ -97,7 +97,7 @@ def test_delete_denied_on_marathon_group(cluster, peter_cluster, set_user_permis
     assert r.status_code == 403
 
 
-def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set_user_permission, marathon_groups):   # NOQA
+def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set_user_permission, marathon_groups):
     # admin router
     set_user_permission(
         rid='dcos:adminrouter:service:marathon',
@@ -108,8 +108,8 @@ def test_read_access_denied_on_marathon_group_prefix(cluster, peter_cluster, set
         rid='dcos:service:marathon:marathon:services:/example',
         uid=peter_cluster.web_auth_default_user.uid,
         action='read')
-    # testing results immediately after the 5 sec expiration
-    time.sleep(6)
+    # 5 sec expiration -> 5 sec expiration plus a second to account for potential latency
+    time.sleep(5 + 1)
 
     # check access to group
     r = peter_cluster.marathon.get('/v2/groups')
