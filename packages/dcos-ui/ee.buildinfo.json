@@ -4,13 +4,13 @@
     "dcos-ui": {
       "kind": "git",
       "git": "https://github.com/dcos/dcos-ui.git",
-      "ref": "4fe5207c0ac9bd52ab3c6cf8ed4975c0988e69fa",
+      "ref": "640fe26a812715e1f6c888e56b4ec501a7724807",
       "ref_origin": "master"
     },
     "dcos-ui-plugins-private": {
         "kind": "git",
         "git": "git@github.com:mesosphere/dcos-ui-plugins-private.git",
-        "ref": "d9e56a10ea80e8476ef2d7dba5c524a477e7f67c",
+        "ref": "1f1d55b6f75178a7e0235a5a789bcdbb23857254",
         "ref_origin": "master"
     }
   }
