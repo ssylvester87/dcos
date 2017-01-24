@@ -10,6 +10,7 @@
     "python-jwt",
     "python-requests",
     "python-retrying",
+    "python-selenium",
     "python-kazoo"],
   "sources": {
     "pytest_html": {

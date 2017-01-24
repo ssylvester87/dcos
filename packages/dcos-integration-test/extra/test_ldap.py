@@ -285,7 +285,7 @@ def remove_config(superuser_api_session):
         assert r.json()['code'] == 'ERR_LDAP_CONFIG_NOT_AVAILABLE'
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def ads1(superuser_api_session):
     d = ADS1()
     set_config(d.config, superuser_api_session)
@@ -293,7 +293,7 @@ def ads1(superuser_api_session):
     remove_config(superuser_api_session)
 
 
-@pytest.yield_fixture(scope="session")
+@pytest.fixture(scope="module")
 def freeipa(superuser_api_session):
     """
     The freeipa fixture starts and populates a freeIPA container
