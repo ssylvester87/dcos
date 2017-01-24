@@ -9,22 +9,21 @@ import subprocess
 
 from ee_helpers import dcos_config
 
+from pkgpanda.util import load_json, load_string
 
-def test_ee_signal_service(cluster):
+
+def test_ee_signal_service(superuser_api_session):
     """
     signal-service runs on an hourly timer, this test runs it as a one-off
     and pushes the results to the test_server app for easy retrieval
     """
     dcos_version = os.getenv("DCOS_VERSION", "")
-    signal_config = open('/opt/mesosphere/etc/dcos-signal-config.json', 'r')
-    signal_config_extra = open('/opt/mesosphere/etc/dcos-signal-extra.json')
 
-    signal_config_data = json.loads(signal_config.read())
-    signal_config_data.update(json.loads(signal_config_extra.read()))
+    signal_config = load_json('/opt/mesosphere/etc/dcos-signal-config.json')
+    signal_config.update(load_json('/opt/mesosphere/etc/dcos-signal-extra.json'))
 
-    customer_key = signal_config_data.get('customer_key', 'CUSTOMER KEY NOT SET')
-    cluster_id_file = open('/var/lib/dcos/cluster-id')
-    cluster_id = cluster_id_file.read().strip()
+    customer_key = signal_config.get('customer_key', 'CUSTOMER KEY NOT SET')
+    cluster_id = load_string('/var/lib/dcos/cluster-id').strip()
 
     # sudo is required to read /run/dcos/etc/signal-service/service_account.json
     env = os.environ.copy()
@@ -125,21 +124,24 @@ def test_ee_signal_service(cluster):
         'rexray-service']
 
     for unit in master_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.masters)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = \
+            len(superuser_api_session.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_node_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(
-            cluster.all_slaves + cluster.masters)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = \
+            len(superuser_api_session.all_slaves + superuser_api_session.masters)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in slave_units:
         total_key = "health-unit-dcos-{}-total".format(unit)
-        exp_data['diagnostics']['properties'][total_key] = len(cluster.slaves)
+        exp_data['diagnostics']['properties'][total_key] = len(superuser_api_session.slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in public_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.public_slaves)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = \
+            len(superuser_api_session.public_slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
     for unit in all_slave_units:
-        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = len(cluster.all_slaves)
+        exp_data['diagnostics']['properties']["health-unit-dcos-{}-total".format(unit)] = \
+            len(superuser_api_session.all_slaves)
         exp_data['diagnostics']['properties']["health-unit-dcos-{}-unhealthy".format(unit)] = 0
 
     # Check the entire hash of diagnostics data

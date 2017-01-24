@@ -13,4 +13,4 @@ mv $PKG_PATH/open_source_tests/util $PKG_PATH/
 # Transfer enterprise test resouces
 cp -r /pkg/extra/* $PKG_PATH/
 # overwrite the open source cluster_fixture.py with EE version
-cp $PKG_PATH/cluster_fixture.py $PKG_PATH/open_source_tests/
+cp $PKG_PATH/api_session_fixture.py $PKG_PATH/open_source_tests/

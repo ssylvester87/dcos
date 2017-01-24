@@ -299,7 +299,7 @@ def ads1(superuser):
 
 
 @pytest.yield_fixture(scope="session")
-def freeipa(superuser, cluster):
+def freeipa(superuser, superuser_api_session):
     """
     The freeipa fixture starts and populates a freeIPA container
     running on marathon in the DC/OS cluster under test. It destroys
@@ -308,7 +308,7 @@ def freeipa(superuser, cluster):
 
     # start the freeIPA application on marathon
     # and clean it up once the tests complete
-    with cluster.marathon.deploy_and_cleanup(
+    with superuser_api_session.marathon.deploy_and_cleanup(
             _freeipa_marathon_definition(),
             timeout=1200):
         # the hostname of the freeIPA server

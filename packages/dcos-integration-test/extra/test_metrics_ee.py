@@ -10,18 +10,15 @@ import pytest
     reason='framework_principal" should only be present in strict and permissive mode',
     strict=True
 )
-def test_framework_principal_present(cluster):
+def test_framework_principal_present(superuser_api_session):
     """ Test that the framework_principal is present as a dimension in EE
-    clusters.
+    superuser_api_sessions.
     """
-    def framework_principal_present(node, superuser):
+    def framework_principal_present(node):
         """Ensure that framework_principal is present in the container's
         dimensions struct, and that it has a non-empty value.
         """
-        containers = cluster.metrics.get(
-            'containers',
-            node=node.host,
-            headers=superuser.auth_header)
+        containers = superuser_api_session.metrics.get('containers', node=node.host)
 
         assert containers.status_code == 200, 'Excepted 200 response, got '
         '{}'.format(containers.status_code)
@@ -30,10 +27,7 @@ def test_framework_principal_present(cluster):
         'present from /containers endpoint, got {}'.format(containers.json())
 
         for container in containers.json():
-            resp = cluster.metrics.get(
-                '/'.join(['containers', container]),
-                node=node.host,
-                headers=superuser.auth_header)
+            resp = superuser_api_session.metrics.get('/'.join(['containers', container]), node=node.host)
 
             assert resp.status_code == 200, 'Expected 200 status code, got '
             '{}, content is {}'.format(resp.status_code, resp.content)
@@ -50,7 +44,7 @@ def test_framework_principal_present(cluster):
         return True
 
     app = ee_helpers.sleep_app_definition("dcos-metrics-%s" % str(uuid.uuid4()))
-    with cluster.marathon.deploy_and_cleanup(app, check_health=False) as endpoints:
+    with superuser_api_session.marathon.deploy_and_cleanup(app, check_health=False) as endpoints:
         time.sleep(60)  # dcos-metrics has a poll interval of 60 seconds so we have to wait until cache is filled
         for node in endpoints:
-            framework_principal_present(node, cluster.web_auth_default_user)
+            framework_principal_present(node)
