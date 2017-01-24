@@ -11,7 +11,7 @@ import pytest
 from api_session_fixture import make_session_fixture
 from jwt.utils import base64url_decode, base64url_encode
 
-from test_util.dcos_api_session import DcosUser
+from test_util.dcos_api_session import DcosAuth, DcosUser
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -218,11 +218,11 @@ def iam_verify_and_reset(superuser_api_session, superuser, peter):
         iam_reset_undecorated(superuser_api_session, superuser, peter)
 
 
-@pytest.fixture(scope="module")
-def forged_superuser_authheader(peter, superuser):
-
-    log.info('Fixture invoked')
-
+@pytest.fixture(scope='session')
+def forged_superuser_session(peter, superuser, noauth_api_session):
+    """ Returns an API session that uses auth from Peter's session
+    with the superuser uid injected
+    """
     # Decode Peter's authentication token.
     t = peter.auth_token
     header_bytes, payload_bytes, signature_bytes = [
@@ -241,6 +241,6 @@ def forged_superuser_authheader(peter, superuser):
         base64url_encode(_).decode('ascii') for _ in (
             header_bytes, forged_payload_bytes, signature_bytes)
         )
-
-    forged_authheader = {'Authorization': 'token={}'.format(forged_token)}
-    return forged_authheader
+    forged_session = noauth_api_session.copy()
+    forged_session.session.auth = DcosAuth(forged_token)
+    return forged_session
