@@ -1,5 +1,5 @@
 [Unit]
-Description=Certificate Authority: DC/OS Certificate Authority
+Description=DC/OS Certificate Authority: issues signed digital certificates for secure communication
 
 [Service]
 User=dcos_ca

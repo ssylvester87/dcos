@@ -1,5 +1,5 @@
 [Unit]
-Description=Identity and Access Management: DCOS Identity and Access Management Service/API
+Description=DC/OS Identity and Access Management (Bouncer): provides authentication, authorization, users, user groups, permissions, and identity provider integrations for fine grained access control
 
 [Service]
 Type=simple
