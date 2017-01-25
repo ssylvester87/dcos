@@ -8,8 +8,6 @@ from collections import OrderedDict
 import pytest
 import requests
 
-from dcostests import IAMUrl
-
 from test_util.helpers import session_tempfile
 
 log = logging.getLogger(__name__)
@@ -262,44 +260,37 @@ class FreeIPA(DirectoryBackend):
         ])
 
 
-def set_config(config, superuser):
+def set_config(config, superuser_api_session):
     """
     Submit `directory_backend.config` as current DC/OS LDAP configuration.
     """
     log.info("Set LDAP config: %s", config)
-    r = requests.put(
-        IAMUrl('/ldap/config'),
-        json=config,
-        headers=superuser.auth_header
-        )
+    r = superuser_api_session.iam.put('/ldap/config', json=config)
     r.raise_for_status()
     assert r.status_code == 200
 
 
-def remove_config(superuser):
+def remove_config(superuser_api_session):
     """
     Remove current DC/OS LDAP configuration.
     """
     log.info("Remove current LDAP config")
-    r = requests.delete(
-        IAMUrl('/ldap/config'),
-        headers=superuser.auth_header
-        )
+    r = superuser_api_session.iam.delete('/ldap/config')
     if not r.status_code == 204:
         assert r.status_code == 400
         assert r.json()['code'] == 'ERR_LDAP_CONFIG_NOT_AVAILABLE'
 
 
 @pytest.yield_fixture()
-def ads1(superuser):
+def ads1(superuser_api_session):
     d = ADS1()
-    set_config(d.config, superuser)
+    set_config(d.config, superuser_api_session)
     yield d
-    remove_config(superuser)
+    remove_config(superuser_api_session)
 
 
 @pytest.yield_fixture(scope="session")
-def freeipa(superuser, superuser_api_session):
+def freeipa(superuser_api_session):
     """
     The freeipa fixture starts and populates a freeIPA container
     running on marathon in the DC/OS cluster under test. It destroys
@@ -329,10 +320,10 @@ def freeipa(superuser, superuser_api_session):
 
         # configure bouncer to use freeIPA as backend
         d = FreeIPA(host, client.ca_cert)
-        set_config(d.config, superuser)
+        set_config(d.config, superuser_api_session)
         yield d
         # remove freeIPA config from bouncer
-        remove_config(superuser)
+        remove_config(superuser_api_session)
 
 
 def _freeipa_marathon_definition():
@@ -436,22 +427,15 @@ def _freeipa_marathon_definition():
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestADS1:
 
-    def test_configtester(self, ads1, superuser):
+    def test_configtester(self, ads1, superuser_api_session):
 
-        r = requests.post(
-            IAMUrl('/ldap/config/test'),
-            json=ads1.credentials('john1'),
-            headers=superuser.auth_header
-            )
+        r = superuser_api_session.iam.post('/ldap/config/test', json=ads1.credentials('john1'))
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
 
-    def test_authentication_delegation(self, superuser, ads1):
+    def test_authentication_delegation(self, superuser_api_session, ads1):
 
-        r = requests.post(
-            IAMUrl('/auth/login'),
-            json=ads1.credentials('john1')
-            )
+        r = superuser_api_session.iam.post('/auth/login', json=ads1.credentials('john1'))
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
@@ -460,10 +444,7 @@ class TestADS1:
         # delegating authentication to the directory back-end. Note that the
         # `iam_verify_and_reset` ensures that john1 does not exist prior to
         # executing this test.
-        r = requests.get(
-            IAMUrl('/users'),
-            headers=superuser.auth_header
-            )
+        r = superuser_api_session.iam.get('/users')
         r.raise_for_status()
 
         # Create dictionary with keys being uids and values being
@@ -471,23 +452,16 @@ class TestADS1:
         users = {d['uid']: d for d in r.json()['array']}
         assert users['john1']['is_remote'] is True
 
-    def test_groupimport(self, ads1, superuser):
+    def test_groupimport(self, ads1, superuser_api_session):
 
-        r = requests.post(
-            IAMUrl('/ldap/importgroup'),
-            json={"groupname": "johngroup"},
-            headers=superuser.auth_header
-            )
+        r = superuser_api_session.iam.post('/ldap/importgroup', json={"groupname": "johngroup"})
         assert r.status_code == 201
 
         john_uids = ('john1', 'john2', 'john3')
 
         # Verify users have been (implicitly) imported
         # and labeled as remote users.
-        r = requests.get(
-            IAMUrl('/users'),
-            headers=superuser.auth_header
-            )
+        r = superuser_api_session.iam.get('/users')
         r.raise_for_status()
         l = r.json()['array']
         users = {d['uid']: d for d in l}
@@ -496,10 +470,7 @@ class TestADS1:
 
         # Verify that `johngroup` exists and that it has
         # the expected set of members.
-        r = requests.get(
-            IAMUrl('/groups/johngroup/users'),
-            headers=superuser.auth_header
-            )
+        r = superuser_api_session.iam.get('/groups/johngroup/users')
         r.raise_for_status()
         l = r.json()['array']
         assert set((d['user']['uid'] for d in l)) == set(john_uids)
@@ -508,25 +479,18 @@ class TestADS1:
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestFreeIPA:
 
-    def test_configtester(self, freeipa, superuser):
-        r = requests.post(
-            IAMUrl('/ldap/config/test'),
-            json=freeipa.credentials('manager'),
-            headers=superuser.auth_header
-            )
+    def test_configtester(self, freeipa, superuser_api_session):
+        r = superuser_api_session.iam.post('/ldap/config/test', json=freeipa.credentials('manager'))
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
 
-    def test_authentication_delegation(self, freeipa):
+    def test_authentication_delegation(self, freeipa, noauth_api_session):
         """
         check that bouncer delegates authentication to the
         configured freeipa authentication service and responds
         with an appropriate DCOS authentication token
         """
-        r = requests.post(
-            IAMUrl('/auth/login'),
-            json=freeipa.credentials('manager')
-            )
+        r = noauth_api_session.iam.post('/auth/login', json=freeipa.credentials('manager'))
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token

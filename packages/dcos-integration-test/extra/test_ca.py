@@ -11,7 +11,7 @@ import pytest
 def test_if_CA_cert_was_loaded(noauth_api_session):
 
     # Endpoint is expected to available for unauthenticated users.
-    r = noauth_api_session.ca.post('info', json={"label": "primary"})
+    r = noauth_api_session.ca.post('/info', json={"label": "primary"})
     assert r.status_code == 200
 
     data = r.json()
@@ -31,10 +31,12 @@ def test_if_CA_can_list_issued_certs(superuser_api_session):
             "CN": "www.example.com"
             }
         }
-    r = superuser_api_session.ca.post('newcert', json=data)
+    r = superuser_api_session.ca.post('/newcert', json=data)
     assert r.status_code == 200
 
-    r = superuser_api_session.ca.post('certificates', json={"authority_key_id": "", "serial": "", "expired_ok": False})
+    r = superuser_api_session.ca.post(
+        '/certificates',
+        json={"authority_key_id": "", "serial": "", "expired_ok": False})
     assert r.status_code == 200
 
     data = r.json()
@@ -55,7 +57,7 @@ def test_if_CA_can_create_cert(superuser_api_session):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = superuser_api_session.ca.post('newcert', json=p)
+    r = superuser_api_session.ca.post('/newcert', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -74,9 +76,9 @@ def test_if_CA_can_create_csr(superuser_api_session, noauth_api_session):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = noauth_api_session.ca.post('newkey', json=p)
+    r = noauth_api_session.ca.post('/newkey', json=p)
     assert r.status_code == 401
-    r = superuser_api_session.ca.post('newkey', json=p)
+    r = superuser_api_session.ca.post('/newkey', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -106,9 +108,9 @@ DFq6rT4iAJeID4uwUYsnzo/huBed9SYpOkRz5It8gYyWdn9tGJTQUyzDXvTvIj5o
 hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 589l09lMVrZoOL8uF3k=
 -----END CERTIFICATE REQUEST-----"""}
-    r = noauth_api_session.ca.post('sign', json=p)
+    r = noauth_api_session.ca.post('/sign', json=p)
     assert r.status_code == 401
-    r = superuser_api_session.ca.post('sign', json=p)
+    r = superuser_api_session.ca.post('/sign', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -120,7 +122,7 @@ hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 
 
 @pytest.mark.parametrize(
-    'endpoint', ["bundle", "certinfo", "init_ca", "scan", "scaninfo"])
+    'endpoint', ['/bundle', '/certinfo', '/init_ca', '/scan', '/scaninfo'])
 def test_if_unused_CA_endpoints_are_protected(noauth_api_session, endpoint):
     r = noauth_api_session.ca.post(endpoint, json={})
     # TODO(jp): see ticket DCOS-7874

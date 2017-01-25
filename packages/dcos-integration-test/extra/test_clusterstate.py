@@ -11,7 +11,7 @@ import requests
 
 def test_if_all_mesos_agents_have_registered(superuser_api_session):
 
-    r = superuser_api_session.get('mesos/master/state')
+    r = superuser_api_session.get('/mesos/master/state')
     assert r.status_code == 200
     data = r.json()
 
@@ -19,23 +19,25 @@ def test_if_all_mesos_agents_have_registered(superuser_api_session):
     assert agent_ips == superuser_api_session.all_slaves
 
 
-def test_if_all_mesos_masters_have_registered(superuser_api_session):
-    zk = kazoo.client.KazooClient(hosts=superuser_api_session.zk_hostports, read_only=True)
+def test_if_all_mesos_masters_have_registered(noauth_api_session):
+    zk_hostports = ','.join(':'.join([host, '2181']) for host in
+                            noauth_api_session.public_masters)
+    zk = kazoo.client.KazooClient(hosts=zk_hostports, read_only=True)
     master_ips = []
 
     zk.start()
-    for znode in zk.get_children("/mesos"):
-        if not znode.startswith("json.info_"):
+    for znode in zk.get_children('/mesos'):
+        if not znode.startswith('json.info_'):
             continue
-        master = json.loads(zk.get("/mesos/" + znode)[0].decode('utf-8'))
+        master = json.loads(zk.get('/mesos/' + znode)[0].decode('utf-8'))
         master_ips.append(master['address']['ip'])
     zk.stop()
 
-    assert sorted(master_ips) == superuser_api_session.masters
+    assert sorted(master_ips) == noauth_api_session.masters
 
 
 def test_if_zookeeper_cluster_is_up(superuser_api_session):
-    r = superuser_api_session.get('exhibitor/exhibitor/v1/cluster/status')
+    r = superuser_api_session.get('/exhibitor/exhibitor/v1/cluster/status')
     assert r.status_code == 200
 
     data = r.json()
@@ -64,7 +66,7 @@ def test_if_all_exhibitors_are_in_sync(superuser_api_session):
 
 
 def test_if_history_service_is_getting_data(superuser_api_session):
-    r = superuser_api_session.get('dcos-history-service/history/last')
+    r = superuser_api_session.get('/dcos-history-service/history/last')
     assert r.status_code == 200
     # Make sure some basic fields are present from state-summary which the DCOS
     # UI relies upon. Their exact content could vary so don't test the value.
