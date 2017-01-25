@@ -1,5 +1,5 @@
 [Unit]
-Description=DC/OS Identity and Access Management (Bouncer): provides authentication, authorization, users, user groups, service accounts, and identity provider integrations for fine grained access control.
+Description=DC/OS Identity and Access Management (Bouncer): controls access to DC/OS components and services by managing users, user groups, service accounts, permissions, and identity providers
 
 [Service]
 Type=simple
