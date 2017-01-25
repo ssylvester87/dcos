@@ -15,14 +15,6 @@ log = logging.getLogger(__name__)
 pytestmark = [pytest.mark.security]
 
 
-@pytest.fixture(scope='session')
-def noauth_cluster(cluster):
-    """The default cluster() fixture is authenticated as the superuser.
-    This fixture supports making requests as an unauthenticated entity.
-    """
-    return cluster.get_user_session(None)
-
-
 class DirectoryBackend:
     """Base class that directory definition classes must inherit from."""
 
@@ -445,9 +437,9 @@ class TestADS1:
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
 
-    def test_authentication_delegation(self, superuser_api_session, ads1):
+    def test_authentication_delegation(self, superuser_api_session, noauth_api_session, ads1):
 
-        r = superuser_api_session.iam.post('/auth/login', json=ads1.credentials('john1'))
+        r = noauth_api_session.iam.post('/auth/login', json=ads1.credentials('john1'))
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
@@ -507,19 +499,16 @@ class TestFreeIPA:
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
 
-    def test_groupimport(self, freeipa, cluster):
+    def test_groupimport(self, freeipa, superuser_api_session):
 
-        r = cluster.iam.post(
-            '/ldap/importgroup',
-            json={"groupname": "employees"}
-            )
+        r = superuser_api_session.iam.post('/ldap/importgroup', json={"groupname": "employees"})
         assert r.status_code == 201
 
         expected_uids = ('manager', 'employee')
 
         # Verify users have been (implicitly) imported
         # and labeled as remote users.
-        r = cluster.iam.get('/users')
+        r = superuser_api_session.iam.get('/users')
         r.raise_for_status()
         l = r.json()['array']
         users = {d['uid']: d for d in l}
@@ -528,7 +517,7 @@ class TestFreeIPA:
 
         # Verify that a group with gid `employees` exists
         # and that it has the expected set of members.
-        r = cluster.iam.get('/groups/employees/users')
+        r = superuser_api_session.iam.get('/groups/employees/users')
         r.raise_for_status()
         l = r.json()['array']
         assert set((d['user']['uid'] for d in l)) == set(expected_uids)
