@@ -5,24 +5,13 @@ Test subtle details of nginx configuration.
 
 Tests should not modify cluster state.
 """
-
-
-import logging
-
 import pytest
-import requests
 
 
-from dcostests import CAUrl
-
-
-log = logging.getLogger(__name__)
-
-
-def test_if_CA_cert_was_loaded():
+def test_if_CA_cert_was_loaded(noauth_api_session):
 
     # Endpoint is expected to available for unauthenticated users.
-    r = requests.post(CAUrl('/info'), json={"label": "primary"})
+    r = noauth_api_session.ca.post('info', json={"label": "primary"})
     assert r.status_code == 200
 
     data = r.json()
@@ -34,7 +23,7 @@ def test_if_CA_cert_was_loaded():
 
 
 @pytest.mark.skip(reason="Disabled till DCOS-8889 is addressed")
-def test_if_CA_can_list_issued_certs(superuser):
+def test_if_CA_can_list_issued_certs(superuser_api_session):
     data = {
         "request": {
             "hosts": ["www.example.com"],
@@ -42,18 +31,10 @@ def test_if_CA_can_list_issued_certs(superuser):
             "CN": "www.example.com"
             }
         }
-    r = requests.post(
-        CAUrl('/newcert'),
-        json=data,
-        headers=superuser.auth_header
-        )
+    r = superuser_api_session.ca.post('newcert', json=data)
     assert r.status_code == 200
 
-    r = requests.post(
-        CAUrl('/certificates'),
-        json={"authority_key_id": "", "serial": "", "expired_ok": False},
-        headers=superuser.auth_header
-        )
+    r = superuser_api_session.ca.post('certificates', json={"authority_key_id": "", "serial": "", "expired_ok": False})
     assert r.status_code == 200
 
     data = r.json()
@@ -66,7 +47,7 @@ def test_if_CA_can_list_issued_certs(superuser):
     # returned certificate is the one that was signed by CA just a moment ago.
 
 
-def test_if_CA_can_create_cert(superuser):
+def test_if_CA_can_create_cert(superuser_api_session):
     p = {"request": {"hosts": ["www.example.com"],
                      "names": [{"C": "US",
                                 "ST": "California",
@@ -74,7 +55,7 @@ def test_if_CA_can_create_cert(superuser):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = requests.post(CAUrl('/newcert'), json=p, headers=superuser.auth_header)
+    r = superuser_api_session.ca.post('newcert', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -85,7 +66,7 @@ def test_if_CA_can_create_cert(superuser):
     assert 'PRIVATE KEY' in data['result']['private_key']
 
 
-def test_if_CA_can_create_csr(superuser):
+def test_if_CA_can_create_csr(superuser_api_session, noauth_api_session):
     p = {"request": {"hosts": ["www.example.com"],
                      "names": [{"C": "US",
                                 "ST": "California",
@@ -93,9 +74,9 @@ def test_if_CA_can_create_csr(superuser):
                                 "O": "example.com"},
                                ],
                      "CN": "www.example.com"}}
-    r = requests.post(CAUrl('/newkey'), json=p)
+    r = noauth_api_session.ca.post('newkey', json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/newkey'), json=p, headers=superuser.auth_header)
+    r = superuser_api_session.ca.post('newkey', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -107,7 +88,7 @@ def test_if_CA_can_create_csr(superuser):
     assert 'PRIVATE KEY' in data['result']['private_key']
 
 
-def test_if_CA_can_create_cert_from_csr(superuser):
+def test_if_CA_can_create_cert_from_csr(superuser_api_session, noauth_api_session):
     p = {"certificate_request": """-----BEGIN CERTIFICATE REQUEST-----
 MIICqjCCAZICAQAwZTEXMBUGA1UEAwwOd3d3LnBvdGF0by5jb20xFTATBgNVBAoM
 DFBvdGF0bywgSW5jLjELMAkGA1UEBhMCREUxEzARBgNVBAgMClBvdGF0b2xhbmQx
@@ -125,9 +106,9 @@ DFq6rT4iAJeID4uwUYsnzo/huBed9SYpOkRz5It8gYyWdn9tGJTQUyzDXvTvIj5o
 hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 589l09lMVrZoOL8uF3k=
 -----END CERTIFICATE REQUEST-----"""}
-    r = requests.post(CAUrl('/sign'), json=p)
+    r = noauth_api_session.ca.post('sign', json=p)
     assert r.status_code == 401
-    r = requests.post(CAUrl('/sign'), json=p, headers=superuser.auth_header)
+    r = superuser_api_session.ca.post('sign', json=p)
     assert r.status_code == 200
 
     data = r.json()
@@ -140,8 +121,7 @@ hDYADyMXhDO/Lm9rEnYd6yXUnIzYQryV9lVAnvFwcPYDRHizA1iPJ3ZuQBd4ODce
 
 @pytest.mark.parametrize(
     'endpoint', ["bundle", "certinfo", "init_ca", "scan", "scaninfo"])
-def test_if_unused_CA_endpoints_are_protected(endpoint):
-    e = CAUrl('/{}'.format(endpoint))
-    r = requests.post(e, json={})
+def test_if_unused_CA_endpoints_are_protected(noauth_api_session, endpoint):
+    r = noauth_api_session.ca.post(endpoint, json={})
     # TODO(jp): see ticket DCOS-7874
     assert r.status_code == 404
