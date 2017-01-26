@@ -10,7 +10,6 @@ def test_enterprise_if_application_run_with_secrets(superuser_api_session, servi
 
     # Create service account secret
     stdout, stderr = cli.exec_command(
-        ["dcos", "security", "secrets", "create-sa-secret",
          private_key_filepath, "mlb-secret", "/mlb-secret"])
     assert stdout == ''
     assert stderr == ''

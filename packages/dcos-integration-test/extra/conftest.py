@@ -291,6 +291,7 @@ def service_accounts_fixture(dcoscli):
     dcoscli.setup_enterprise()
 
     service_uid = utils.random_string(8)
+
     fd, private_key = tempfile.mkstemp()
     fd2, public_key = tempfile.mkstemp()
 
