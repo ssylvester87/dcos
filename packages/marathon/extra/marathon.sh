@@ -36,6 +36,6 @@ exec /opt/mesosphere/bin/java \
     --revive_offers_for_new_apps \
     --zk_compression \
     --mesos_leader_ui_url "/mesos" \
-    --enable_features "vips,task_killing,external_volumes,secrets" \
+    --enable_features "vips,task_killing,external_volumes,secrets,gpu_resources" \
     $MARATHON_TLS_ARGS \
     $MARATHON_EXTRA_ARGS
