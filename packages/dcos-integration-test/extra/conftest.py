@@ -18,6 +18,8 @@ from dcos_test_utils.dcos_api_session import DcosAuth, DcosUser
 from dcoscli import DCOS_CLI_URL, DCOSCLI
 from jwt.utils import base64url_decode, base64url_encode
 
+from dcos_internal_utils import utils
+
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -282,3 +284,105 @@ def dcoscli(superuser_api_session):
 
     shutil.rmtree(os.path.expanduser("~/.dcos"))
     shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@pytest.fixture()
+def service_accounts_fixture(dcoscli):
+    dcoscli.setup_enterprise()
+
+    service_uid = utils.random_string(8)
+    fd, private_key = tempfile.mkstemp()
+    fd2, public_key = tempfile.mkstemp()
+
+    # configure service account
+    sa_base = ["dcos", "security", "org", "service-accounts"]
+    dcoscli.exec_command(
+        sa_base + ["keypair", private_key, public_key])
+    dcoscli.exec_command(
+        sa_base + ["create", "-p", public_key, "-d", "test", service_uid])
+    os.chmod(private_key, 0o600)
+
+    stdout, _ = dcoscli.exec_command(
+        ["dcos", "cluster", "list", "--attached", "--json"])
+    cluster_id = json.loads(stdout)[0].get("cluster_id")
+
+    yield (dcoscli, service_uid, private_key, public_key)
+
+    # switch back to superuser to delete sa user
+    dcoscli.exec_command(["dcos", "cluster", "attach", cluster_id])
+    dcoscli.exec_command(sa_base + ["delete", service_uid])
+    try:
+        os.close(fd)
+        os.close(fd2)
+    except OSError:
+        pass
+
+
+def secrets_reset_undecorated(superuser_api_session):
+    """
+    FIXME: change these fixtures to cleanup state after a test
+        so that it matches state at the beginning. This current implemtation
+        will produce unexpected behavior if a cluster is not 'fresh'
+    1) Remove all secrets.
+    """
+    # Remove unexpected secrets.
+    r = superuser_api_session.secrets.get('/secret/default?list=true')
+    for u in r.json()['array']:
+        log.info('Delete secret: {}'.format(u))
+        r = superuser_api_session.secrets.delete('/secret/default/{}'.format(u))
+        r.raise_for_status()
+
+
+def secrets_verify_undecorated(superuser_api_session):
+    """
+    1) Verify store is unsealed.
+    2) Verify store is initialized.
+    3) Verify there are no secrets stored.
+    """
+    # Verify store is unsealed.
+    r = superuser_api_session.secrets.get('/seal-status/default')
+    assert r.status_code == 200
+    data = r.json()
+    assert not data["sealed"]
+
+    # Verify store is initialized
+    r = superuser_api_session.secrets.get('/store')
+    assert r.status_code == 200
+    data = r.json()
+    assert data['array'][0]['initialized']
+
+    # Verify there are no secrets stored.
+    r = superuser_api_session.secrets.get('/secret/default/?list=true')
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data['array'], list)
+    assert len(data['array']) == 0
+
+
+@pytest.fixture()
+def secrets_verify_and_reset(superuser_api_session):
+    """
+    Pre-test steps:
+
+        1) Verify store is unsealed.
+        2) Verify there are no secrets stored.
+
+    Post-test steps:
+
+        1) Unseal store if store sealed.
+        2) Remove unexpected secrets.
+
+    Only yield into test code if pre-test has succeeded. Perform post-test even
+    if pre-test failed, i.e. always try to perform cleanup.
+    """
+    try:
+        logging.info('Verifying secret store is in default state')
+        secrets_verify_undecorated(superuser_api_session)
+    except Exception as e:
+        log.error('Exception in secrets_verify_undecorated(), reraise: {}'.format(str(e)))
+        raise
+    else:
+        yield
+    finally:
+        logging.info('Returning secret store to default state')
+        secrets_reset_undecorated(superuser_api_session)

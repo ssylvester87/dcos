@@ -1,42 +1,6 @@
 import json
-import os
-import tempfile
 
 import pytest
-
-from dcos_internal_utils import utils
-
-
-@pytest.fixture()
-def service_accounts_fixture(dcoscli):
-    dcoscli.setup_enterprise()
-
-    name = utils.random_string(8)
-    fd, private_key = tempfile.mkstemp()
-    fd2, public_key = tempfile.mkstemp()
-
-    # configure service account
-    sa_base = ["dcos", "security", "org", "service-accounts"]
-    dcoscli.exec_command(
-        sa_base + ["keypair", private_key, public_key])
-    dcoscli.exec_command(
-        sa_base + ["create", "-p", public_key, "-d", "test", name])
-    os.chmod(private_key, 0o600)
-
-    stdout, _ = dcoscli.exec_command(
-        ["dcos", "cluster", "list", "--attached", "--json"])
-    cluster_id = json.loads(stdout)[0].get("cluster_id")
-
-    yield (dcoscli, name, private_key, public_key)
-
-    # switch back to superuser to delete sa user
-    dcoscli.exec_command(["dcos", "cluster", "attach", cluster_id])
-    dcoscli.exec_command(sa_base + ["delete", name])
-    try:
-        os.close(fd)
-        os.close(fd2)
-    except OSError:
-        pass
 
 
 @pytest.fixture()

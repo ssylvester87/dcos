@@ -3,6 +3,9 @@ Test Secrets functionality
 """
 import logging
 
+import pytest
+
+pytestmark = [pytest.mark.usefixtures('secrets_verify_and_reset')]
 log = logging.getLogger(__name__)
 
 
@@ -20,7 +23,7 @@ def test_if_secrets_can_get_stores(superuser_api_session):
     assert data['array'][0]['initialized']
 
 
-def test_if_secrets_can_get_store(superuser_api_session):
+def test_if_secrets_can_get_default_store(superuser_api_session):
     r = superuser_api_session.secrets.get('/store/default')
     assert r.status_code == 200
     data = r.json()
@@ -32,14 +35,19 @@ def test_if_secrets_unauthorized_get_store(superuser_api_session):
     assert r.status_code == 401
 
 
-def test_if_secrets_put_store(superuser_api_session):
-    # FIXME: this test leaves state in the superuser_api_session and will fail on re-run
+def test_if_secrets_CRD_store(superuser_api_session):
     data = {
         "name": "testStore",
         "driver": "vault",
         "addr": "http://127.0.0.1:8200"}
     r = superuser_api_session.secrets.put('/store/testStore', json=data)
     assert r.status_code == 201
+
+    r = superuser_api_session.secrets.get('/store/testStore')
+    assert r.status_code == 200
+
+    r = superuser_api_session.secrets.delete('/store/testStore')
+    assert r.status_code == 204
 
 
 def test_if_secrets_init_status(superuser_api_session):
@@ -69,21 +77,18 @@ def test_if_secrets_get_wrongsecret(superuser_api_session):
     assert r.status_code == 404
 
 
-def test_if_secrets_put_secret(superuser_api_session):
-    # FIXME: this test leaves state behind and fails on rerun
+def test_if_secrets_CRUD_secret(superuser_api_session):
+    # Creating secret
     r = superuser_api_session.secrets.put('/secret/default/anewpath', json={'value': 'anewsecret'})
     assert r.status_code == 201
 
-
-def test_if_secrets_get_secret(superuser_api_session):
-    # FIXME: this state relies on the previous test. Please never do that.
+    # Reading secret
     r = superuser_api_session.secrets.get('/secret/default/anewpath')
     assert r.status_code == 200
     data = r.json()
     assert data['value'] == 'anewsecret'
 
-
-def test_if_secrets_list_secret(superuser_api_session):
+    # Listing secrets
     r = superuser_api_session.secrets.get('/secret/default/?list=true')
     assert r.status_code == 200
     data = r.json()
@@ -91,15 +96,15 @@ def test_if_secrets_list_secret(superuser_api_session):
     assert isinstance(data['array'], list)
     assert len(data['array']) > 0
 
-
-def test_if_secrets_put_secret_exists(superuser_api_session):
-    # FIXME: test relies on previous test: NO
+    # Trying to create Existing secret
     r = superuser_api_session.secrets.put('/secret/default/anewpath', json={'value': 'anewsecret'})
     assert r.status_code == 409
 
+    # Updating secret
+    r = superuser_api_session.secrets.patch('/secret/default/anewpath', json={'value': 'updatedsecret'})
+    assert r.status_code == 204
 
-def test_if_secrets_delete_secret(superuser_api_session):
-    # FIXME: test relies on previous test: NO
+    # Deleting secret
     r = superuser_api_session.secrets.delete('/secret/default/anewpath')
     assert r.status_code == 204
 
@@ -107,12 +112,6 @@ def test_if_secrets_delete_secret(superuser_api_session):
 def test_if_secrets_delete_wrongsecret(superuser_api_session):
     r = superuser_api_session.secrets.delete('/secret/default/wrongpath')
     assert r.status_code == 404
-
-
-def test_if_secrets_delete_store(superuser_api_session):
-    # FIXME: test relies on previous test: NO
-    r = superuser_api_session.secrets.delete('/store/testStore')
-    assert r.status_code == 204
 
 
 def test_if_secrets_delete_wrongstore(superuser_api_session):
