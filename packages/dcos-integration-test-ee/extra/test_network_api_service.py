@@ -1,6 +1,7 @@
 """
 Test Enterprise DC/OS Network Api Service
 """
+
 import logging
 import socket
 import uuid

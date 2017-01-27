@@ -697,11 +697,7 @@ package:
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
 {% endswitch %}
-{% switch marathon_authn_enabled %}
-{% case "true" %}
-{% case "false" %}
-      PLUGIN_AUTHN_MODE=disabled
-{% endswitch %}
+      PLUGIN_AUTHN_MODE="{{ marathon_authn_mode }}"
 {% switch marathon_https_enabled %}
 {% case "true" %}
       TLS_ENABLED=true
@@ -718,7 +714,8 @@ package:
 {% endswitch %}
   - path: /etc_master/metronome-extras
     content: |
-      METRONOME_MESOS_USER={{ default_task_user }}
+      METRONOME_MESOS_USER="{{ default_task_user }}"
+      PLUGIN_AUTHN_MODE="{{ marathon_authn_mode }}"
 {% switch framework_authentication_enabled %}
 {% case "true" %}
       METRONOME_MESOS_AUTHENTICATION_PRINCIPAL=dcos_metronome
@@ -830,7 +827,7 @@ package:
         "agent_authentication_required": {{ agent_authentication_required }},
         "framework_authentication_enabled": {{ framework_authentication_enabled }},
         "agent_authn_enabled": {{ agent_authn_enabled }},
-        "marathon_authn_enabled": {{ marathon_authn_enabled }},
+        "marathon_authn_mode": "{{ marathon_authn_mode }}",
         "marathon_https_enabled": {{ marathon_https_enabled }},
         "marathon_extra_args": "{{ marathon_extra_args }}",
         "zk_acls_enabled": {{ zk_acls_enabled }}
