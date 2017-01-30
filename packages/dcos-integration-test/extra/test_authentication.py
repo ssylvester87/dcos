@@ -1,73 +1,63 @@
 """
 Test authentication behavior of various components.
 """
-
-
-import logging
-
 import pytest
-import requests
 
-from dcostests import dcos, IAMUrl, Url
-
-
-log = logging.getLogger(__name__)
+from ee_helpers import bootstrap_config
 
 pytestmark = [
     pytest.mark.security,
     pytest.mark.skipif(
-        dcos.config['security'] in {'disabled', 'permissive'},
+        bootstrap_config['security'] in {'disabled', 'permissive'},
         reason=("Authentication tests skipped: currently adjusted to only run in strict security mode")
     )
 ]
 
-# Specify URLs that are expected to require authentication.
-component_urls = [
-    IAMUrl('/users'),
-    Url(host=dcos.masters[0], port=8443, path="/v2/apps"),
-    Url(host=dcos.masters[0], port=9443, path="/v1/jobs"),
-    Url(host=dcos.masters[0], port=5050, path="/teardown"),
-    Url(host=dcos.agents[0], port=5051, path="/containers"),
-    Url(host=dcos.agents[0], port=61002, path="/system/health/v1")
-    ]
+
+ENDPOINT_PARAMS = [
+    ('get', '/acs/api/v1/users', None, None),
+    ('get', '/v2/apps', 'master', 8443),
+    ('get', '/v1/jobs', 'master', 9443),
+    ('post', '/teardown', 'master', 5050),
+    ('get', '/containers', 'agent', 5051),
+    ('get', '/system/health/v1', 'agent', 61002)]
 
 
-component_urls = [str(u) for u in component_urls]
+def make_request(api_session, method, path, host, port):
+    if host == 'master':
+        host = api_session.masters[0]
+    elif host == 'agent':
+        host = api_session.slaves[0]
+    elif host is not None:
+        raise AssertionError('Bad host parameter: {}. Use master or agent'.format(host))
+    return getattr(api_session, method)(path, host=host, port=port)
 
 
-@pytest.mark.parametrize("url", component_urls)
-def test_component_auth_direct_no_auth(url):
-
-    if 'teardown' in url:
-        r = requests.post(url, json={})
-    else:
-        r = requests.get(url)
-
+@pytest.mark.parametrize('method, path, host, port', ENDPOINT_PARAMS)
+def test_component_auth_direct_no_auth(
+        noauth_api_session, method, path, host, port):
+    r = make_request(noauth_api_session, method, path, host, port)
     assert r.status_code == 401
     assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
-@pytest.mark.parametrize("url", component_urls)
-def test_component_auth_direct_forged_token(url, forged_superuser_authheader):
-
-    r = requests.get(url, headers=forged_superuser_authheader)
-
+@pytest.mark.parametrize('method, path, host, port', ENDPOINT_PARAMS)
+def test_component_auth_direct_forged_token(
+        forged_superuser_session, method, path, host, port):
+    r = make_request(forged_superuser_session, method, path, host, port)
     assert r.status_code == 401
     assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
-@pytest.mark.parametrize("url", component_urls)
-def test_component_auth_direct_peter(url, peter):
-
-    if 'teardown' in url:
-        r = requests.post(url, headers=peter.auth_header, data={})
-    else:
-        r = requests.get(url, headers=peter.auth_header)
+@pytest.mark.parametrize('method, path, host, port', ENDPOINT_PARAMS)
+def test_component_auth_direct_peter(
+        peter_api_session, method, path, host, port):
+    r = make_request(peter_api_session, method, path, host, port)
     # Expect success or forbidden.
     try:
         r.raise_for_status()
     except:
-        if 'teardown' in url:
+        if 'teardown' in r.request.url:
             assert r.status_code == 400
         else:
             assert r.status_code == 403

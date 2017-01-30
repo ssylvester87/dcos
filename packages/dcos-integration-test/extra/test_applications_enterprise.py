@@ -2,13 +2,12 @@ import uuid
 
 import pytest
 
-from dcostests import dcos
+from ee_helpers import bootstrap_config
 
 
 @pytest.mark.skipif(
-    dcos.config['security'] == 'strict',
-    reason='Pods are not yet supported in strict security mode.'
-)
+    bootstrap_config['security'] == 'strict',
+    reason='Pods are not yet supported in strict security mode.')
 def test_enterprise_if_marathon_pods_can_be_deployed_with_mesos_containerizer(superuser_api_session):
     """Marathon pods deployment integration test using the Mesos Containerizer
 
