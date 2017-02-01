@@ -271,6 +271,8 @@ package:
   - path: /etc_master/3dt_config.json
     content: |
         {
+            "role": "master",
+            "iam-config": "/run/dcos/etc/3dt/master_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
@@ -286,6 +288,8 @@ package:
   - path: /etc_slave/3dt_config.json
     content: |
         {
+            "role": "agent",
+            "iam-config": "/run/dcos/etc/3dt/agent_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
@@ -298,6 +302,8 @@ package:
   - path: /etc_slave_public/3dt_config.json
     content: |
         {
+            "role": "agent_public",
+            "iam-config": "/run/dcos/etc/3dt/agent_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
@@ -307,8 +313,6 @@ package:
             "force-tls": {{ ssl_enabled }},
             "agent-port": {{ adminrouter_agent_port }}
         }
-  # TODO: Fix a copy of endpoints_config.json. We need a way to ship only 1 config for both open and enterprise DC/OS.
-  #       If you add a new endpoint here, please make sure to add it to open DC/OS config as well.
   - path: /etc/endpoints_config.json
     content: |
         {
