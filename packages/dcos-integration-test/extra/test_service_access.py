@@ -108,12 +108,13 @@ def test_read_access_denied_on_marathon_group_prefix(peter_api_session, peter, s
         rid='dcos:service:marathon:marathon:services:/example',
         uid=peter.uid,
         action='read')
-    # caching requires at least a 5 sec wait
-    time.sleep(6)
+    # 5 sec expiration -> 5 sec expiration plus a second to account for potential latency
+    time.sleep(5 + 1)
 
     # check access to group
     r = peter_api_session.marathon.get('/v2/groups')
-    groups = r.json().get('groups')
+    groups = r.json()['groups']
+
     # /example-secure should NOT be viewable
     assert len(groups) == 1
     assert groups[0]['id'] == '/example'
@@ -139,7 +140,8 @@ def test_cache_timeout_for_access_on_marathon_group_prefix(
         action='read')
     # t1 successful access
     r = peter_api_session.marathon.get('/v2/groups')
-    groups = r.json().get('groups')
+    groups = r.json()['groups']
+
     assert len(groups) == 1
     assert groups[0]['id'] == '/example'
 
@@ -150,7 +152,8 @@ def test_cache_timeout_for_access_on_marathon_group_prefix(
         action='read')
     # t2 successful access (even after remove based on cache)
     r = peter_api_session.marathon.get('/v2/groups')
-    groups = r.json().get('groups')
+    groups = r.json()['groups']
+
     # still in cache
     assert len(groups) == 1
     assert groups[0]['id'] == '/example'
