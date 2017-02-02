@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export FREETYPE_CFLAGS="-I/opt/mesosphere/include/freetype2"
+export FREETYPE_LIBS="-L/opt/mesosphere/lib -lfreetype"
+
+pushd "/pkg/src/fontconfig"
+./configure "--prefix=$PKG_PATH" \
+            FREETYPE_CFLAGS="${FREETYPE_CFLAGS}" \
+            FREETYPE_LIBS="${FREETYPE_LIBS}" \
+            --disable-docs
+
+make
+make install
