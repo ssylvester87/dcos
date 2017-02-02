@@ -7,10 +7,9 @@ StandardOutput=journal
 StandardError=journal
 Restart=always
 RestartSec=20
-
+LimitNOFILE=16384
 User=dcos_bouncer
 PermissionsStartOnly=True
-
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=-/run/dcos/etc/bouncer
 Environment=BOUNCER_PACKAGE_PATH=${PKG_PATH}
@@ -19,6 +18,5 @@ Environment=SECRET_KEY_FILE_PATH=/run/dcos/pki/tls/private/bouncer.key
 Environment=AUTH_TOKEN_SIGNATURE_ALGORITHM=RS256
 Environment=BOUNCER_CONFIG_CLASS=DCOSConfig
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-bouncer
-
 WorkingDirectory=${PKG_PATH}
 ExecStart=${PKG_PATH}/bouncer/bin/bouncer.sh

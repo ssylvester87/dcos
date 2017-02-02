@@ -24,6 +24,7 @@ User=dcos_networking_api
 Restart=always
 StartLimitInterval=0
 RestartSec=5
+LimitNOFILE=16384
 WorkingDirectory=${PKG_PATH}/networking_api
 EnvironmentFile=/opt/mesosphere/etc/networking_api-erl.env
 EnvironmentFile=/opt/mesosphere/environment
