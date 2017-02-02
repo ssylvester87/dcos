@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import stat
@@ -5,6 +6,8 @@ import subprocess
 import tempfile
 
 import requests
+
+log = logging.getLogger(__name__)
 
 DCOS_CLI_URL = "https://downloads.dcos.io/binaries/cli/linux/x86-64/latest/dcos"
 
@@ -53,20 +56,19 @@ class DCOSCLI():
         :rtype: (str, str)
         """
 
-        print('CMD: {!r}'.format(cmd))
+        log.info('CMD: {!r}'.format(cmd))
 
         process = subprocess.run(
             cmd,
             stdin=stdin, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=self.env,
-            check=False)
+            check=True)
 
         stdout, stderr = process.stdout.decode('utf-8'), process.stderr.decode('utf-8')
 
-        # We should always print the stdout and stderr
-        print('STDOUT: {}'.format(stdout))
-        print('STDERR: {}'.format(stderr))
+        log.info('STDOUT: {}'.format(stdout))
+        log.info('STDERR: {}'.format(stderr))
 
         return (stdout, stderr)
 

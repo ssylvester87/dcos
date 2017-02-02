@@ -3,14 +3,15 @@ import io
 import json
 import os
 import subprocess
-import time
 
-import ee_helpers
 import pytest
 
 from dcoscli_fixture import dcoscli_fixture
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 @pytest.fixture(scope='session')
@@ -276,18 +277,19 @@ class TestDCOSCLI:
         assert stdout == 'superusers:\n    description: Superuser group\n\n'
         assert stderr == ''
 
-    @pytest.mark.skipif(ee_helpers.bootstrap_config['security'] == 'strict',
-                        reason="Need to bypass insecure cert warning")
     def test_oidc_sso(self, dcoscli):
-        # google OIDC provider configured with master.mesos.com
+
+        base_url = dcoscli.url.scheme + "://localhost/"
+
+        # google OIDC provider configured with localhost
         dcoscli.exec_command(
-            ["dcos", "config", "set", "core.dcos_url", "http://localhost"])
+            ["dcos", "config", "set", "core.dcos_url", base_url])
 
         # configure OIDC provider
         cmd = ["dcos", "security", "cluster", "oidc", "add",
                "--description", "test",
                "--issuer", "https://accounts.google.com",
-               "--base-url", "http://localhost",
+               "--base-url", base_url,
                "--client-secret", "LQhYKgiRzzS-b8V2KHe-e64N",
                "--client-id", "791234115532-m91hhinppf2fv7v96o1umoobbkg97vkb.apps.googleusercontent.com",
                "google-oidc-test"]
@@ -309,10 +311,14 @@ class TestDCOSCLI:
             # blocking call
             line = txt_output.readline()
 
-        driver = webdriver.PhantomJS(service_log_path='/tmp/ghostdriver.log')
+        # ignore SSL cert warning
+        driver = webdriver.PhantomJS(
+            service_log_path='/tmp/ghostdriver.log',
+            service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any']
+        )
 
         # start OIDC auth
-        expected_auth_url = "http://localhost/" + "acs/api/v1/auth/login" + \
+        expected_auth_url = base_url + "acs/api/v1/auth/login" + \
             "?oidc-provider=google-oidc-test&target=dcos:authenticationresponse:html"
         auth_url = line.strip("\n ")
         assert expected_auth_url == auth_url
@@ -329,9 +335,10 @@ class TestDCOSCLI:
         next_button.click()
 
         # wait for dom to update with new fields
-        time.sleep(5)
+        password = WebDriverWait(driver, 120).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//div[@id='password-shown']//input[@id='Passwd']")))
         # add password
-        password = driver.find_element_by_id('Passwd')
         password.send_keys("thefuture")
         # signin
         signin = driver.find_element_by_id('signIn')
