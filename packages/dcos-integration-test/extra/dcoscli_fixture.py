@@ -6,12 +6,10 @@ import tempfile
 
 import requests
 
-from dcostests import Url
-
 DCOS_CLI_URL = "https://downloads.dcos.io/binaries/cli/linux/x86-64/latest/dcos"
 
 
-def dcoscli_fixture():
+def dcoscli_fixture(superuser_api_session):
     tmpdir = tempfile.mkdtemp()
     dcos_cli_path = os.path.join(tmpdir, "dcos")
 
@@ -25,7 +23,7 @@ def dcoscli_fixture():
     st = os.stat(dcos_cli_path)
     os.chmod(dcos_cli_path, st.st_mode | stat.S_IEXEC)
 
-    return DCOSCLI(tmpdir)
+    return DCOSCLI(tmpdir, superuser_api_session)
 
     shutil.rmtree(os.path.expanduser("~/.dcos"))
     shutil.rmtree(tmpdir, ignore_errors=True)
@@ -33,7 +31,7 @@ def dcoscli_fixture():
 
 class DCOSCLI():
 
-    def __init__(self, directory):
+    def __init__(self, directory, superuser_api_session):
         updated_env = os.environ.copy()
         updated_env.update({
             'PATH': "{}:{}".format(
@@ -42,6 +40,7 @@ class DCOSCLI():
             'PYTHONUNBUFFERED': 'x'
         })
         self.env = updated_env
+        self.url = superuser_api_session.default_url
 
     def exec_command(self, cmd, stdin=None):
         """Execute CLI command
@@ -61,7 +60,7 @@ class DCOSCLI():
             stdin=stdin, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=self.env,
-            check=True)
+            check=False)
 
         stdout, stderr = process.stdout.decode('utf-8'), process.stderr.decode('utf-8')
 
@@ -73,7 +72,7 @@ class DCOSCLI():
 
     def setup(self):
         self.exec_command(
-            ["dcos", "config", "set", "core.dcos_url", str(Url('/'))])
+            ["dcos", "config", "set", "core.dcos_url", str(self.url)])
         self.exec_command(
             ["dcos", "config", "set", "core.ssl_verify", "false"])
 

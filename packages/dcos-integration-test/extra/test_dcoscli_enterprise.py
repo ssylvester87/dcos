@@ -14,8 +14,8 @@ from selenium import webdriver
 
 
 @pytest.fixture(scope='session')
-def dcoscli():
-    return dcoscli_fixture()
+def dcoscli(superuser_api_session):
+    return dcoscli_fixture(superuser_api_session)
 
 
 class TestDCOSCLI:
@@ -53,7 +53,7 @@ class TestDCOSCLI:
         assert stderr == ''
 
     def test_secrets_management(self, dcoscli):
-        dcoscli.setup_enterprise()
+        dcoscli.login()
 
         # list secrets
         stdout, stderr = dcoscli.exec_command(
@@ -97,8 +97,6 @@ class TestDCOSCLI:
         assert stderr == ''
 
     def test_cluster_management(self, dcoscli):
-        dcoscli.setup_enterprise()
-
         # show secret stores
         stdout, stderr = dcoscli.exec_command(
             ["dcos", "security", "cluster", "secret-store", "show"])
@@ -281,8 +279,6 @@ class TestDCOSCLI:
     @pytest.mark.skipif(ee_helpers.bootstrap_config['security'] == 'strict',
                         reason="Need to bypass insecure cert warning")
     def test_oidc_sso(self, dcoscli):
-        dcoscli.setup_enterprise()
-
         # google OIDC provider configured with master.mesos.com
         dcoscli.exec_command(
             ["dcos", "config", "set", "core.dcos_url", "http://localhost"])
