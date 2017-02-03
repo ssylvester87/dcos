@@ -335,7 +335,7 @@ class TestDCOSCLI:
         next_button.click()
 
         # wait for dom to update with new fields
-        password = WebDriverWait(driver, 120).until(
+        password = WebDriverWait(driver, 30).until(
             EC.element_to_be_clickable(
                 (By.XPATH, "//div[@id='password-shown']//input[@id='Passwd']")))
         # add password
@@ -346,11 +346,15 @@ class TestDCOSCLI:
 
         # allow google access to give info to Relying Party
         # wait for dom to update with "clickable" field
-        allow_access = driver.find_element_by_id('submit_approve_access')
+        allow_access = WebDriverWait(driver, 30).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//button[@id='submit_approve_access']")))
         allow_access.click()
 
         # We should now be redirected to HTML page with auth token
-        dcos_auth_token = driver.find_element_by_class_name('tokenbox').text
+        dcos_auth_token = WebDriverWait(driver, 30).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//div[@class='tokenbox wrap']"))).text
         driver.close()
 
         # test `dcos_auth_token` with CLI
