@@ -346,7 +346,6 @@ class TestDCOSCLI:
 
         # allow google access to give info to Relying Party
         # wait for dom to update with "clickable" field
-        time.sleep(5)
         allow_access = driver.find_element_by_id('submit_approve_access')
         allow_access.click()
 
