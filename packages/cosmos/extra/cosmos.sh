@@ -7,7 +7,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
     ADMINROUTER_URI=${ADMINROUTER_URI:-https://master.mesos}
     MARATHON_URI=${MARATHON_URI:-https://master.mesos:8443}
     MESOSMASTER_URI=${MESOSMASTER_URI:-https://leader.mesos:5050}
-    ZOOKEEPER_URI=${ZOOKEEPER_URI:-zk://localhost:2181/cosmos}
+    ZOOKEEPER_URI=${ZOOKEEPER_URI:-zk://zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181/cosmos}
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
         -Djavax.net.ssl.trustStore=${TLS_TRUSTSTORE} \

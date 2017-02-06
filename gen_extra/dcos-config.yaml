@@ -168,7 +168,7 @@ package:
         "mesosAuthentication": "iam",
         "IAMConfigFile": "/run/dcos/etc/mesos-dns/iam.json",
 {% endswitch %}
-        "zk": "zk://127.0.0.1:2181/mesos"
+        "zk": "zk://zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181/mesos"
       }
   - path: /etc/bouncer-config.json
     content: |
@@ -180,7 +180,7 @@ package:
         "EXPIRATION_AUTH_TOKEN_DAYS": {{ bouncer_expiration_auth_token_days }},
         "EXPIRATION_AUTH_COOKIE_DAYS": {{ bouncer_expiration_auth_token_days }},
         "EXPIRATION_INFO_COOKIE_DAYS": {{ bouncer_expiration_auth_token_days }},
-        "DATASTORE_ZK_BACKEND_HOSTS": "127.0.0.1:2181",
+        "DATASTORE_ZK_BACKEND_HOSTS": "zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181",
         "GUNICORN_WORKER_PROCESSES": 1,
         "GUNICORN_THREADS_PER_WORKER": 10,
         "GUNICORN_BIND_ADDRESS": "127.0.0.1:8101",

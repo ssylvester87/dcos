@@ -20,8 +20,7 @@ def test_if_all_mesos_agents_have_registered(superuser_api_session):
 
 
 def test_if_all_mesos_masters_have_registered(noauth_api_session):
-    zk_hostports = ','.join(':'.join([host, '2181']) for host in
-                            noauth_api_session.public_masters)
+    zk_hostports = 'zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181'
     zk = kazoo.client.KazooClient(hosts=zk_hostports, read_only=True)
     master_ips = []
 
