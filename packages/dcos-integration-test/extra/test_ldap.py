@@ -256,6 +256,10 @@ class FreeIPA(DirectoryBackend):
                 'search-filter-template': '(uid=%(username)s)',
                 'search-base': 'cn=users,cn=compat,' + dc
             }),
+            ('group-search', {
+                'search-filter-template': '(cn=%(groupname)s)',
+                'search-base': 'cn=groups,cn=compat,' + dc
+            }),
             ('ca-certs', ca_cert),
         ])
 
@@ -433,9 +437,9 @@ class TestADS1:
         r.raise_for_status()
         assert r.json()['code'] == 'TEST_PASSED'
 
-    def test_authentication_delegation(self, superuser_api_session, ads1):
+    def test_authentication_delegation(self, superuser_api_session, noauth_api_session, ads1):
 
-        r = superuser_api_session.iam.post('/auth/login', json=ads1.credentials('john1'))
+        r = noauth_api_session.iam.post('/auth/login', json=ads1.credentials('john1'))
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
@@ -494,3 +498,26 @@ class TestFreeIPA:
         r.raise_for_status()
         token = r.json()['token']
         assert r.cookies['dcos-acs-auth-cookie'] == token
+
+    def test_groupimport(self, freeipa, superuser_api_session):
+
+        r = superuser_api_session.iam.post('/ldap/importgroup', json={"groupname": "employees"})
+        assert r.status_code == 201
+
+        expected_uids = ('manager', 'employee')
+
+        # Verify users have been (implicitly) imported
+        # and labeled as remote users.
+        r = superuser_api_session.iam.get('/users')
+        r.raise_for_status()
+        l = r.json()['array']
+        users = {d['uid']: d for d in l}
+        for uid in expected_uids:
+            assert users[uid]['is_remote'] is True
+
+        # Verify that a group with gid `employees` exists
+        # and that it has the expected set of members.
+        r = superuser_api_session.iam.get('/groups/employees/users')
+        r.raise_for_status()
+        l = r.json()['array']
+        assert set((d['user']['uid'] for d in l)) == set(expected_uids)
