@@ -30,12 +30,13 @@ ANYONE_CR = [ACL(Permissions.CREATE | Permissions.READ, ANYONE_ID_UNSAFE)]
 ANYONE_READ = [ACL(Permissions.READ, ANYONE_ID_UNSAFE)]
 ANYONE_ALL = [ACL(Permissions.ALL, ANYONE_ID_UNSAFE)]
 LOCALHOST_ALL = [make_acl('ip', '127.0.0.1', all=True)]
+ZOOKEEPER_ADDR = 'zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181'
 
 vault_config_template = """
 disable_mlock = true
 
 backend "zookeeper" {
-  address = "127.0.0.1:2181"
+  address = "%(zookeeper_addr)s"
   advertise_addr = "%(advertise_addr)s"
   path = "dcos/vault/default"
   %(znode_owner)s
@@ -552,6 +553,7 @@ class Bootstrapper(object):
             'znode_owner': znode_owner,
             'auth_info': auth_info,
             'advertise_addr': advertise_addr,
+            'zookeeper_addr': ZOOKEEPER_ADDR
         }
         cfg = vault_config_template % params
         cfg = cfg.strip() + '\n'
@@ -583,8 +585,9 @@ class Bootstrapper(object):
             return
 
         zk_creds = self.secrets['zk']['dcos_mesos_master']
+        zk_creds['zookeeper_addr'] = ZOOKEEPER_ADDR
 
-        env = 'MESOS_ZK=zk://{username}:{password}@127.0.0.1:2181/mesos\n'
+        env = 'MESOS_ZK=zk://{username}:{password}@{zookeeper_addr}/mesos\n'
         env = env.format_map(zk_creds)
         env = bytes(env, 'ascii')
 
@@ -614,7 +617,8 @@ class Bootstrapper(object):
             pass
 
         zk_creds = self.secrets['zk']['dcos_metronome']
-        env1 = 'METRONOME_ZK_URL=zk://{username}:{password}@127.0.0.1:2181/metronome\n'
+        zk_creds['zookeeper_addr'] = ZOOKEEPER_ADDR
+        env1 = 'METRONOME_ZK_URL=zk://{username}:{password}@{zookeeper_addr}/metronome\n'
         env1 = env1.format_map(zk_creds)
 
         keystore_password = utils.random_string(64)
@@ -671,7 +675,8 @@ class Bootstrapper(object):
 
     def write_marathon_zk_env(self, env_fn):
         zk_creds = self.secrets['zk']['dcos_marathon']
-        env = 'MARATHON_ZK=zk://{username}:{password}@127.0.0.1:2181/marathon\n'
+        zk_creds['zookeeper_addr'] = ZOOKEEPER_ADDR
+        env = 'MARATHON_ZK=zk://{username}:{password}@{zookeeper_addr}/marathon\n'
         env = env.format_map(zk_creds)
         env = bytes(env, 'ascii')
 

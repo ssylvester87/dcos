@@ -66,13 +66,13 @@ package:
     content: |
       set $adminrouter_agent_port {{ adminrouter_agent_port }};
       set $upstream_networking_api http://127.0.0.1:61430;
+      set $upstream_cosmos http://127.0.0.1:7070;
 {% switch ssl_enabled %}
 {% case "false" %}
       proxy_ssl_verify off;
       set $upstream_mesos http://leader.mesos:5050;
       set $upstream_marathon http://127.0.0.1:8080;
       set $upstream_secrets http://127.0.0.1:1337;
-      set $upstream_cosmos http://127.0.0.1:7070;
 {% case "true" %}
       proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
       proxy_ssl_verify on;
@@ -80,7 +80,6 @@ package:
       set $upstream_mesos https://leader.mesos:5050;
       set $upstream_marathon https://127.0.0.1:8443;
       set $upstream_secrets https://127.0.0.1:1337;
-      set $upstream_cosmos https://127.0.0.1:7443;
 {% endswitch %}
   - path: /etc_slave/adminrouter-upstreams.conf
     content: |
@@ -155,6 +154,7 @@ package:
         "listener": "0.0.0.0",
         "email": "root.mesos-dns.mesos",
         "IPSources": {{ mesos_dns_ip_sources }},
+        "SetTruncateBit": false,
         "HTTPListener": "127.0.0.1",
 {% switch ssl_enabled %}
 {% case "false" %}
@@ -169,7 +169,7 @@ package:
         "mesosAuthentication": "iam",
         "IAMConfigFile": "/run/dcos/etc/mesos-dns/iam.json",
 {% endswitch %}
-        "zk": "zk://127.0.0.1:2181/mesos"
+        "zk": "zk://zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181/mesos"
       }
   - path: /etc/bouncer-config.json
     content: |
@@ -181,7 +181,7 @@ package:
         "EXPIRATION_AUTH_TOKEN_DAYS": {{ bouncer_expiration_auth_token_days }},
         "EXPIRATION_AUTH_COOKIE_DAYS": {{ bouncer_expiration_auth_token_days }},
         "EXPIRATION_INFO_COOKIE_DAYS": {{ bouncer_expiration_auth_token_days }},
-        "DATASTORE_ZK_BACKEND_HOSTS": "127.0.0.1:2181",
+        "DATASTORE_ZK_BACKEND_HOSTS": "zk-1.zk:2181,zk-2.zk:2181,zk-3.zk:2181,zk-4.zk:2181,zk-5.zk:2181",
         "GUNICORN_WORKER_PROCESSES": 1,
         "GUNICORN_THREADS_PER_WORKER": 10,
         "GUNICORN_BIND_ADDRESS": "127.0.0.1:8101",
