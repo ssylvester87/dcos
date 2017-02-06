@@ -154,6 +154,7 @@ package:
         "listener": "0.0.0.0",
         "email": "root.mesos-dns.mesos",
         "IPSources": {{ mesos_dns_ip_sources }},
+        "SetTruncateBit": false,
         "HTTPListener": "127.0.0.1",
 {% switch ssl_enabled %}
 {% case "false" %}
