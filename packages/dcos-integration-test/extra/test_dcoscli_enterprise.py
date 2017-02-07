@@ -5,7 +5,6 @@ import os
 import subprocess
 
 import pytest
-
 from dcoscli_fixture import dcoscli_fixture
 
 from selenium import webdriver
@@ -19,21 +18,60 @@ def dcoscli(superuser_api_session):
     return dcoscli_fixture(superuser_api_session)
 
 
+@pytest.fixture()
+def service_accounts_fixture(dcoscli, request):
+    name, private_key, public_key = request.param
+
+    dcoscli.setup_enterprise()
+    # configure service account
+    sa_base = ["dcos", "security", "org", "service-accounts"]
+    dcoscli.exec_command(
+        sa_base + ["keypair", private_key, public_key])
+    dcoscli.exec_command(
+        sa_base + ["create", "-p", public_key, "-d", "test", name])
+    os.chmod(private_key, 0o600)
+
+    yield
+
+    # need to be superuser to delete sa user
+    dcoscli.login()
+    dcoscli.exec_command(sa_base + ["delete", name])
+
+
+@pytest.fixture()
+def secrets_fixture(dcoscli, request):
+    value, path = request.param
+
+    dcoscli.setup_enterprise()
+    # create secret
+    stdout, stderr = dcoscli.exec_command(
+        ["dcos", "security", "secrets", "create", "--value={}".format(value), path])
+    assert stdout == ''
+    assert stderr == ''
+
+    yield
+
+    # delete secret
+    stdout, stderr = dcoscli.exec_command(
+        ["dcos", "security", "secrets", "delete", "/foo"])
+    assert stdout == ''
+    assert stderr == ''
+
+    # list secrets
+    stdout, stderr = dcoscli.exec_command(
+        ["dcos", "security", "secrets", "list", "/"])
+    assert stdout == ''
+    assert stderr == ''
+
+
 class TestDCOSCLI:
     def test_cli(self, dcoscli):
         dcoscli.login()
 
-    def test_service_accounts(self, dcoscli):
-        dcoscli.setup_enterprise()
-
-        # configure service account
-        service_accounts = ["dcos", "security", "org", "service-accounts"]
-        dcoscli.exec_command(
-            service_accounts + ["keypair", "/tmp/private-key.pem", "/tmp/public-key.pem"])
-        dcoscli.exec_command(
-            service_accounts + ["create", "-p", "/tmp/public-key.pem", "-d", "test", "test-principal"])
-        os.chmod('/tmp/private-key.pem', 0o600)
-
+    @pytest.mark.parametrize('service_accounts_fixture', [
+        ("test-principal", "/tmp/private-key.pem", "/tmp/public-key.pem")
+        ], indirect=True)
+    def test_service_accounts(self, dcoscli, service_accounts_fixture):
         # create non strict sa secret in default store
         stdout, stderr = dcoscli.exec_command(
             ["dcos", "security", "secrets", "create-sa-secret",
@@ -53,20 +91,10 @@ class TestDCOSCLI:
         assert stdout == 'Login successful!\n'
         assert stderr == ''
 
-    def test_secrets_management(self, dcoscli):
-        dcoscli.login()
-
-        # list secrets
-        stdout, stderr = dcoscli.exec_command(
-            ["dcos", "security", "secrets", "list", "/"])
-        assert stdout == ''
-        assert stderr == ''
-
-        # create secret
-        stdout, stderr = dcoscli.exec_command(
-            ["dcos", "security", "secrets", "create", "--value=newsecret", "/foo"])
-        assert stdout == ''
-        assert stderr == ''
+    @pytest.mark.parametrize('secrets_fixture', [
+        ("newsecret", "/foo")
+        ], indirect=True)
+    def test_secrets_management(self, dcoscli, secrets_fixture):
 
         # get secret
         stdout, stderr = dcoscli.exec_command(
@@ -83,18 +111,6 @@ class TestDCOSCLI:
         stdout, stderr = dcoscli.exec_command(
             ["dcos", "security", "secrets", "list", "/"])
         assert stdout == '- foo\n\n'
-        assert stderr == ''
-
-        # delete secret
-        stdout, stderr = dcoscli.exec_command(
-            ["dcos", "security", "secrets", "delete", "/foo"])
-        assert stdout == ''
-        assert stderr == ''
-
-        # list secrets
-        stdout, stderr = dcoscli.exec_command(
-            ["dcos", "security", "secrets", "list", "/"])
-        assert stdout == ''
         assert stderr == ''
 
     def test_cluster_management(self, dcoscli):
@@ -161,7 +177,7 @@ class TestDCOSCLI:
         assert json.loads(stdout) == out
         assert stderr == ''
 
-    def test_users_and_groups(self, dcoscli):
+    def test_users_and_groups(self, dcoscli, iam_verify_and_reset):
         users = ["dcos", "security", "org", "users"]
         groups = ["dcos", "security", "org", "groups"]
 
