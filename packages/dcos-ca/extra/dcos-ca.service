@@ -8,6 +8,7 @@ StandardOutput=journal
 StandardError=journal
 Restart=always
 RestartSec=5
+LimitNOFILE=16384
 EnvironmentFile=/opt/mesosphere/environment
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-ca
 ExecStart=/opt/mesosphere/bin/dcos-ca \
