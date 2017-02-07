@@ -91,6 +91,7 @@ def test_ee_signal_service(superuser_api_session):
         'metronome-service',
         'networking_api-service',
         'secrets-service',
+        'secrets-socket',
         'signal-service',
         'vault-service']
     all_node_units = [
