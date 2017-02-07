@@ -28,6 +28,10 @@ crypto_backend = cryptography.hazmat.backends.default_backend()
 
 SanEntry = namedtuple("SanEntry", ['type', 'val'])
 
+# Max length of custom provided common name for key certificate. By default
+# we're adding the "DC/OS Root CA" suffix
+CUSTOM_COMMON_NAME_MAX_LENGTH = 40
+
 
 def read_file_line(filename):
     with open(filename, 'r') as f:
@@ -127,8 +131,22 @@ class Flock:
         log.info('Unlocked fd {}'.format(self.fd))
 
 
-def generate_CA_key_certificate(valid_days=3650):
+def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
+
+    # Certificate common name length is restricted to 64 characters per RFC 5280
+    # By default we're adding "DC/OS Root CA" prefix so we need to make sure that
+    # provided common name and prefix are shorter than 64 characters constraint.
+    if cn_suffix and len(cn_suffix) > CUSTOM_COMMON_NAME_MAX_LENGTH:
+        raise ValueError(
+            "cn parameter can't be longer than {} characters".format(
+                CUSTOM_COMMON_NAME_MAX_LENGTH)
+            )
+
+    # The default common name that is added as suffix or used as default value
+    common_name = u"DC/OS Root CA"
+    if cn_suffix:
+        common_name = u"{} {}".format(common_name, cn_suffix)
 
     privkey_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
@@ -140,7 +158,7 @@ def generate_CA_key_certificate(valid_days=3650):
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"CA"),
         x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Mesosphere, Inc."),
-        x509.NameAttribute(NameOID.COMMON_NAME, u"DC/OS Root CA"),
+        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
     cert = x509.CertificateBuilder().subject_name(
         subject
