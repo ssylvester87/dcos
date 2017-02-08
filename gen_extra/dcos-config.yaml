@@ -257,7 +257,7 @@ package:
   - path: /etc/dcos-log-extra.env
     content: |
       DCOS_LOG_CONFIG_PATH=/opt/mesosphere/etc/dcos-log-config-ee.json
-  - path: /etc/dcos-log-config-ee.json
+  - path: /etc_master/dcos-log-config-ee.json
     content: |
       {
 {% switch ssl_enabled %}
@@ -265,7 +265,30 @@ package:
         "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
 {% case "false" %}
 {% endswitch %}
-        "auth": {{ mesos_authz_enforced }}
+        "auth": {{ mesos_authz_enforced }},
+        "role": "master"
+      }
+  - path: /etc_slave/dcos-log-config-ee.json
+    content: |
+      {
+{% switch ssl_enabled %}
+{% case "true" %}
+        "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+{% case "false" %}
+{% endswitch %}
+        "auth": {{ mesos_authz_enforced }},
+        "role": "agent"
+      }
+  - path: /etc_slave_public/dcos-log-config-ee.json
+    content: |
+      {
+{% switch ssl_enabled %}
+{% case "true" %}
+        "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+{% case "false" %}
+{% endswitch %}
+        "auth": {{ mesos_authz_enforced }},
+        "role": "agent_public"
       }
   - path: /etc_master/3dt_config.json
     content: |
