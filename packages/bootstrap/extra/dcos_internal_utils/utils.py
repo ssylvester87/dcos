@@ -135,7 +135,7 @@ def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
     # the `cn_suffix` parameter.
     common_name = u"DC/OS Root CA"
     if cn_suffix:
-        common_name = u"{} {}".format(common_name, cn_suffix)
+        common_name = "{} {}".format(common_name, cn_suffix)
 
     # Certificate common name length is restricted to 64 characters per RFC 5280
     # By default we're adding "DC/OS Root CA" prefix so we need to make sure that
@@ -155,10 +155,10 @@ def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
         encryption_algorithm=serialization.NoEncryption())
 
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"CA"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Mesosphere, Inc."),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mesosphere, Inc."),
         x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
     cert = x509.CertificateBuilder().subject_name(
