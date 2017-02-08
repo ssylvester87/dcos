@@ -202,15 +202,7 @@ class Bootstrapper(object):
 
         return crt
 
-    def create_master_secrets(self, root_ca_cn_suffix=None):
-        """Creates basic master node secrets like root certificate, Zookeeper
-        ACL credentials and service account credentials.
-
-        :param root_ca_cn_suffix: Optinally provide custom Root certificate
-                                  common name that will get appended to the
-                                  default "DC/OS Root CA" name.
-        """
-
+    def create_master_secrets(self):
         creds = self.opts.zk_master_creds
 
         if creds:
@@ -269,7 +261,7 @@ class Bootstrapper(object):
         # SSL is being used in the cluster
         ca_key, ca_crt = utils.generate_CA_key_certificate(
             valid_days=3650,
-            cn_suffix=root_ca_cn_suffix,
+            cn_suffix=self.cluster_id(),
             )
         ca_certs = {
             'RootCA': {
@@ -1050,8 +1042,7 @@ def make_run_dirs(opts):
 
 def dcos_bouncer(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.bouncer_acls()
 
     keypath = opts.rundir + '/pki/tls/private/bouncer.key'
@@ -1064,8 +1055,7 @@ def dcos_bouncer(b, opts):
 
 def dcos_secrets(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.dcos_secrets_acls()
 
     if opts.config['ssl_enabled']:
@@ -1088,8 +1078,7 @@ def dcos_secrets(b, opts):
 
 def dcos_vault_default(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.dcos_vault_default_acls()
 
     vault_dir = opts.statedir + '/secrets/vault'
@@ -1112,8 +1101,7 @@ def dcos_vault_default(b, opts):
 
 def dcos_ca(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.dcos_ca_acls()
 
     path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
@@ -1129,8 +1117,7 @@ def dcos_ca(b, opts):
 
 def dcos_mesos_master(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.mesos_zk_acls()
 
     b.write_mesos_master_env(opts.rundir + '/etc/mesos-master')
@@ -1204,8 +1191,7 @@ def dcos_mesos_slave_public(b, opts):
 
 def dcos_marathon(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.marathon_zk_acls()
 
     if opts.config['zk_acls_enabled']:
@@ -1249,8 +1235,7 @@ def dcos_marathon(b, opts):
 
 def dcos_metronome(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.metronome_zk_acls()
 
     # For libmesos scheduler SSL.
@@ -1288,9 +1273,7 @@ def dcos_metronome(b, opts):
 
 def dcos_mesos_dns(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
-
+    b.create_master_secrets()
     b.create_service_account('dcos_mesos_dns', superuser=True)
 
     if opts.config['ssl_enabled']:
@@ -1305,9 +1288,7 @@ def dcos_mesos_dns(b, opts):
 
 def dcos_adminrouter(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
-
+    b.create_master_secrets()
     b.create_service_account('dcos_adminrouter', superuser=True)
 
     extra_san = []
@@ -1387,8 +1368,7 @@ def dcos_spartan(b, opts):
 
 def dcos_spartan_master(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
 
     if opts.config['ssl_enabled']:
         b.write_CA_certificate()
@@ -1428,9 +1408,7 @@ def dcos_erlang_service(servicename, b, opts):
 
 def dcos_erlang_service_master(servicename, b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
-
+    b.create_master_secrets()
     b.create_service_account('dcos_{}_master'.format(servicename), superuser=True)
 
     user = 'dcos_' + servicename
@@ -1478,8 +1456,7 @@ def dcos_erlang_service_agent(servicename, b, opts):
 
 def dcos_cosmos(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
     b.cosmos_acls()
 
     key = opts.rundir + '/pki/tls/private/cosmos.key'
@@ -1500,9 +1477,7 @@ def dcos_cosmos(b, opts):
 
 def dcos_signal(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
-
+    b.create_master_secrets()
     b.create_service_account('dcos_signal_service', superuser=True)
 
     svc_acc_creds_fn = opts.rundir + '/etc/signal-service/service_account.json'
@@ -1512,8 +1487,7 @@ def dcos_signal(b, opts):
 
 def dcos_metrics_master(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
 
     b.create_service_account('dcos_metrics_master', superuser=True)
 
@@ -1534,8 +1508,7 @@ def dcos_metrics_agent(b, opts):
 
 def dcos_3dt_master(b, opts):
     b.init_zk_acls()
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
 
     b.create_service_account('dcos_3dt_master', superuser=True)
     svc_acc_creds_fn = opts.rundir + '/etc/3dt/master_service_account.json'
@@ -1555,8 +1528,7 @@ def dcos_3dt_agent(b, opts):
 
 
 def dcos_history(b, opts):
-    b.create_master_secrets(
-        root_ca_cn_suffix=b.cluster_id())
+    b.create_master_secrets()
 
     b.create_service_account('dcos_history_service', superuser=True)
 
