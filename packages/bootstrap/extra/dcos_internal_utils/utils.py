@@ -28,9 +28,8 @@ crypto_backend = cryptography.hazmat.backends.default_backend()
 
 SanEntry = namedtuple("SanEntry", ['type', 'val'])
 
-# Max length of custom provided common name for key certificate. By default
-# we're adding the "DC/OS Root CA" suffix
-CUSTOM_COMMON_NAME_MAX_LENGTH = 40
+# Certificate Common Name length is restricted to 64 characters per RFC 5280
+COMMON_NAME_MAX_LENGTH = 64
 
 
 def read_file_line(filename):
@@ -132,21 +131,23 @@ class Flock:
 
 
 def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
+    # The default certificate Common Name that can be optionally extended with
+    # the `cn_suffix` parameter.
+    common_name = u"DC/OS Root CA"
+    if cn_suffix:
+        common_name = u"{} {}".format(common_name, cn_suffix)
 
     # Certificate common name length is restricted to 64 characters per RFC 5280
     # By default we're adding "DC/OS Root CA" prefix so we need to make sure that
     # provided common name and prefix are shorter than 64 characters constraint.
-    if cn_suffix and len(cn_suffix) > CUSTOM_COMMON_NAME_MAX_LENGTH:
+    if len(common_name) > COMMON_NAME_MAX_LENGTH:
         raise ValueError(
-            "cn parameter can't be longer than {} characters".format(
-                CUSTOM_COMMON_NAME_MAX_LENGTH)
+            "Comman Name longer than {} characters: {}".format(
+                COMMON_NAME_MAX_LENGTH, common_name)
             )
 
-    # The default common name that is added as suffix or used as default value
-    common_name = u"DC/OS Root CA"
-    if cn_suffix:
-        common_name = u"{} {}".format(common_name, cn_suffix)
+    key = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048, backend=crypto_backend)
 
     privkey_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
