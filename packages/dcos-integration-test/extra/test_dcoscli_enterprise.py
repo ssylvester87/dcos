@@ -3,6 +3,7 @@ import io
 import json
 import os
 import subprocess
+import tempfile
 
 import pytest
 from dcoscli_fixture import dcoscli_fixture
@@ -12,6 +13,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from dcos_internal_utils import utils
+
 
 @pytest.fixture(scope='session')
 def dcoscli(superuser_api_session):
@@ -19,10 +22,13 @@ def dcoscli(superuser_api_session):
 
 
 @pytest.fixture()
-def service_accounts_fixture(dcoscli, request):
-    name, private_key, public_key = request.param
-
+def service_accounts_fixture(dcoscli):
     dcoscli.setup_enterprise()
+
+    name = utils.random_string(8)
+    fd, private_key = tempfile.mkstemp()
+    fd2, public_key = tempfile.mkstemp()
+
     # configure service account
     sa_base = ["dcos", "security", "org", "service-accounts"]
     dcoscli.exec_command(
@@ -31,11 +37,16 @@ def service_accounts_fixture(dcoscli, request):
         sa_base + ["create", "-p", public_key, "-d", "test", name])
     os.chmod(private_key, 0o600)
 
-    yield
+    yield (name, private_key, public_key)
 
     # need to be superuser to delete sa user
     dcoscli.login()
     dcoscli.exec_command(sa_base + ["delete", name])
+    try:
+        os.close(fd)
+        os.close(fd2)
+    except OSError:
+        pass
 
 
 @pytest.fixture()
@@ -68,14 +79,12 @@ class TestDCOSCLI:
     def test_cli(self, dcoscli):
         dcoscli.login()
 
-    @pytest.mark.parametrize('service_accounts_fixture', [
-        ("test-principal", "/tmp/private-key.pem", "/tmp/public-key.pem")
-        ], indirect=True)
     def test_service_accounts(self, dcoscli, service_accounts_fixture):
+        name, private_key, public_key = service_accounts_fixture
         # create non strict sa secret in default store
         stdout, stderr = dcoscli.exec_command(
             ["dcos", "security", "secrets", "create-sa-secret",
-             "/tmp/private-key.pem", "sa-secret", "/sa-secret"])
+             private_key, "sa-secret", "/sa-secret"])
         assert stdout == ''
         assert stderr == ''
 
@@ -87,7 +96,7 @@ class TestDCOSCLI:
 
         # login using service account
         stdout, stderr = dcoscli.exec_command(
-            ["dcos", "auth", "login", "--username=test-principal", "--private-key=/tmp/private-key.pem"])
+            ["dcos", "auth", "login", "--username={}".format(name), "--private-key={}".format(private_key)])
         assert stdout == 'Login successful!\n'
         assert stderr == ''
 
