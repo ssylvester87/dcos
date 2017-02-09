@@ -15,7 +15,7 @@ service=${PKG_PATH}/dcos.target.wants_master/dcos-networking_api.service
 mkdir -p $(dirname $service)
 cat <<EOF > $service
 [Unit]
-Description=DC/OS Network Metrics: exposes networking-related metrics
+Description=DC/OS Network Metrics: exposes network metrics
 BindsTo=dcos-epmd.service
 
 [Service]
