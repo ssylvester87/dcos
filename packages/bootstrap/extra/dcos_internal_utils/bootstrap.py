@@ -259,7 +259,10 @@ class Bootstrapper(object):
 
         # always generate the CA cert, regardless of whether
         # SSL is being used in the cluster
-        ca_key, ca_crt = utils.generate_CA_key_certificate(3650)
+        ca_key, ca_crt = utils.generate_CA_key_certificate(
+            valid_days=3650,
+            cn_suffix=self.cluster_id(),
+            )
         ca_certs = {
             'RootCA': {
                 'key': ca_key,
@@ -1272,7 +1275,6 @@ def dcos_metronome(b, opts):
 def dcos_mesos_dns(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-
     b.create_service_account('dcos_mesos_dns', superuser=True)
 
     if opts.config['ssl_enabled']:
@@ -1296,9 +1298,6 @@ def dcos_mesos_dns(b, opts):
 def dcos_adminrouter(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-
-    b.cluster_id()
-
     b.create_service_account('dcos_adminrouter', superuser=True)
 
     extra_san = []
@@ -1419,7 +1418,6 @@ def dcos_erlang_service(servicename, b, opts):
 def dcos_erlang_service_master(servicename, b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-
     b.create_service_account('dcos_{}_master'.format(servicename), superuser=True)
 
     user = 'dcos_' + servicename
@@ -1489,8 +1487,6 @@ def dcos_cosmos(b, opts):
 def dcos_signal(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
-
-    b.cluster_id()
     b.create_service_account('dcos_signal_service', superuser=True)
 
     svc_acc_creds_fn = opts.rundir + '/etc/signal-service/service_account.json'
@@ -1502,7 +1498,6 @@ def dcos_metrics_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    b.cluster_id()
     b.create_service_account('dcos_metrics_master', superuser=True)
 
     svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
