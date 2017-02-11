@@ -975,8 +975,12 @@ package:
                     "value": "DCOS_SPACE"
                   },
                   {
-                    "key": "network_timeout",
+                    "key": "initial_network_timeout",
                     "value": "5secs"
+                  },
+                  {
+                    "key": "attempts",
+                    "value": "2"
                   }
                 ]
               },
@@ -1006,8 +1010,12 @@ package:
                     "value": "DCOS_SPACE"
                   },
                   {
-                    "key": "network_timeout",
+                    "key": "initial_network_timeout",
                     "value": "5secs"
+                  },
+                  {
+                    "key": "attempts",
+                    "value": "2"
                   }
                 ]
               },
