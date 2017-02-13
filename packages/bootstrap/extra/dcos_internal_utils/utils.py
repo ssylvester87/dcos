@@ -133,7 +133,7 @@ class Flock:
 def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
     # The default certificate Common Name that can be optionally extended with
     # the `cn_suffix` parameter.
-    common_name = u"DC/OS Root CA"
+    common_name = "DC/OS Root CA"
     if cn_suffix:
         common_name = "{} {}".format(common_name, cn_suffix)
 
