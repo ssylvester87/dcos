@@ -12,6 +12,8 @@ from cryptography.hazmat.backends import default_backend as crypto_backend
 
 from ee_helpers import bootstrap_config
 
+from pkgpanda.util import load_string
+
 log = logging.getLogger(__name__)
 
 strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
@@ -108,6 +110,9 @@ def test_verify_server_cert_against_root_cert(tls_netlocs, superuser_api_session
 
 
 def test_cert_issuer_and_subject(tls_netlocs):
+    expected_issuer_cn = "DC/OS Root CA {}".format(
+        load_string('/var/lib/dcos/cluster-id').strip())
+
     for netloc in tls_netlocs:
         cert_pem = ssl.get_server_certificate(
             (netloc.host, netloc.port),
@@ -118,7 +123,7 @@ def test_cert_issuer_and_subject(tls_netlocs):
         issuer_cns = cert.issuer.get_attributes_for_oid(
             x509.oid.NameOID.COMMON_NAME)
         assert len(issuer_cns) == 1
-        assert issuer_cns[0].value == 'DC/OS Root CA'
+        assert issuer_cns[0].value == expected_issuer_cn
 
         subject_ons = cert.subject.get_attributes_for_oid(
             x509.oid.NameOID.ORGANIZATION_NAME)

@@ -28,6 +28,9 @@ crypto_backend = cryptography.hazmat.backends.default_backend()
 
 SanEntry = namedtuple("SanEntry", ['type', 'val'])
 
+# Certificate Common Name length is restricted to 64 characters per RFC 5280
+COMMON_NAME_MAX_LENGTH = 64
+
 
 def read_file_line(filename):
     with open(filename, 'r') as f:
@@ -127,8 +130,24 @@ class Flock:
         log.info('Unlocked fd {}'.format(self.fd))
 
 
-def generate_CA_key_certificate(valid_days=3650):
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
+def generate_CA_key_certificate(valid_days=3650, cn_suffix=None):
+    # The default certificate Common Name that can be optionally extended with
+    # the `cn_suffix` parameter.
+    common_name = "DC/OS Root CA"
+    if cn_suffix:
+        common_name = "{} {}".format(common_name, cn_suffix)
+
+    # Certificate common name length is restricted to 64 characters per RFC 5280
+    # By default we're adding "DC/OS Root CA" prefix so we need to make sure that
+    # provided common name and prefix are shorter than 64 characters constraint.
+    if len(common_name) > COMMON_NAME_MAX_LENGTH:
+        raise ValueError(
+            "Comman Name longer than {} characters: {}".format(
+                COMMON_NAME_MAX_LENGTH, common_name)
+            )
+
+    key = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048, backend=crypto_backend)
 
     privkey_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
@@ -136,11 +155,11 @@ def generate_CA_key_certificate(valid_days=3650):
         encryption_algorithm=serialization.NoEncryption())
 
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"CA"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Mesosphere, Inc."),
-        x509.NameAttribute(NameOID.COMMON_NAME, u"DC/OS Root CA"),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mesosphere, Inc."),
+        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
     cert = x509.CertificateBuilder().subject_name(
         subject

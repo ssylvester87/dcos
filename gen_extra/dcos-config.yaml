@@ -161,6 +161,8 @@ package:
 {% case "true" %}
         "MesosHTTPSOn": true,
         "CACertFile": "/run/dcos/pki/CA/certs/ca.crt",
+        "CertFile": "/run/dcos/pki/tls/certs/mesos-dns.crt",
+        "KeyFile": "/run/dcos/pki/tls/private/mesos-dns.key",
 {% endswitch %}
 {% switch mesos_authenticate_http %}
 {% case "false" %}
@@ -975,8 +977,12 @@ package:
                     "value": "DCOS_SPACE"
                   },
                   {
-                    "key": "network_timeout",
+                    "key": "initial_network_timeout",
                     "value": "5secs"
+                  },
+                  {
+                    "key": "attempts",
+                    "value": "2"
                   }
                 ]
               },
@@ -1006,8 +1012,12 @@ package:
                     "value": "DCOS_SPACE"
                   },
                   {
-                    "key": "network_timeout",
+                    "key": "initial_network_timeout",
                     "value": "5secs"
+                  },
+                  {
+                    "key": "attempts",
+                    "value": "2"
                   }
                 ]
               },
