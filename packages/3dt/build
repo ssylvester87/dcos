@@ -21,7 +21,7 @@ mkdir -p $(dirname $slave_service)
 mkdir -p $(dirname $slave_public_service)
 cat <<EOF | tee $master_socket_service $slave_socket_service $slave_public_socket_service
 [Unit]
-Description=DC/OS Diagnostics Agent Socket: socket for DC/OS Diagnostics Agent
+Description=DC/OS Diagnostics (3DT) Agent Socket: socket for DC/OS Diagnostics Agent
 
 [Socket]
 ListenStream=/run/dcos/3dt.sock
@@ -29,7 +29,7 @@ EOF
 
 cat <<EOF | tee $slave_service $slave_public_service
 [Unit]
-Description=DC/OS Diagnostics Agent: diagnostics agent service
+Description=DC/OS Diagnostics (3DT) Agent: exposes component health
 [Service]
 PermissionsStartOnly=True
 EnvironmentFile=/opt/mesosphere/environment
@@ -44,7 +44,7 @@ EOF
 
 cat <<EOF | tee $master_service
 [Unit]
-Description=DC/OS Diagnostics Master: diagnostics aggregation service
+Description=DC/OS Diagnostics (3DT) Master: exposes system, node, and component health
 [Service]
 PermissionsStartOnly=True
 EnvironmentFile=/opt/mesosphere/environment
