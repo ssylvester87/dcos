@@ -9,6 +9,7 @@ import pytest
 from dcoscli_fixture import dcoscli_fixture
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -371,10 +372,14 @@ class TestDCOSCLI:
 
         # allow google access to give info to Relying Party
         # wait for dom to update with "clickable" field
-        allow_access = WebDriverWait(driver, 30).until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//button[@id='submit_approve_access']")))
-        allow_access.click()
+        try:
+            allow_access = WebDriverWait(driver, 30).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[@id='submit_approve_access']")))
+            allow_access.click()
+        except TimeoutException:
+            # depending on when the tests run, google may already have access
+            pass
 
         # We should now be redirected to HTML page with auth token
         dcos_auth_token = WebDriverWait(driver, 30).until(
