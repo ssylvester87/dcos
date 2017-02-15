@@ -365,7 +365,7 @@ class TestDCOSCLI:
             EC.element_to_be_clickable(
                 (By.XPATH, "//div[@id='password-shown']//input[@id='Passwd']")))
         # add password
-        password.send_keys("thefuture")
+        password.send_keys("thefuture1")
         # signin
         signin = driver.find_element_by_id('signIn')
         signin.click()
