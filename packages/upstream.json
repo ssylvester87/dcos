@@ -1,6 +1,6 @@
 {
-  "kind": "git",
-  "git": "https://github.com/dcos/dcos",
-  "ref": "18c76a2b4b24aab0c4107bae9c7191a68e6de174",
-  "ref_origin": "master"
+  "git": "https://github.com/mesosphere/dcos", 
+  "kind": "git", 
+  "ref": "bfda09f38436845129a6abf694565157566a7f45", 
+  "ref_origin": "revert-marathon"
 }
