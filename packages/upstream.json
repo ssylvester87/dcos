@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/amitaekbote/dcos",
   "kind": "git",
-  "ref": "b9e80193a419cb016725a54b4e4d0efdaf5803f7",
-  "ref_origin": "master"
+  "ref": "9dfc092c8b4dd612e96e3f436ccb8b3d8f0c7892",
+  "ref_origin": "ee-upgrade"
 }
