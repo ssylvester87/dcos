@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/jasongilanfarr/dcos", 
   "kind": "git", 
-  "ref": "50abcc3ff488cfef261cf75735b63d1850fbcfd7",
-  "ref_origin": "master"
+  "ref": "3bd58fd46397278ae1f9d06f46de4dd139611a19", 
+  "ref_origin": "jason/marathon-1.4"
 }
