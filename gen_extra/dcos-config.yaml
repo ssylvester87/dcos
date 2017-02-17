@@ -38,7 +38,7 @@ package:
 {% case "none" %}
 {% case "only_root_path" %}
 {% endswitch %}
-  - path: /etc_master/adminrouter-listen.conf
+  - path: /etc_master/adminrouter-listen-ee.conf
     content: |
       listen 443 ssl default_server;
 {% switch adminrouter_master_enforce_https %}
@@ -92,7 +92,7 @@ package:
       proxy_ssl_verify_depth 5;
       set $upstream_bouncer https://master.mesos;
 {% endswitch %}
-  - path: /etc_slave/adminrouter-listen.conf
+  - path: /etc_slave/adminrouter-listen-ee.conf
     content: |
       listen 61002 ssl default_server;
 {% switch adminrouter_agent_enforce_https %}
@@ -121,7 +121,7 @@ package:
       proxy_ssl_verify_depth 5;
       set $upstream_bouncer https://master.mesos;
 {% endswitch %}
-  - path: /etc_slave_public/adminrouter-listen.conf
+  - path: /etc_slave_public/adminrouter-listen-ee.conf
     content: |
       listen 61002 ssl default_server;
 {% switch adminrouter_agent_enforce_https %}
