@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/vespian/dcos", 
   "kind": "git", 
-  "ref": "50abcc3ff488cfef261cf75735b63d1850fbcfd7",
-  "ref_origin": "master"
+  "ref": "6cc88b6a576f396509cddf2725573ead9467b7e3", 
+  "ref_origin": "prozlach/DCOS-13597"
 }
