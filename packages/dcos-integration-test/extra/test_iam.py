@@ -5,11 +5,51 @@ import base64
 import json
 import time
 
+import cryptography.hazmat.backends
 import jwt
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from jwt.utils import base64url_decode
 
+
 pytestmark = [pytest.mark.security]
+
+
+cryptography_backend = cryptography.hazmat.backends.default_backend()
+
+
+def generate_RSA_keypair(key_size=2048):
+    """
+    Generate an RSA keypair with an exponent of 65537. Serialize the public
+    key in the the X.509 SubjectPublicKeyInfo/OpenSSL PEM public key format
+    (RFC 5280). Serialize the private key in the PKCS#8 (RFC 3447) format.
+    Args:
+        bits (int): the key length in bits.
+    Returns:
+        (private key, public key) 2-tuple, both unicode
+        objects holding the serialized keys.
+    """
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=key_size,
+        backend=cryptography_backend)
+
+    privkey_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption())
+
+    public_key = private_key.public_key()
+    pubkey_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo)
+
+    return privkey_pem.decode('ascii'), pubkey_pem.decode('ascii')
+
+
+# Pre-generate keypair for performance reasons.
+default_rsa_privkey, default_rsa_pubkey = generate_RSA_keypair()
 
 
 class TestIAM404s:
@@ -192,11 +232,16 @@ class TestIAMUserGroupCRUD:
         # Specify service details.
         uid = 'test-service-1'
         description = 'a test service'
-        sharedsecret = 'Woot-secret-woot'
 
         # Create service.
         service_path = '/users/' + uid
-        r = superuser_api_session.iam.put(service_path, json={'description': description, 'secret': sharedsecret})
+        r = superuser_api_session.iam.put(
+            service_path,
+            json={
+                'description': description,
+                'public_key': default_rsa_pubkey
+                }
+            )
         assert r.status_code == 201
 
         # Log in.
@@ -207,8 +252,8 @@ class TestIAMUserGroupCRUD:
                     'exp': int(time.time() + 5 * 60),
                     'uid': uid
                 },
-                sharedsecret,
-                algorithm='HS256')
+                default_rsa_privkey,
+                algorithm='RS256')
             .decode('ascii')
             }
         r = noauth_api_session.iam.post('/auth/login', json=login_obj)

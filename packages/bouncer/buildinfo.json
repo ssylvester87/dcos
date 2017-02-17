@@ -24,13 +24,13 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "cd93b8cf0923ac80295d923e21c014c005bc336d",
+      "ref": "ae4c0677b7e2d7c5ba15b3aa95048cc739815482",
       "ref_origin": "dcos/1.9"
     },
     "python3-saml": {
       "kind": "git",
       "git": "git@github.com:onelogin/python3-saml.git",
-      "ref": "054f8e686df2405376c60d4d289c8e8b144e83f8",
+      "ref": "6c90f88a0c8e6ca8cba1f78743d31c1c86859ee5",
       "ref_origin": "master"
     },
     "jsonschema": {
@@ -62,13 +62,13 @@
     "ldap3": {
       "kind": "git",
       "git": "git@github.com:cannatag/ldap3.git",
-      "ref": "a8e97fa6b3814e1339c90b2665f7338f1e4ca123",
+      "ref": "0d30d3a6376f6fd095e40ae0e03ee4c293a0d703",
       "ref_origin": "master"
     },
     "pyasn1": {
       "kind": "url",
-      "url": "https://pypi.python.org/packages/3.5/p/pyasn1/pyasn1-0.1.9-py2.py3-none-any.whl",
-      "sha1": "d838c67c619e8d2f955149424dfc8940dea0a9cb"
+      "url": "https://pypi.python.org/packages/07/4c/9a0927b81958997c1a4b2f88f70a48e622471b61fcd00d5039054fe881df/pyasn1-0.2.2-py2.py3-none-any.whl",
+      "sha1": "bdf5ef86a3a102fe9feece461b93b7e1717080e9"
     },
     "lxml": {
       "kind": "url_extract",
