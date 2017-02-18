@@ -1,18 +1,9 @@
-import io
-
 import json
 import os
-import subprocess
 import tempfile
 
 import pytest
 from dcoscli_fixture import dcoscli_fixture
-
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 from dcos_internal_utils import utils
 
@@ -301,102 +292,4 @@ class TestDCOSCLI:
         stdout, stderr = dcoscli.exec_command(
             groups + ["show"])
         assert stdout == 'superusers:\n    description: Superuser group\n\n'
-        assert stderr == ''
-
-    def test_oidc_sso(self, dcoscli):
-
-        base_url = dcoscli.url.scheme + "://localhost/"
-
-        # google OIDC provider configured with localhost
-        dcoscli.exec_command(
-            ["dcos", "config", "set", "core.dcos_url", base_url])
-
-        # configure OIDC provider
-        cmd = ["dcos", "security", "cluster", "oidc", "add",
-               "--description", "test",
-               "--issuer", "https://accounts.google.com",
-               "--base-url", base_url,
-               "--client-secret", "LQhYKgiRzzS-b8V2KHe-e64N",
-               "--client-id", "791234115532-m91hhinppf2fv7v96o1umoobbkg97vkb.apps.googleusercontent.com",
-               "google-oidc-test"]
-        dcoscli.exec_command(cmd)
-
-        cmd = ["dcos", "auth", "login", "--provider=google-oidc-test"]
-        process = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=False,
-            env=dcoscli.env,
-            universal_newlines=False
-        )
-
-        txt_output = io.TextIOWrapper(process.stdout, encoding='utf-8')
-        for i in range(4):
-            # blocking call
-            line = txt_output.readline()
-
-        # ignore SSL cert warning
-        driver = webdriver.PhantomJS(
-            service_log_path='/tmp/ghostdriver.log',
-            service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any']
-        )
-
-        # start OIDC auth
-        expected_auth_url = base_url + "acs/api/v1/auth/login" + \
-            "?oidc-provider=google-oidc-test&target=dcos:authenticationresponse:html"
-        auth_url = line.strip("\n ")
-        assert expected_auth_url == auth_url
-        driver.get(auth_url)
-
-        # We should now be on gmail login page
-        # At this point we enter credentials and login to continue auth process
-
-        # add email
-        email_field = driver.find_element_by_id('Email')
-        # note the spelling below...
-        email_field.send_keys('mesophere.oidc.test@gmail.com')
-        next_button = driver.find_element_by_id('next')
-        next_button.click()
-
-        # wait for dom to update with new fields
-        password = WebDriverWait(driver, 30).until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//div[@id='password-shown']//input[@id='Passwd']")))
-        # add password
-        password.send_keys("thefuture1")
-        # signin
-        signin = driver.find_element_by_id('signIn')
-        signin.click()
-
-        # allow google access to give info to Relying Party
-        # wait for dom to update with "clickable" field
-        try:
-            allow_access = WebDriverWait(driver, 30).until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, "//button[@id='submit_approve_access']")))
-            allow_access.click()
-        except TimeoutException:
-            # depending on when the tests run, google may already have access
-            pass
-
-        # We should now be redirected to HTML page with auth token
-        dcos_auth_token = WebDriverWait(driver, 30).until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//div[@class='tokenbox wrap']"))).text
-        driver.close()
-
-        # test `dcos_auth_token` with CLI
-        stdout, _ = process.communicate(input=bytes(dcos_auth_token, 'utf-8'), timeout=None)
-        assert stdout.decode('utf-8') == 'Login successful!\n'
-
-        # clean up - remove authenticated user
-
-        # login as superuser
-        dcoscli.login()
-        # delete user
-        cmd = ["dcos", "security", "org", "users", "delete", "mesophere.oidc.test@gmail.com"]
-        stdout, stderr = dcoscli.exec_command(cmd)
-        assert stdout == ''
         assert stderr == ''
