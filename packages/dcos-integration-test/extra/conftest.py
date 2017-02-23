@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import pytest
 from api_session_fixture import make_session_fixture
+from dcoscli_fixture import dcoscli_fixture
 from jwt.utils import base64url_decode, base64url_encode
 
 from test_util.dcos_api_session import DcosAuth, DcosUser
@@ -244,3 +245,8 @@ def forged_superuser_session(peter, superuser, noauth_api_session):
     forged_session = noauth_api_session.copy()
     forged_session.session.auth = DcosAuth(forged_token)
     return forged_session
+
+
+@pytest.fixture(scope='session')
+def dcoscli(superuser_api_session):
+    return dcoscli_fixture(superuser_api_session)

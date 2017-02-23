@@ -2,10 +2,15 @@
 Test Bouncer's SAML integration with Shibboleth
 """
 
+import io
+import os
+import subprocess
+import tempfile
+from collections import namedtuple
+
 import pytest
 
 import test_ldap
-
 from ee_helpers import bootstrap_config
 
 from selenium import webdriver
@@ -15,10 +20,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 pytestmark = [pytest.mark.security]
 
+SamlUser = namedtuple("SamlUser", ["username", "password", "email"])
 
 # Service Provider base URL configured in Shibboleth IdP
 SP_BASE_URL = "https://master.mesos"
-
 
 # Shibboleth IdP Metadata
 IDP_METADATA = """<?xml version="1.0" encoding="UTF-8"?>
@@ -81,6 +86,35 @@ s00xrv14zLifcc8oj5DYzOhYRifRXgHX
             Location="https://shibboleth.marathon.l4lb.thisdcos.directory:4443/idp/profile/SAML2/Redirect/SSO"/>
     </IDPSSODescriptor>
 </EntityDescriptor>"""
+
+
+@pytest.fixture(scope="module")
+def dcoscli_enterprise(dcoscli):
+    dcoscli.setup_enterprise()
+    yield dcoscli
+
+
+@pytest.fixture()
+def browser():
+    driver = webdriver.PhantomJS(
+        service_log_path='/tmp/ghostdriver.log',
+        service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'])
+    driver.set_window_size(1024, 968)
+    yield driver
+    driver.close()
+
+
+@pytest.fixture()
+def ipd_metadata_file():
+    """ This fixture writes contents of the IDP_METADATA variable to a file so
+    it can be used as an argument where CLI expects path to metadat file
+
+    IdP Metadata contains information about SAML Identity provider Service"""
+    fd, path = tempfile.mkstemp()
+    with os.fdopen(fd, 'w') as file:
+        file.write(IDP_METADATA)
+    yield path
+    os.remove(path)
 
 
 @pytest.fixture(scope="module")
@@ -228,6 +262,13 @@ def shibboleth_idp(shibboleth_app, superuser_api_session):
 @pytest.mark.usefixtures("iam_verify_and_reset")
 class TestShibbolethSAML:
 
+    # This user is created in freeipa_app fixture
+    SAML_USER = SamlUser(
+        'employee',
+        'Secret123',
+        'employee@freeipa.marathon.l4lb.thisdcos.directory'
+        )
+
     def test_add_and_delete_valid_idp_provider(self, superuser_api_session):
         """
         Test adding and removing a valid SAML provider
@@ -248,40 +289,59 @@ class TestShibbolethSAML:
             '/auth/saml/providers/{}'.format(provider_id))
         assert r.status_code == 204
 
+    def test_add_and_delete_valid_idp_provider_with_cli(
+            self,
+            dcoscli_enterprise,
+            superuser_api_session,
+            ipd_metadata_file,
+            ):
+        """
+        Test adding and removing a valid SAML provider
+        """
+        provider_id = "shib-integration-test-crud"
+        dcoscli_enterprise.exec_command(
+            ["dcos", "security", "cluster", "saml", "add",
+             "--description", "test_add_and_delete_valid_idp_provider_with_cli",
+             "--sp-base-url", SP_BASE_URL,
+             "--idp-metadata", ipd_metadata_file,
+             provider_id]
+            )
+
+        stdout, _stderr = dcoscli_enterprise.exec_command(
+            ["dcos", "security", "cluster", "saml", "show", provider_id])
+        assert 'sp_base_url: {}'.format(SP_BASE_URL) in stdout
+
+        # Clean up provider configuration
+        r = superuser_api_session.iam.delete(
+            '/auth/saml/providers/{}'.format(provider_id))
+        assert r.status_code == 204
+
     @pytest.mark.skipif(
         bootstrap_config['security'] == 'disabled',
         reason='Shibboleth IdP expects DC/OS UI available on https://master.mesos',
         )
-    def test_login_with_valid_user(self, superuser_api_session, shibboleth_idp):
+    def test_login_with_valid_user(
+            self,
+            superuser_api_session,
+            shibboleth_idp,
+            browser,
+            ):
         """
         Tests whole login flow with a valid user and checks that user was
         authenticated and implicitly imported.
         """
-        # This user is created in freeipa_app fixture
-        user = (
-            'employee',  # username
-            'Secret123',  # password
-            'employee@freeipa.marathon.l4lb.thisdcos.directory'  # mail
-            )
-
-        # Start PhantomJS with options ssl ignore errors to accept self signed
-        # certificates
-        driver = webdriver.PhantomJS(
-            service_log_path='/tmp/ghostdriver.log',
-            service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'])
-        driver.set_window_size(1024, 968)
 
         # Start login flow by visiting DC/OS frontpage. We're starting with
         # static master.mesos URL that is configured as Shibboleth Service
         # Provider
-        driver.get(SP_BASE_URL)
+        browser.get(SP_BASE_URL)
 
         # Let browser driver work and render all service providers links and
         # wait until the link is clickable
         ui_xpath = ('//div[@class="login-modal-auth-providers"]' +
                     '//a[contains(@class, "login-modal-auth-provider")]' +
                     '[contains(@href, "shib")]')
-        login_link = WebDriverWait(driver, 120).until(
+        login_link = WebDriverWait(browser, 120).until(
             EC.element_to_be_clickable((By.XPATH, ui_xpath)))
 
         # Make sure that login link was found on frontpage
@@ -289,31 +349,111 @@ class TestShibbolethSAML:
         login_link.click()
 
         # Make sure that user got redirected to correct Shibboleth URL
-        assert driver.current_url.startswith(
+        assert browser.current_url.startswith(
             'https://shibboleth.marathon.l4lb.thisdcos.directory:4443/' +
             'idp/profile/SAML2/Redirect/SSO'
             )
 
         # Fill user details and click login button
-        driver.find_element_by_id('username').send_keys(user[0])
-        driver.find_element_by_id('password').send_keys(user[1])
-        driver.find_element_by_name('_eventId_proceed').click()
+        browser.find_element_by_id('username').send_keys(
+            self.SAML_USER.username)
+        browser.find_element_by_id('password').send_keys(
+            self.SAML_USER.password)
+        browser.find_element_by_name('_eventId_proceed').click()
 
         # Browser should be redirected at Shibboleth page that offers user to
         # accept releasing user details to third party (bouncer)
 
         # Click Accept button which should complete SAML flow and create
         # new bouncer user
-        driver.find_element_by_name('_eventId_proceed').click()
+        browser.find_element_by_name('_eventId_proceed').click()
 
         # Make sure that user ended back at DC/OS URL
-        assert SP_BASE_URL in driver.current_url
-
-        driver.close()
+        assert SP_BASE_URL in browser.current_url
 
         # Validate that newly authenticated user exists in bouncer
-        resp = superuser_api_session.iam.get('/users/{}'.format(user[2]))
+        resp = superuser_api_session.iam.get(
+            '/users/{}'.format(self.SAML_USER.email))
         resp.raise_for_status()
 
         # There is no need to delete newly authenticated user as
         # "iam_verify_and_reset" already handles that.
+
+    @pytest.mark.skipif(
+        bootstrap_config['security'] == 'disabled',
+        reason='Shibboleth IdP expects DC/OS UI available on https://master.mesos',
+        )
+    def test_login_via_cli(
+            self,
+            dcoscli_enterprise,
+            superuser_api_session,
+            shibboleth_idp,
+            browser,
+            ):
+        with dcoscli_enterprise.dcos_url(SP_BASE_URL):
+            process = dcoscli_enterprise.start_command(
+                ["dcos", "auth", "login",
+                 "--provider={}".format(shibboleth_idp)],
+                stderr=subprocess.STDOUT,
+                )
+
+            auth_url = None
+            # Read stdout lines until the line contains an Auth URL
+            stdout = io.TextIOWrapper(process.stdout, encoding='utf-8')
+            while auth_url is None:
+                line = stdout.readline().strip("\n ")
+                if line.startswith('http'):
+                    auth_url = line
+
+            expected_auth_url = (
+                SP_BASE_URL +
+                '/acs/api/v1/auth/login?saml-provider={}'.format(
+                    shibboleth_idp) +
+                '&target=dcos:authenticationresponse:html')
+            assert auth_url == expected_auth_url
+
+            browser.get(auth_url)
+
+            # Make sure that user got redirected to correct Shibboleth URL
+            assert browser.current_url.startswith(
+                'https://shibboleth.marathon.l4lb.thisdcos.directory:4443/' +
+                'idp/profile/SAML2/Redirect/SSO'
+                )
+
+            # Fill user details and click login button
+            browser.find_element_by_id('username').send_keys(
+                self.SAML_USER.username)
+            browser.find_element_by_id('password').send_keys(
+                self.SAML_USER.password)
+            browser.find_element_by_name('_eventId_proceed').click()
+
+            # Browser should be redirected at Shibboleth page that offers user
+            # to accept releasing user details to third party (bouncer)
+
+            # Click Accept button which should complete SAML flow and create
+            # new bouncer user
+            browser.find_element_by_name('_eventId_proceed').click()
+
+            # Make sure that user ended back at DC/OS URL
+            assert SP_BASE_URL in browser.current_url
+
+            # We should now be redirected to HTML page with auth token
+            dcos_auth_token = WebDriverWait(browser, 30).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//div[@class='tokenbox wrap']"))).text
+
+            # test `dcos_auth_token` with CLI
+            stdout, _ = process.communicate(
+                input=dcos_auth_token.encode(), timeout=None)
+            assert 'Login successful!' in stdout.decode('utf-8')
+
+            # Authenticate back as an admin
+            dcoscli_enterprise.login()
+
+            # Validate that newly authenticated user exists in the bouncer
+            stdout, _ = dcoscli_enterprise.exec_command(
+                ["dcos", "security", "org", "users", "show", self.SAML_USER.email])
+
+            assert "SAML-authenticated (Provider ID: {})".format(shibboleth_idp) in stdout
+            assert "is_remote: true" in stdout
+            assert "is_service: false" in stdout

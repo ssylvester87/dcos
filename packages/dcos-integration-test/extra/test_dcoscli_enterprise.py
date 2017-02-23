@@ -3,14 +3,8 @@ import os
 import tempfile
 
 import pytest
-from dcoscli_fixture import dcoscli_fixture
 
 from dcos_internal_utils import utils
-
-
-@pytest.fixture(scope='session')
-def dcoscli(superuser_api_session):
-    return dcoscli_fixture(superuser_api_session)
 
 
 @pytest.fixture()
