@@ -10,7 +10,8 @@
     "python-jwt",
     "python-requests",
     "python-retrying",
-    "python-kazoo"],
+    "python-kazoo",
+    "python-selenium"],
   "sources": {
     "pytest_html": {
       "kind": "url_extract",
