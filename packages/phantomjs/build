@@ -1,0 +1,5 @@
+#!/bin/bash
+
+mkdir -p "$PKG_PATH/bin"
+ls -l /pkg/src/phantomjs/bin/
+cp /pkg/src/phantomjs/bin/phantomjs "$PKG_PATH/bin/"

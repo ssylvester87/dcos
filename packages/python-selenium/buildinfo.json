@@ -1,0 +1,8 @@
+{
+  "requires": ["python"],
+  "single_source": {
+    "kind": "url_extract",
+    "url": "https://pypi.python.org/packages/0c/42/20c235e604bf736bc970c1275a78c4ea28c6453a0934002f95df9c49dad0/selenium-3.0.2.tar.gz#md5=0440b3156f26678dfc904cae5aa594ab",
+    "sha1": "6116b1eff4157143cca18fb2e3fbb0184540ebb2"
+  }
+}
