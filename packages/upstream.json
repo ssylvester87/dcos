@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/darkonie/dcos",
   "kind": "git",
-  "ref": "8f32af4a13ec71d306123f318b431e10423528d2",
-  "ref_origin": "master"
+  "ref": "54154cfee759bf44a9876da6823954bf209ea308",
+  "ref_origin": "mnaboka/3dt-config"
 }
