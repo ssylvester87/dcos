@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/branden/dcos",
   "kind": "git",
-  "ref": "8f32af4a13ec71d306123f318b431e10423528d2",
-  "ref_origin": "master"
+  "ref": "ec228bc607081e57d004d7296de2b0dcbf572859",
+  "ref_origin": "package-variant-validation"
 }
