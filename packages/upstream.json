@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/cruhland/dcos",
   "kind": "git",
-  "ref": "804d4a79165c149a7bdbb4c09b3ec0ab118522bb",
-  "ref_origin": "master"
+  "ref": "aff05a5a02b10629231a427c3381f65bbb05c7c7",
+  "ref_origin": "cosmos-release"
 }
