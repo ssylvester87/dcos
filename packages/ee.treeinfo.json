@@ -13,5 +13,6 @@
   "exclude": [
     "dcos-oauth",
     "dcos-installer-ui"
-  ]
+  ],
+  "bootstrap_package_list": ["dcos-image"]
 }
