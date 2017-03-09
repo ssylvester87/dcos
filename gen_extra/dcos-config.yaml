@@ -292,7 +292,10 @@ package:
         "auth": {{ mesos_authz_enforced }},
         "role": "agent_public"
       }
-  - path: /etc_master/3dt_config.json
+  - path: /etc/dcos-3dt-extra.env
+    content: |
+      DCOS_3DT_CONFIG_PATH=/opt/mesosphere/etc/dcos-3dt-config-ee.json
+  - path: /etc_master/dcos-3dt-config-ee.json
     content: |
         {
             "role": "master",
@@ -304,12 +307,12 @@ package:
 {% endswitch %}
             "pull": true,
             "diagnostics-bundle-dir": "/var/lib/dcos/3dt/diag-bundles",
-            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
             "master-port": {{ adminrouter_master_port }},
             "agent-port": {{ adminrouter_agent_port }},
             "force-tls": {{ ssl_enabled }}
         }
-  - path: /etc_slave/3dt_config.json
+  - path: /etc_slave/dcos-3dt-config-ee.json
     content: |
         {
             "role": "agent",
@@ -319,11 +322,11 @@ package:
 {% case "true" %}
             "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
 {% endswitch %}
-            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
             "agent-port": {{ adminrouter_agent_port }}
         }
-  - path: /etc_slave_public/3dt_config.json
+  - path: /etc_slave_public/dcos-3dt-config-ee.json
     content: |
         {
             "role": "agent_public",
@@ -333,11 +336,11 @@ package:
 {% case "true" %}
             "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
 {% endswitch %}
-            "endpoint-config": "/opt/mesosphere/etc/endpoints_config.json",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
             "agent-port": {{ adminrouter_agent_port }}
         }
-  - path: /etc/endpoints_config.json
+  - path: /etc/dcos-3dt-endpoint-config-ee.json
     content: |
         {
           "HTTPEndpoints": [
