@@ -8,7 +8,7 @@ from util import LineBufferFilter, SearchCriteria, GuardedSubprocess
 log = logging.getLogger(__name__)
 
 
-class TestCacheEE():
+class TestCacheEE:
     def test_if_service_auth_token_is_sent_to_cache_upstreams(
             self, nginx_class, mocker, superuser_user_header):
         service_t_expected = 'CeupyavLegmijFlewd8' * 40
