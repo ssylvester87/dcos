@@ -1,6 +1,11 @@
 {
-  "docker": "dcos/dcos-builder:adminrouter_dockerdir-latest",
-  "requires": ["openssl"],
-  "sources": {},
-  "username": "dcos_adminrouter"
+    "docker": "dcos/dcos-builder:adminrouter_dockerdir-latest",
+    "requires": ["openssl"],
+    "sources": {
+        "dcos_open": {
+            "kind": "git_local",
+            "rel_path": "../../ext/upstream/"
+        }
+    },
+    "username": "dcos_adminrouter"
 }

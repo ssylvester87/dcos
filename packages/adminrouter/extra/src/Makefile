@@ -5,7 +5,7 @@ AR_OPEN_PATH := ${DCOS_OPEN_PATH}/packages/adminrouter/extra/src/
 apply-open:
 	# We use rsync due to the fact that directory copying in the loop is
 	# confusing plain `cp`
-	cp -vR ${AR_OPEN_PATH}../../docker/ ../../
+	-cp -vR ${AR_OPEN_PATH}../../docker/ ../../
 	for f in \
 			.flake8 \
 			Makefile.common \
