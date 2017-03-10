@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/gpaul/dcos",
   "kind": "git",
-  "ref": "1498a9427cc981766823d2b9fd7b589e9a8657fd",
-  "ref_origin": "master"
+  "ref": "1286070b10af592f3a180330f0a94f07a2d1c5fb",
+  "ref_origin": "gpaul/set-socket-owners"
 }
