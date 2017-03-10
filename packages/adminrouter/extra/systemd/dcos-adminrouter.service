@@ -24,7 +24,7 @@ EnvironmentFile=-/run/dcos/etc/adminrouter.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-adminrouter
 ExecStartPre=/usr/bin/test -f /var/lib/dcos/cluster-id
 # Wait for auth backend to seed the secret key
-ExecStartPre=/usr/bin/curl --fail -sS -o /dev/null http://127.0.0.1:8101/acs/api/v1/groups
+ExecStartPre=/opt/mesosphere/bin/curl --fail -sS -o /dev/null http://127.0.0.1:8101/acs/api/v1/groups
 ExecStart=$PKG_PATH/nginx/sbin/nginx -c $PKG_PATH/nginx/conf/nginx.master.conf
 ExecReload=/bin/kill -HUP $MAINPID
 KillSignal=SIGQUIT
