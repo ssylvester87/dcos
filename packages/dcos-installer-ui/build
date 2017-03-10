@@ -2,7 +2,7 @@
 cd "/pkg/src/dcos-installer-ui"
 npm install
 echo "module.exports = {};" > ./src/js/config/Config.dev.js
-echo "module.exports = {pluginsConfig: {authentication: {enabled: true},branding: {enabled: true},customerid: {enabled: true},documentation: {enabled: true},introduction: {enabled: true}}};" > ./src/js/config/Config.production.js
+echo "module.exports = {pluginsConfig: {authentication: {enabled: true},branding: {enabled: true},customerid: {enabled: true},documentation: {enabled: true},introduction: {enabled: true},security: {enabled: true}}};" > ./src/js/config/Config.production.js
 
 npm run dist
 
