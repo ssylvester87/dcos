@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/orsenthil/dcos-1",
+  "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "af9b7469461513b71ee0e507d9f1cd67fa8bfb51",
-  "ref_origin": "train-138"
+  "ref": "1498a9427cc981766823d2b9fd7b589e9a8657fd",
+  "ref_origin": "master"
 }
