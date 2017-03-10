@@ -7,7 +7,6 @@
     "metronome": "ee",
     "dcos-signal": "ee",
     "bootstrap": "ee",
-    "3dt": "ee",
     "cosmos": "ee"
   },
   "exclude": [
