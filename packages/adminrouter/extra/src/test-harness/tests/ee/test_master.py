@@ -31,7 +31,7 @@ authed_endpoints = [
 ]
 
 
-class TestAuthEnforcementEE():
+class TestAuthEnforcementEE:
     @pytest.mark.parametrize("path,rid", acl_endpoints)
     def test_if_unknown_user_is_forbidden_access(self,
                                                  master_ar_process,
@@ -139,7 +139,7 @@ class TestAuthEnforcementEE():
         assert lbf.extra_matches == {}
 
 
-class TestHealthEndpointEE():
+class TestHealthEndpointEE:
     def test_if_request_is_sent_to_correct_upstream(self,
                                                     master_ar_process,
                                                     superuser_user_header):
