@@ -6,7 +6,7 @@ import requests
 
 from ee_helpers import bootstrap_config
 
-import test_util
+import test_util.helpers
 
 
 log = logging.getLogger(__name__)
