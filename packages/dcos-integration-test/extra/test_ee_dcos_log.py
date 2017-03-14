@@ -1,11 +1,10 @@
 import logging
 import uuid
-from functools import wraps
 
 import pytest
-
 import requests
 
+import test_util
 from ee_helpers import bootstrap_config
 
 
@@ -16,25 +15,8 @@ strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
 pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
-def dcos_journald_log_enabled(fn):
-    # TODO: move this decorator to a common place to be available for open and ee tests.
-    @wraps(fn)
-    def wrapped(superuser_api_session, peter_api_session):
-        response = superuser_api_session.get('/dcos-metadata/ui-config.json').json()
-        try:
-            strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']
-        except Exception:
-            logging.error('Unable to find logging strategy')
-            raise
-
-        if strategy.startswith('journald'):
-            return fn(superuser_api_session, peter_api_session)
-        pytest.skip('Skipping a test since journald logging is disabled')
-    return wrapped
-
-
-@dcos_journald_log_enabled
 def test_fine_grained_acls(superuser_api_session, peter_api_session):
+    test_util.helpers.skip_test_if_dcos_journald_disabled(superuser_api_session)
     test_uuid = uuid.uuid4().hex
 
     task_id = "integration-test-task-logs-{}".format(test_uuid)
