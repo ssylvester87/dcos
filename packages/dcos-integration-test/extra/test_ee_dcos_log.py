@@ -4,8 +4,9 @@ import uuid
 import pytest
 import requests
 
-import test_util
 from ee_helpers import bootstrap_config
+
+import test_util
 
 
 log = logging.getLogger(__name__)
