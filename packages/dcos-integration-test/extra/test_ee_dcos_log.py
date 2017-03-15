@@ -2,10 +2,11 @@ import logging
 import uuid
 
 import pytest
-
 import requests
 
 from ee_helpers import bootstrap_config
+
+import test_util.helpers
 
 
 log = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
 def test_fine_grained_acls(superuser_api_session, peter_api_session):
+    test_util.helpers.skip_test_if_dcos_journald_log_disabled(superuser_api_session)
     test_uuid = uuid.uuid4().hex
 
     task_id = "integration-test-task-logs-{}".format(test_uuid)

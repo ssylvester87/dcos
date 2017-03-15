@@ -19,7 +19,7 @@ def jsonParse(def json) {
     new groovy.json.JsonSlurperClassic().parseText(json)
 }
 
-task_wrapper('mesos'){
+task_wrapper('mesos', master_branches) {
     stage('Cleanup workspace') {
         deleteDir()
     }
