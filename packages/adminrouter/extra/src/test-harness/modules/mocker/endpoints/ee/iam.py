@@ -18,6 +18,11 @@ class IamHTTPRequestHandler(RecordingHTTPRequestHandler):
         '^/acs/api/v1/users/([^/]+)/permissions$')
 
     def _calculate_response(self, base_path, url_args, body_args=None):
+        """Determine if the IAM request should be allow/deny.
+
+           Please refer to the description of the BaseHTTPRequestHandler class
+           for details on the arguments and return value of this method.
+        """
         if base_path == '/acs/api/v1/internal/policyquery':
             return self.__internal_policy_query_request_handler()
 

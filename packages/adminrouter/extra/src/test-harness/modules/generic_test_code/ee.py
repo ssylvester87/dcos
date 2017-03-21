@@ -10,7 +10,7 @@ def assert_iam_queried_for_uid_and_rid(mocker, uid, rid, expect_two_iam_calls=Fa
     Arguments:
         mocker (Mocker): Mocker instance with all server mocks
         uid (str): User ID that should have been queried
-        rid (str): Role ID that should have been queried
+        rid (str): Resource ID that should have been queried
         expect_two_iam_calls (bool): specifies whether the request is being made to IAM
             or not. Requests being made to IAM end up in two recorded requests:
             one for IAM itself and one for policyquery.
