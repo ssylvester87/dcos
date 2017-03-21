@@ -33,21 +33,6 @@ EEStaticFiles = [
         "/opt/mesosphere/etc/bootstrap-config.json",
         content=BOOTSTRAP_CONFIG,
         ),
-    NginxStaticServedFile(
-        "/opt/mesosphere/active.buildinfo.full.json",
-        content='{}',
-        ),
-    NginxStaticServedFile(
-        "/opt/mesosphere/bin/detect_ip_public",
-        content=textwrap.dedent("""\
-        #/usr/bin/env bash
-        echo "10.0.0.1"
-        """)
-    ),
-    NginxStaticServedFile(
-        "/var/lib/dcos/cluster-id",
-        content="cluster-id",
-    ),
 ]
 
 
