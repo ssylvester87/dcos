@@ -1,9 +1,9 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
-
 import json
 import logging
 import os
 import subprocess
+import uuid
 
 from tempfile import mkstemp
 
@@ -13,9 +13,6 @@ import retrying
 from ee_helpers import bootstrap_config
 from test_iam import generate_RSA_keypair
 from util import parse_dotenv
-
-test_framework_name = "integration_test"
-test_zknode = test_framework_name
 
 
 def _create_temp_service(superuser_api_session, uid, keypair):
@@ -33,16 +30,6 @@ def _create_temp_service(superuser_api_session, uid, keypair):
 def _delete_temp_service(superuser_api_session, uid, credentials):
     os.remove(credentials)
     superuser_api_session.iam.delete_service(uid)
-
-
-@pytest.fixture(scope="function")
-def zk_test_session():
-    yield
-    subprocess.check_call([
-        "source /opt/mesosphere/environment.export; "
-        "/opt/mesosphere/active/exhibitor/usr/zookeeper/bin/zkCli.sh -server 127.0.0.1:2181 "
-        "rmr /" + test_zknode
-    ], shell=True)
 
 
 @pytest.fixture(scope="module")
@@ -108,19 +95,23 @@ def service_accounts(superuser_api_session):
         _delete_temp_service(superuser_api_session, services[param]['uid'], services[param]['path'])
 
 
-def _run_framework(authenticate, principal, credentials, role):
-    """Run classic RPC framework to register depending on the use of
-    authentication.
+@pytest.fixture
+def run_framework(service_accounts, request):
+    """ Run classic RPC framework to register depending on the use of
+        authentication. After the test, kill the framework process if
+        it is still running.
 
     Args:
         authenticate: use classic RPC authenticatee module
         principal: framework principal
         credentials: service account credentials
         role: framework role when registering
-
-    Returns:
-        Popen
     """
+    test_framework_name = 'integration_test_' + uuid.uuid4().hex
+
+    authenticate, hash_uid, hash_path, role = request.param
+    principal = service_accounts[hash_uid]['uid']
+    credentials = service_accounts[hash_path]['path']
 
     # Use test environment as a baseline.
     env = os.environ.copy()
@@ -156,7 +147,7 @@ def _run_framework(authenticate, principal, credentials, role):
 
     cmd.extend([
         "/opt/mesosphere/bin/java", "-Xmx2G", "-jar", "/opt/mesosphere/active/marathon/usr/marathon.jar",
-        "--zk", "zk://localhost:2181/" + test_zknode,
+        "--zk", "zk://localhost:2181/" + test_framework_name,
         "--master", "leader.mesos:5050",
         "--framework_name", test_framework_name,
         "--http_port", "8081"])
@@ -170,22 +161,35 @@ def _run_framework(authenticate, principal, credentials, role):
         cmd.append("--mesos_authentication_principal")
         cmd.append(principal)
 
-    return subprocess.Popen(cmd, env=env)
+    logging.info('Starting framework...')
+    p = subprocess.Popen(cmd, env=env)
+
+    yield p, test_framework_name
+
+    # Kill the process if it didn't already die.
+    if not p.poll():
+        logging.warning('Terminating framework...')
+        subprocess.check_call(['sudo', '-i', 'kill', str(p.pid)])
+
+    p.wait()
+    logging.info('Framework is gone now')
+
+    subprocess.check_call([
+        "source /opt/mesosphere/environment.export; "
+        "/opt/mesosphere/active/exhibitor/usr/zookeeper/bin/zkCli.sh -server 127.0.0.1:2181 "
+        "rmr /" + test_framework_name
+    ], shell=True)
 
 
 class FrameworkAborted(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
+    pass
 
 
 @retrying.retry(wait_fixed=1000,
                 stop_max_attempt_number=30,
                 retry_on_result=lambda ret: ret is False,
                 retry_on_exception=lambda x: False)
-def _wait_for_framework_to_connect(dcos_api_session, p):
+def _wait_for_framework_to_connect(dcos_api_session, p, test_framework_name):
     if p.poll():
         raise FrameworkAborted("Framework pid %d has aborted - exiting retries" % (p.pid))
 
@@ -209,82 +213,59 @@ def _wait_for_framework_to_connect(dcos_api_session, p):
     return False
 
 
-@pytest.mark.parametrize("authenticate, hash_uid, hash_path, role, expect_connect", [
+@pytest.mark.parametrize('run_framework,expect_connect', [
     # Assert that registration without authentication works only when
     # authentication is not enforced.
-    (False, 'default', 'default', '', not bootstrap_config['framework_authentication_required']),
+    ((False, 'default', 'default', ''), not bootstrap_config['framework_authentication_required']),
     # Assert that an authenticated registration for the role '*' succeeds
     # for a service account that has such permission setup if authentication
     # is enabled.
-    (True, 'default', 'default', '', bootstrap_config['framework_authentication_enabled']),
+    ((True, 'default', 'default', ''), bootstrap_config['framework_authentication_enabled']),
     # Assert that an authenticated registration for the role 'foo'
     # succeeds for a service account that has such permission setup.
-    (True, 'secondary', 'secondary', 'foo', bootstrap_config['framework_authentication_enabled']),
+    ((True, 'secondary', 'secondary', 'foo'), bootstrap_config['framework_authentication_enabled']),
     # Assert that an authenticated registration for the role 'foo' succeeds
     # for a service account that has been setup with permissions for role
     # '*' if authentication is enabled but not required.
-    (True, 'default', 'default', 'foo',
+    ((True, 'default', 'default', 'foo'),
         (bootstrap_config['framework_authentication_enabled'] and
             not bootstrap_config['mesos_authz_enforced'])),
     # Assert that an authenticated registration for the role '*' succeeds
     # for a service account that has been setup with permissions for role
     # 'foo' if authentication is enabled but not required.
-    (True, 'secondary', 'secondary', '',
+    ((True, 'secondary', 'secondary', ''),
         (bootstrap_config['framework_authentication_enabled'] and
             not bootstrap_config['mesos_authz_enforced'])),
     # Assert that a registration for the role 'foo' succeeds for a service
     # account that has been setup with permissions for role '*' if
     # authentication is not enforced.
-    (False, 'default', 'default', 'foo', not bootstrap_config['framework_authentication_required']),
+    ((False, 'default', 'default', 'foo'), not bootstrap_config['framework_authentication_required']),
     # Assert that a registration for the role '*' succeeds for a service
     # account that has been setup with permissions for role 'foo' if
     # authentication is not enforced.
-    (False, 'secondary', 'secondary', '', not bootstrap_config['framework_authentication_required']),
+    ((False, 'secondary', 'secondary', ''), not bootstrap_config['framework_authentication_required']),
     # Assert that authentication with a non matching framework principal
     # always fails.
-    (True, 'invalid', 'default', '', False),
+    ((True, 'invalid', 'default', ''), False),
     # Assert that authentication fails when the private key does not
     # match the public key.
-    (True, 'invalid', 'invalid', '', False)
-])
-def test_framework_registration(
-        superuser_api_session, service_accounts, zk_test_session,
-        authenticate, hash_uid, hash_path, role, expect_connect):
-    """Assert that V0 framework registration w/out authentication works
-    in expected ways.
-
-    Args:
-        authenticate: use classic RPC authenticatee module
-        hash_uid: service hash for the uid to use
-        hash_path: service hash for the credentials path to use
-        role: framework role when registering
-        exp_connect: expect registered framework connection
+    ((True, 'invalid', 'invalid', ''), False)
+], indirect=['run_framework'])
+def test_framework_registration(superuser_api_session, run_framework, expect_connect):
+    """ Assert that a V0 framework registration w/out authentication
+        works in expected ways.
     """
-
-    logging.info('Starting framework...')
-    p = _run_framework(
-        authenticate=authenticate,
-        principal=service_accounts[hash_uid]['uid'],
-        credentials=service_accounts[hash_path]['path'],
-        role=role)
-
     connected = False
+    p, test_framework_name = run_framework
 
     try:
-        _wait_for_framework_to_connect(superuser_api_session, p)
+        _wait_for_framework_to_connect(superuser_api_session, p, test_framework_name)
         connected = True
 
     except retrying.RetryError as e:
         logging.warning('Framework did not register in time')
 
     except FrameworkAborted as e:
-        logging.warning('Framework has aborted: {}'.format(e.value))
-
-    if not p.poll():
-        logging.warning('Terminating framework...')
-        subprocess.Popen(["sudo", "kill", str(p.pid)])
-
-    p.wait()
-    logging.info('Framework is gone now')
+        logging.warning('Framework has aborted')
 
     assert connected == expect_connect
