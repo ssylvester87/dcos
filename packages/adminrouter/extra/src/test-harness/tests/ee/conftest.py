@@ -25,6 +25,7 @@ _NginxStaticServedFile = namedtuple("NginxStaticServedFile", ["path", "content"]
 def NginxStaticServedFile(path, content=None):
     return _NginxStaticServedFile(path=path, content=content)
 
+
 EEStaticFiles = [
     NginxStaticServedFile(
         "/opt/mesosphere/active/acl-schema/etc/acl-schema.json",
@@ -51,21 +52,3 @@ def ee_static_files():
     # Remove all created files
     for static_file in EEStaticFiles:
         os.unlink(static_file.path)
-
-
-@pytest.fixture()
-def iam_deny_all(mocker):
-    """Modifies IAM mock configuration to deny all policyquery requests"""
-    mocker.send_command(
-        endpoint_id='http://127.0.0.1:8101',
-        func_name='deny_all_queries',
-        )
-
-
-@pytest.fixture()
-def iam_permit_all(mocker):
-    """Modifies IAM mock configuration to deny all policyquery requests"""
-    mocker.send_command(
-        endpoint_id='http://127.0.0.1:8101',
-        func_name='permit_all_queries',
-        )

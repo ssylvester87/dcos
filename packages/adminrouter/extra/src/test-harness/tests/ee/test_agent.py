@@ -123,8 +123,7 @@ class TestAuthEnforcementEE:
                                                       path,
                                                       rid,
                                                       mocker,
-                                                      ee_static_files,
-                                                      iam_deny_all):
+                                                      ee_static_files):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -134,14 +133,15 @@ class TestAuthEnforcementEE:
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
-        with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', rid):
-            assert_endpoint_response(
-                agent_ar_process,
-                path,
-                403,
-                assert_stderr=log_messages,
-                headers=valid_user_header
-                )
+        with iam_denies_all_requests(mocker):
+            with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', rid):
+                assert_endpoint_response(
+                    agent_ar_process,
+                    path,
+                    403,
+                    assert_stderr=log_messages,
+                    headers=valid_user_header
+                    )
 
     @pytest.mark.parametrize("path,rid", acl_endpoints)
     def test_if_internal_policyquery_sends_service_auth_token_to_upstream(

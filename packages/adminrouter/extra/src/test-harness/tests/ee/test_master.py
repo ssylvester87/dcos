@@ -5,9 +5,7 @@ import pytest
 
 from generic_test_code.common import (
     assert_endpoint_response,
-    assert_iam_queried_for_uid_and_rid,
     generic_correct_upstream_dest_test,
-    generic_valid_user_is_permitted_test,
     verify_header,
 )
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
@@ -15,41 +13,39 @@ from util import SearchCriteria, iam_denies_all_requests
 
 acl_endpoints = [
     ('/acs/acl-schema.json', 'dcos:adminrouter:acs'),
-    ('/exhibitor/foo/bar', 'dcos:adminrouter:ops:exhibitor'),
     ('/acs/api/v1/foo/bar', 'dcos:adminrouter:acs'),
+    ('/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/ca/api/v2/certificates', 'dcos:adminrouter:ops:ca:ro'),
     ('/ca/api/v2/newcert', 'dcos:adminrouter:ops:ca:rw'),
     ('/ca/api/v2/newkey', 'dcos:adminrouter:ops:ca:rw'),
     ('/ca/api/v2/sign', 'dcos:adminrouter:ops:ca:rw'),
-    ('/mesos/master/state-summary', 'dcos:adminrouter:ops:mesos'),
-    ('/package/foo/bar', 'dcos:adminrouter:package'),
     ('/cosmos/service/foo/bar', 'dcos:adminrouter:package'),
-    ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
-    ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
-    ('/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
-    ('/service/nginx-alwaysthere/foo/bar', 'dcos:adminrouter:service:nginx-alwaysthere'),
-    ('/metadata', "dcos:adminrouter:ops:metadata"),
-    ('/dcos-metadata/bootstrap-config.json', "dcos:adminrouter:ops:metadata"),
-    ('/pkgpanda/active.buildinfo.full.json', "dcos:adminrouter:ops:metadata"),
     ('/dcos-history-service/foo/bar', 'dcos:adminrouter:ops:historyservice'),
+    ('/dcos-metadata/bootstrap-config.json', "dcos:adminrouter:ops:metadata"),
+    ('/exhibitor/foo/bar', 'dcos:adminrouter:ops:exhibitor'),
+    ('/mesos/master/state-summary', 'dcos:adminrouter:ops:mesos'),
     ('/mesos_dns/foo/bar', 'dcos:adminrouter:ops:mesos-dns'),
+    ('/metadata', "dcos:adminrouter:ops:metadata"),
+    ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
+    ('/package/foo/bar', 'dcos:adminrouter:package'),
+    ('/pkgpanda/active.buildinfo.full.json', "dcos:adminrouter:ops:metadata"),
+    ('/service/nginx-alwaysthere/foo/bar', 'dcos:adminrouter:service:nginx-alwaysthere'),
+    ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
     ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
     ('/system/v1/metrics/foo/bar', 'dcos:adminrouter:ops:system-metrics'),
 ]
 
 authed_endpoints = [
-    ('/secrets/v1', 'dcos:adminrouter:secrets'),
     ('/capabilities', 'dcos:adminrouter:capabilities'),
     ('/navstar/lashup/key', 'dcos:adminrouter:navstar-lashup-key'),
+    ('/secrets/v1', 'dcos:adminrouter:secrets'),
     ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/logs/v1',
-     'dcos:adminrouter:system:agent'),
+        'dcos:adminrouter:system:agent'),
     ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/metrics/v0',
-     'dcos:adminrouter:system:agent'),
-    ('/system/v1/leader/marathon',
-     'dcos:adminrouter:system:leader:marathon'),
-    ('/system/v1/leader/mesos',
-     'dcos:adminrouter:system:leader:mesos'),
+        'dcos:adminrouter:system:agent'),
+    ('/system/v1/leader/marathon', 'dcos:adminrouter:system:leader:marathon'),
+    ('/system/v1/leader/mesos', 'dcos:adminrouter:system:leader:mesos'),
 ]
 
 
@@ -91,7 +87,12 @@ class TestAuthEnforcementEE:
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
-        with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', rid):
+        is_auth_location = path.startswith("/acs/api/v1")
+        with assert_iam_queried_for_uid_and_rid(
+                mocker,
+                'bozydar',
+                rid,
+                expect_two_iam_calls=is_auth_location):
             assert_endpoint_response(
                 master_ar_process,
                 path,
@@ -107,8 +108,7 @@ class TestAuthEnforcementEE:
                                                       path,
                                                       rid,
                                                       mocker,
-                                                      ee_static_files,
-                                                      iam_deny_all):
+                                                      ee_static_files):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -118,14 +118,15 @@ class TestAuthEnforcementEE:
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
-        with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', rid):
-            assert_endpoint_response(
-                master_ar_process,
-                path,
-                403,
-                assert_stderr=log_messages,
-                headers=valid_user_header
-                )
+        with iam_denies_all_requests(mocker):
+            with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', rid):
+                assert_endpoint_response(
+                    master_ar_process,
+                    path,
+                    403,
+                    assert_stderr=log_messages,
+                    headers=valid_user_header
+                    )
 
     @pytest.mark.parametrize("path,rid", authed_endpoints)
     def test_if_known_user_is_permitted_access(self,
@@ -166,9 +167,7 @@ class TestAuthEnforcementEE:
     def test_if_user_is_allowed_to_get_own_permisions(self,
                                                       master_ar_process,
                                                       valid_user_header,
-                                                      mocker,
-                                                      iam_deny_all
-                                                      ):
+                                                      mocker):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -178,23 +177,23 @@ class TestAuthEnforcementEE:
                 SearchCriteria(1, True),
             }
 
-        assert_endpoint_response(
-            master_ar_process,
-            '/acs/api/v1/users/bozydar/permissions',
-            200,
-            assert_stderr=log_messages,
-            headers=valid_user_header,
-            assertions=[
-                lambda r: r.json()['user'] == 'bozydar',
-                lambda r: r.json()['permissions'],
-                ]
-            )
+        with iam_denies_all_requests(mocker):
+            assert_endpoint_response(
+                master_ar_process,
+                '/acs/api/v1/users/bozydar/permissions',
+                200,
+                assert_stderr=log_messages,
+                headers=valid_user_header,
+                assertions=[
+                    lambda r: r.json()['user'] == 'bozydar',
+                    lambda r: r.json()['permissions'],
+                    ]
+                )
 
     def test_if_getting_different_user_permissions_is_authorized(self,
                                                                  master_ar_process,
                                                                  valid_user_header,
                                                                  mocker,
-                                                                 iam_permit_all
                                                                  ):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
@@ -204,7 +203,11 @@ class TestAuthEnforcementEE:
             'reason="Bouncer PQ response" .*':
                 SearchCriteria(1, True),
             }
-        with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', 'dcos:adminrouter:acs'):
+        with assert_iam_queried_for_uid_and_rid(
+                mocker,
+                'bozydar',
+                'dcos:adminrouter:acs',
+                expect_two_iam_calls=True):
             assert_endpoint_response(
                 master_ar_process,
                 '/acs/api/v1/users/root/permissions',
@@ -220,9 +223,7 @@ class TestAuthEnforcementEE:
     def test_if_getting_different_user_permissions_is_denied(self,
                                                              master_ar_process,
                                                              valid_user_header,
-                                                             mocker,
-                                                             iam_deny_all
-                                                             ):
+                                                             mocker):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -232,14 +233,18 @@ class TestAuthEnforcementEE:
                 SearchCriteria(1, True),
             }
 
-        with assert_iam_queried_for_uid_and_rid(mocker, 'bozydar', 'dcos:adminrouter:acs'):
-            assert_endpoint_response(
-                master_ar_process,
-                '/acs/api/v1/users/root/permissions',
-                403,
-                assert_stderr=log_messages,
-                headers=valid_user_header,
-                )
+        with iam_denies_all_requests(mocker):
+            with assert_iam_queried_for_uid_and_rid(
+                    mocker,
+                    'bozydar',
+                    'dcos:adminrouter:acs'):
+                assert_endpoint_response(
+                    master_ar_process,
+                    '/acs/api/v1/users/root/permissions',
+                    403,
+                    assert_stderr=log_messages,
+                    headers=valid_user_header,
+                    )
 
     def test_if_exhibitor_basic_auth_is_passed_to_upstream(self,
                                                            master_ar_process,
@@ -269,17 +274,15 @@ class TestAuthEnforcementEE:
             endpoint_id='http://127.0.0.1:8101',
             func_name='record_requests',
             )
-        mocker.send_command(
-            endpoint_id='http://127.0.0.1:8101',
-            func_name='record_requests',
-            )
 
         headers = {"CUSTOM_HEADER": "CUSTOM_VALUE"}
         headers.update(valid_user_header)
-        generic_valid_user_is_permitted_test(
+        assert_endpoint_response(
             master_ar_process,
-            headers,
-            path)
+            path,
+            200,
+            headers=headers,
+            )
 
         requests = mocker.send_command(
             endpoint_id='http://127.0.0.1:8101',
