@@ -4,13 +4,15 @@ import copy
 import pytest
 import requests
 
-from generic_test_code import (
+from generic_test_code.common import (
     assert_endpoint_response,
-    assert_iam_queried_for_uid_and_rid,
     generic_upstream_headers_verify_test,
     verify_header,
 )
-from util import LineBufferFilter, SearchCriteria
+from generic_test_code.ee import (
+    assert_iam_queried_for_uid_and_rid,
+)
+from util import LineBufferFilter, SearchCriteria, iam_denies_all_requests
 
 
 acl_endpoints = [

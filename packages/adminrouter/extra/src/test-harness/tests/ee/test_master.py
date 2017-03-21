@@ -3,14 +3,15 @@
 import requests
 import pytest
 
-from generic_test_code import (
+from generic_test_code.common import (
     assert_endpoint_response,
     assert_iam_queried_for_uid_and_rid,
     generic_correct_upstream_dest_test,
     generic_valid_user_is_permitted_test,
     verify_header,
 )
-from util import SearchCriteria
+from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
+from util import SearchCriteria, iam_denies_all_requests
 
 acl_endpoints = [
     ('/acs/acl-schema.json', 'dcos:adminrouter:acs'),
@@ -53,6 +54,9 @@ authed_endpoints = [
 
 
 class TestAuthEnforcementEE:
+    """Tests full request cycle and all components involved in authentication
+    authorization for each all protected paths"""
+
     @pytest.mark.parametrize("path,rid", acl_endpoints)
     def test_if_unauthn_user_is_forbidden_access(self,
                                                  mocker,

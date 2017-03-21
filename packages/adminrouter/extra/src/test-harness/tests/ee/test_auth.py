@@ -3,8 +3,8 @@
 import os
 import requests
 
-from generic_test_code import assert_endpoint_response
-from util import SearchCriteria, GuardedSubprocess
+from generic_test_code.common import assert_endpoint_response
+from util import SearchCriteria, iam_denies_all_requests
 
 EXHIBITOR_PATH = "/exhibitor/foo/bar"
 
@@ -35,7 +35,7 @@ class TestAuthnJWTValidator:
             cookies={"dcos-acs-auth-cookie": "invalid"},
             )
 
-    def test_missmatched_auth_token_algo_in_cookie(
+    def test_mismatched_auth_token_algo_in_cookie(
             self,
             nginx_class,
             mismatch_alg_jwt_generator,

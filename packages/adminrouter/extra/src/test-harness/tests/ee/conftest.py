@@ -5,9 +5,11 @@
 from collections import namedtuple
 import json
 import os
-import textwrap
 
 import pytest
+
+pytest.register_assert_rewrite('generic_test_code.ee')
+
 
 # Example bootstrap config served by NGINX
 BOOTSTRAP_CONFIG = json.dumps({
@@ -22,7 +24,6 @@ _NginxStaticServedFile = namedtuple("NginxStaticServedFile", ["path", "content"]
 
 def NginxStaticServedFile(path, content=None):
     return _NginxStaticServedFile(path=path, content=content)
-
 
 EEStaticFiles = [
     NginxStaticServedFile(
