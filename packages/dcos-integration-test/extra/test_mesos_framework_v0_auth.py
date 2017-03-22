@@ -10,9 +10,9 @@ from tempfile import mkstemp
 import pytest
 import retrying
 
-from ee_helpers import bootstrap_config
-from test_iam import generate_RSA_keypair
-from util import parse_dotenv
+from ee_helpers import bootstrap_config, generate_RSA_keypair, parse_dotenv
+
+log = logging.getLogger(__name__)
 
 
 def _create_temp_service(superuser_api_session, uid, keypair):
@@ -32,8 +32,8 @@ def _delete_temp_service(superuser_api_session, uid, credentials):
     superuser_api_session.iam.delete_service(uid)
 
 
-@pytest.fixture(scope="module")
-def service_accounts(superuser_api_session):
+@pytest.fixture
+def service_accounts(superuser_api_session, iam_verify_and_reset):
     alice_keypair = generate_RSA_keypair()
     bob_keypair = generate_RSA_keypair()
 
@@ -70,7 +70,7 @@ def service_accounts(superuser_api_session):
     params = ["default", "secondary", "invalid"]
 
     for param in params:
-        logging.info('Creating service account \'{}\'...'.format(param))
+        log.info('Creating service account \'{}\'...'.format(param))
 
         services[param]['path'] = _create_temp_service(
             superuser_api_session, services[param]['uid'], services[param]['keypair'])
@@ -138,9 +138,8 @@ def run_framework(service_accounts, request):
         env['DCOS_SERVICE_ACCOUNT_CREDENTIAL'] = "file://" + credentials
         env['MESOS_FRAMEWORK_AUTHN'] = "true"
 
-    cmd = []
+    cmd = ['sudo']
 
-    cmd.append("sudo")
     # Explicitly copy variables into `sudo` environment.
     for key, value in env.items():
         cmd.append(key + "=" + value)
@@ -161,18 +160,18 @@ def run_framework(service_accounts, request):
         cmd.append("--mesos_authentication_principal")
         cmd.append(principal)
 
-    logging.info('Starting framework...')
+    log.info('Starting framework...')
     p = subprocess.Popen(cmd, env=env)
 
     yield p, test_framework_name
 
     # Kill the process if it didn't already die.
     if not p.poll():
-        logging.warning('Terminating framework...')
+        log.warning('Terminating framework...')
         subprocess.check_call(['sudo', '-i', 'kill', str(p.pid)])
 
     p.wait()
-    logging.info('Framework is gone now')
+    log.info('Framework is gone now')
 
     subprocess.check_call([
         "source /opt/mesosphere/environment.export; "
@@ -196,18 +195,18 @@ def _wait_for_framework_to_connect(dcos_api_session, p, test_framework_name):
     r = dcos_api_session.get("/mesos/master/state-summary")
 
     if r.status_code != 200:
-        logging.info("Mesos master returned status code {} != 200 - continuing to wait...".format(r.status_code))
+        log.info("Mesos master returned status code {} != 200 - continuing to wait...".format(r.status_code))
         return False
 
     data = r.json()
 
     if not data.get('frameworks'):
-        logging.info("Mesos master has no frameworks - continuing to wait...")
+        log.info("Mesos master has no frameworks - continuing to wait...")
         return False
 
     for framework in data['frameworks']:
         if (framework['name'] == test_framework_name) and framework['connected']:
-            logging.info("Test framework connected")
+            log.info("Test framework connected")
             return True
 
     return False
@@ -263,9 +262,9 @@ def test_framework_registration(superuser_api_session, run_framework, expect_con
         connected = True
 
     except retrying.RetryError as e:
-        logging.warning('Framework did not register in time')
+        log.warning('Framework did not register in time')
 
     except FrameworkAborted as e:
-        logging.warning('Framework has aborted')
+        log.warning('Framework has aborted')
 
     assert connected == expect_connect
