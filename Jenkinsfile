@@ -19,7 +19,7 @@ def jsonParse(def json) {
     new groovy.json.JsonSlurperClassic().parseText(json)
 }
 
-task_wrapper('mesos', master_branches) {
+task_wrapper('mesos-sec', master_branches) {
     stage('Cleanup workspace') {
         deleteDir()
     }
@@ -39,21 +39,15 @@ task_wrapper('mesos', master_branches) {
 
         dir("dcos-open") {
             git branch: repo_branch, credentialsId: 'a7ac7f84-64ea-4483-8e66-bb204484e58f', poll: false, url: repo_url
+            sh 'echo `pwd` > ../dcos-ee/packages/adminrouter/extra/src/.dcos-open.path'
         }
     }
 
-    stage('Apply EE overlay on top of Open') {
-        sh 'rm -vR dcos-ee/packages/adminrouter/docker/'
-        sh 'cp -vR dcos-open/packages/adminrouter/docker/ dcos-ee/packages/adminrouter/'
-        sh 'cp -vR dcos-open/packages/adminrouter/extra/src/test-harness dcos-ee/packages/adminrouter/extra/src/'
-        sh 'cp -vR dcos-open/packages/adminrouter/extra/src/Makefile dcos-ee/packages/adminrouter/extra/src/'
-        sh 'cp -vR dcos-open/packages/adminrouter/extra/src/pytest.ini dcos-ee/packages/adminrouter/extra/src/'
-        sh 'cp -vR dcos-open/packages/adminrouter/extra/src/.flake8 dcos-ee/packages/adminrouter/extra/src/'
-        sh 'cp -vR dcos-open/packages/adminrouter/extra/src/mime.types dcos-ee/packages/adminrouter/extra/src/'
-        sh 'rm -vR dcos-ee/packages/adminrouter/extra/src/test-harness/tests/open'
-    }
-
     dir("dcos-ee/packages/adminrouter/extra/src/") {
+        stage('Apply EE overlay on top of Open') {
+            sh 'make apply-open'
+        }
+
         stage('Prepare devkit container') {
             sh 'make update-devkit'
         }

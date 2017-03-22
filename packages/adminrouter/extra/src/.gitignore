@@ -1,0 +1,32 @@
+# Safe to ignore
+*.sw?
+*.pyc
+.cache/*
+test-harness/logs/*.log
+*.dia~
+
+# Just an utility file used during overlaying:
+.dcos-open.path
+
+#Overlay things, must not be included in the EE repository:
+.flake8
+Makefile.common
+master/agent.lua
+master/cache.lua
+master/marathon-leader.lua
+mime.types
+pytest.ini
+resty/http.lua
+resty/http_headers.lua
+resty/lock.lua
+test-harness/conftest.py
+test-harness/logs/*
+test-harness/modules/*.py
+test-harness/modules/mocker/*.py
+test-harness/modules/mocker/endpoints/*.py
+test-harness/modules/mocker/endpoints/open/*
+test-harness/modules/runner/__init__.py
+test-harness/modules/runner/common.py
+test-harness/modules/runner/open.py
+test-harness/tests/*.py
+test-harness/tests/open/*

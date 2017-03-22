@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 pytestmark = pytest.mark.usefixtures("agent_ar_process")
 
 
-class TestLogsEndpointEE():
+class TestLogsEndpointEE:
 
     def test_logs_authn_endpoint(self,
                                  agent_ar_process,

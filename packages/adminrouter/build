@@ -8,11 +8,18 @@ set -u  # Undefined variables
 export CXXFLAGS=-I/opt/mesosphere/include
 export AR_BIN_DIR=$PKG_PATH
 
+# Apply EE overlay on top of Open Adminrouter:
+cp -vR /pkg/extra/src/ $PKG_PATH/merged_repos/
+cd $PKG_PATH/merged_repos/
+make apply-open DCOS_OPEN_PATH=/pkg/src/dcos_open/
+
+# Build AR:
 $OPENRESTY_COMPILE_SCRIPT --with-cc-opt="-I /opt/mesosphere/include" --with-ld-opt="-L /opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib"
 
-# Incorporate adminrouter components.
+# Incorporate the adminrouter configuration:
 rm -vfR $PKG_PATH/nginx/conf/*
-cp -vR /pkg/extra/src/{common,errorpages,master,mime.types,nginx.agent.conf,nginx.master.conf,resty} $PKG_PATH/nginx/conf/
+cp -vR $PKG_PATH/merged_repos/{common,errorpages,master,mime.types,nginx.agent.conf,nginx.master.conf,resty} $PKG_PATH/nginx/conf/
+rm -vR $PKG_PATH/merged_repos/
 
 # TODO: We need more comprehensive approach to libraries. This is tracked in
 # https://jira.mesosphere.com/browse/DCOS-14039

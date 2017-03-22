@@ -1,5 +1,4 @@
 local cjson_safe = require "cjson.safe"
-local statecache = require "master.cache"
 
 local util = {}
 
