@@ -1,5 +1,5 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/amitaekbote/dcos",
   "kind": "git",
   "ref": "8e9b6498a309a95e8e08e82bc61437eb285d942b",
   "ref_origin": "master"
