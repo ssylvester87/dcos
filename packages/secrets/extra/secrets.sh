@@ -15,7 +15,9 @@ if [[ "${SECRETS_BOOTSTRAP}" == "true" ]]; then
 fi
 
 if [[ "${TLS_ENABLED}" == "true" ]]; then
-    EXTRA_FLAGS+=" --key ${TLS_KEY_FILE} --cert ${TLS_CERT_FILE} --CA ${TLS_CA_FILE}"
+    EXTRA_FLAGS+=" --key ${TLS_KEY_FILE} --cert ${TLS_CERT_FILE} --CA ${TLS_CA_FILE} --bouncer-addr=https://master.mesos"
+else
+    EXTRA_FLAGS+=" --bouncer-addr=http://master.mesos"
 fi
 
 # TODO need to do $PKG_PATH here and envsubst in build
