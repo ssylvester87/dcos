@@ -196,8 +196,6 @@ def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
     machine_ip = detect_ip()
 
     san = [
-        x509.DNSName(machine_ip),
-        x509.DNSName('127.0.0.1'),
         x509.DNSName('localhost'),
         x509.IPAddress(ipaddress.IPv4Address(machine_ip)),
         x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
@@ -220,15 +218,30 @@ def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
     except herror:
         pass
 
+    # Add IP addresses as DNSName records for legacy reasons, i.e. some clients
+    # don't support IPAddress SAN record types. It's important to add these as
+    # last entries so Firefox can validate certificates. See DCOS_OSS-646
+    ip_addresses_as_dns_names = [
+        x509.DNSName(machine_ip),
+        x509.DNSName('127.0.0.1'),
+    ]
+
     if extra_san is not None:
         for s in extra_san:
             if s.type == 'dns':
-                san.append(x509.DNSName(s.val))
+                # If DNSName looks like an IP address add it to the last position
+                try:
+                    ipaddress.ip_address(s.val)
+                    ip_addresses_as_dns_names.append(x509.DNSName(s.val))
+                except ValueError:
+                    san.append(x509.DNSName(s.val))
             elif s.type == 'ip':
                 san.append(x509.IPAddress(ipaddress.IPv4Address(s.val)))
             else:
                 msg_fmt = "Unrecognized extra_san entry type: %s for %s"
                 raise AssertionError(msg_fmt.format(s.type, s.val))
+
+    san.extend(ip_addresses_as_dns_names)
 
     log.info('Subject Alternative Names: %s', san)
 

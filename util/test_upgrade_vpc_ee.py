@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -6,10 +7,31 @@ from typing import List, Optional
 import pkg_resources
 import yaml
 
-from pkgpanda.util import load_string, load_yaml, logger
+from cli import dcoscli_fixture
+
+from pkgpanda.util import load_yaml, logger
 from test_util import test_upgrade_vpc
 from test_util.dcos_api_session import DcosApiSession, DcosUser
 from test_util.helpers import session_tempfile
+
+
+def token(host):
+    cli = dcoscli_fixture()
+    cli.exec_command(
+        ["dcos", "config", "set", "core.dcos_url", host.public_ip])
+
+    cli.exec_command(["dcos", "config", "set", "core.ssl_verify", "False"])
+
+    stdout, stderr = cli.exec_command(["dcos", "auth", "login", "--username=testadmin",
+                                       "--password=testpassword"])
+
+    auth_stdout, stderr = cli.exec_command(
+        ["dcos", "config", "show", "core.dcos_acs_token"])
+    if stderr == '':
+        auth_token = auth_stdout.strip('\n')
+        return auth_token
+
+    return None
 
 
 def add_detect_ip_public_contents_to_yaml(yaml_file_path: Optional[str]) -> Optional[str]:
@@ -32,6 +54,27 @@ def load_config(filepath: Optional[str]) -> dict:
     if filepath is None:
         return {}
     return load_yaml(filepath)
+
+
+class EEVpcClusterUpgradeTest(test_upgrade_vpc.VpcClusterUpgradeTest):
+
+    def mesos_metrics_snapshot(self, cluster, host):
+        if host in cluster.masters:
+            port = 5050
+        else:
+            port = 5051
+
+        if self.acs_token is None:
+            self.acs_token = token(host)
+
+        with cluster.ssher.tunnel(host) as tunnel:
+            return json.loads(
+                tunnel.remote_cmd(
+                    test_upgrade_vpc.curl_cmd + ['--cacert /run/dcos/pki/CA/certs/ca.crt',
+                                                 '-H "Authorization: token={}"'.format(self.acs_token),
+                                                 'https://{}:{}/metrics/snapshot'.format(host.private_ip, port)]
+                ).decode('utf-8')
+            )
 
 
 class EEDcosApiSessionFactory(test_upgrade_vpc.VpcClusterUpgradeTestDcosApiSessionFactory):
@@ -80,20 +123,20 @@ if __name__ == '__main__':
     aws_region = os.getenv('DEFAULT_AWS_REGION', 'eu-central-1')
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    ssh_key = load_string(os.getenv('DCOS_SSH_KEY_PATH', 'default_ssh_key'))
 
     config_yaml_override_install = add_detect_ip_public_contents_to_yaml(os.getenv('CONFIG_YAML_OVERRIDE_INSTALL'))
     config_yaml_override_upgrade = add_detect_ip_public_contents_to_yaml(os.getenv('CONFIG_YAML_OVERRIDE_UPGRADE'))
 
     install_config = load_config(config_yaml_override_install)
     upgrade_config = load_config(config_yaml_override_upgrade)
-    test = test_upgrade_vpc.VpcClusterUpgradeTest(num_masters, num_agents, num_public_agents,
-                                                  stable_installer_url, installer_url,
-                                                  aws_region, aws_access_key_id, aws_secret_access_key,
-                                                  ssh_key, "root",
-                                                  config_yaml_override_install, config_yaml_override_upgrade,
-                                                  EEDcosApiSessionFactory(install_config),
-                                                  EEDcosApiSessionFactory(upgrade_config))
+
+    test = EEVpcClusterUpgradeTest(num_masters, num_agents, num_public_agents,
+                                   stable_installer_url, installer_url,
+                                   aws_region, aws_access_key_id, aws_secret_access_key,
+                                   "root",
+                                   config_yaml_override_install, config_yaml_override_upgrade,
+                                   EEDcosApiSessionFactory(install_config),
+                                   EEDcosApiSessionFactory(upgrade_config))
     status = test.run_test()
 
     sys.exit(status)

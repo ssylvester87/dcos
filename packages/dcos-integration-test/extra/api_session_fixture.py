@@ -1,6 +1,8 @@
 import logging
 import os
 
+import iam_helper
+
 from ee_helpers import bootstrap_config
 
 from test_util.dcos_api_session import DcosApiSession, DcosUser, get_args_from_env
@@ -33,9 +35,8 @@ class MesosNodeClientMixin:
 class EnterpriseApiSession(MesosNodeClientMixin, DcosApiSession):
     @property
     def iam(self):
-        new = self.copy()
-        new.default_url = self.default_url.copy(path='acs/api/v1')
-        return new
+        return iam_helper.Iam(self.default_url.copy(path='acs/api/v1'),
+                              session=self.copy().session)
 
     @property
     def secrets(self):

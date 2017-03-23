@@ -5,50 +5,15 @@ import base64
 import json
 import time
 
-import cryptography.hazmat.backends
 import jwt
 import pytest
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from ee_helpers import generate_RSA_keypair
 from jwt.utils import base64url_decode
-
 
 pytestmark = [pytest.mark.security]
 
-
-cryptography_backend = cryptography.hazmat.backends.default_backend()
-
-
-def generate_RSA_keypair(key_size=2048):
-    """
-    Generate an RSA keypair with an exponent of 65537. Serialize the public
-    key in the the X.509 SubjectPublicKeyInfo/OpenSSL PEM public key format
-    (RFC 5280). Serialize the private key in the PKCS#8 (RFC 3447) format.
-    Args:
-        bits (int): the key length in bits.
-    Returns:
-        (private key, public key) 2-tuple, both unicode
-        objects holding the serialized keys.
-    """
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=key_size,
-        backend=cryptography_backend)
-
-    privkey_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption())
-
-    public_key = private_key.public_key()
-    pubkey_pem = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo)
-
-    return privkey_pem.decode('ascii'), pubkey_pem.decode('ascii')
-
-
 # Pre-generate keypair for performance reasons.
+# TODO: move this into a session scoped fixture
 default_rsa_privkey, default_rsa_pubkey = generate_RSA_keypair()
 
 
