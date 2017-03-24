@@ -28,6 +28,16 @@ class Mocker(MockerBase):
             ReflectingUnixSocketEndpoint('/run/dcos/3dt.sock'))
         # IAM
         ee_endpoints.append(IamEndpoint(ip='127.0.0.1', port=8101))
+        # Mesos DNS
+        ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=8123))
+        # Networking API
+        ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=61430))
+        # DC/OS history service
+        ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.2', port=15055))
+        # Metrics(agent):
+        ee_endpoints.append(
+            ReflectingUnixSocketEndpoint(path='/run/dcos/dcos-metrics-agent.sock'))
+
         # Add more EE endpoints here...
 
         super().__init__(ee_endpoints)

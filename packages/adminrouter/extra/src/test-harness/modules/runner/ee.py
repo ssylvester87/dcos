@@ -30,6 +30,8 @@ class Nginx(NginxBase):
                                      "_Aq5gzw"
                                      ),
                  secret_key_file_path=os.environ.get("IAM_PUBKEY_FILE_PATH"),
+                 # username:password - dcos:dcos
+                 exhibitor_basic_auth="ZGNvczpkY29z",
                  **base_kwargs):
 
         NginxBase.__init__(self, **base_kwargs)
@@ -37,3 +39,5 @@ class Nginx(NginxBase):
         self._env["JWT_ALG"] = jwt_algo
         self._env["SERVICE_AUTH_TOKEN"] = service_auth_token
         self._set_ar_env_from_val('SECRET_KEY_FILE_PATH', secret_key_file_path)
+        self._set_ar_env_from_val(
+            'EXHIBITOR_ADMIN_HTTPBASICAUTH_CREDS', exhibitor_basic_auth)
