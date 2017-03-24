@@ -1,4 +1,5 @@
 local cjson = require "cjson"
+local cjson_safe = require "cjson.safe"
 local jwt = require "resty.jwt"
 local jwt_validators = require "resty.jwt-validators"
 local cookiejar = require "resty.cookie"
@@ -8,7 +9,6 @@ local util = require "common.util"
 
 
 local SECRET_KEY = nil
-local BODY_AUTH_ERROR_RESPONSE = nil
 
 
 local errorpages_dir_path = os.getenv("AUTH_ERROR_PAGE_DIR_PATH")
@@ -208,7 +208,7 @@ local function validate_jwt_or_exit(object, action)
     ngx.log(ngx.DEBUG, "Valid token. Extract UID from payload.")
     local uid = jwt_obj.payload.uid
 
-    if uid == nil then
+    if uid == nil or uid == ngx.null then
         ngx.log(ngx.NOTICE, "Unexpected token payload: missing uid.")
         return exit_401(object, action)
     end
@@ -253,12 +253,23 @@ local function check_acl_triple_or_exit(triple)
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
     end
 
-    local respdata = cjson.decode(res.body)
+    local respdata = cjson_safe.decode(res.body)
     ngx.log(
         ngx.DEBUG,
         "JSONdecoded response body, JSONized: " ..
         cjson.encode(respdata)
         )
+
+    if respdata == nil then
+        ngx.log(
+            ngx.NOTICE,
+            "JSONdecode failed. Response: " ..
+            cjson.encode(res)
+            )
+        ngx.status = ngx.HTTP_INTERNAL_SERVER_ERROR
+        ngx.say("Unexpected policyquery response.")
+        return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    end
 
     if respdata.allowed == nil then
         ngx.log(
