@@ -6,9 +6,7 @@ mkdir -p "$LIB_INSTALL_DIR"
 
 echo "pip version: $(pip --version)"
 echo "Install packages from wheel files."
-for package in jsonschema pyasn1 idna; do
-  pip install --no-deps --no-index --target="$LIB_INSTALL_DIR" /pkg/src/$package/*.whl
-done
+pip install --no-deps --no-index --target="$LIB_INSTALL_DIR" /pkg/src/jsonschema/*.whl
 
 
 # Resolve 'Package libffi was not found in the pkg-config search path'.
@@ -21,7 +19,6 @@ export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
 echo "Install packages from local source directories."
 for package in \
     pycparser \
-    cffi \
     falcon \
     python-mimeparse \
     oic \
