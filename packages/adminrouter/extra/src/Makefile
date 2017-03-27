@@ -6,6 +6,7 @@ apply-open:
 	# We use rsync due to the fact that directory copying in the loop is
 	# confusing plain `cp`
 	-cp -vR ${AR_OPEN_PATH}../../docker/ ../../
+	mkdir -v resty/ errorpages/ || true
 	for f in \
 			.flake8 \
 			Makefile.common \
@@ -14,9 +15,9 @@ apply-open:
 			master/marathon-leader.lua \
 			mime.types \
 			pytest.ini \
-			resty/http.lua \
-			resty/http_headers.lua \
-			resty/lock.lua \
+			common/auth/ \
+			resty/ \
+			errorpages/ \
 			test-harness/ \
 			; \
 		do \

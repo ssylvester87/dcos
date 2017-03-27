@@ -83,7 +83,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object={} .*'.format(rid) +
             'result=allow .*' +
-            'reason="Bouncer PQ response" .*' +
+            'reason="IAM PQ response" .*' +
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
@@ -114,7 +114,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object={} .*'.format(rid) +
             'result=deny .*' +
-            'reason="Bouncer PQ response" .*' +
+            'reason="IAM PQ response" .*' +
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
@@ -200,7 +200,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object=dcos:adminrouter:acs .*' +
             'result=allow .*' +
-            'reason="Bouncer PQ response" .*':
+            'reason="IAM PQ response" .*':
                 SearchCriteria(1, True),
             }
         with assert_iam_queried_for_uid_and_rid(
@@ -229,7 +229,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object=dcos:adminrouter:acs .*' +
             'result=deny .*' +
-            'reason="Bouncer PQ response" .*':
+            'reason="IAM PQ response" .*':
                 SearchCriteria(1, True),
             }
 
