@@ -262,7 +262,7 @@ class TestAuthEnforcementEE:
             ))
 
     @pytest.mark.parametrize("path,rid", acl_endpoints)
-    def test_if_acl_validation_doesnt_pass_headers_to_bouncer(
+    def test_if_acl_validation_doesnt_pass_headers_to_iam(
             self,
             master_ar_process,
             valid_user_header,
@@ -290,7 +290,7 @@ class TestAuthEnforcementEE:
             )
 
         last_request = requests[-1]
-        # In case of /acs/api/v1 two requests will be sent to the bouncer mock
+        # In case of /acs/api/v1 two requests will be sent to the iam mock
         # endpoint so work with first request that was issued by auth.lua
         if path.startswith('/acs/api/v1/'):
             last_request = requests[-2]

@@ -220,7 +220,7 @@ end
 
 local function check_acl_triple_or_exit(triple)
     -- Check if user <uid> is allowed to perform action <action> on resource
-    -- <rid>. Do this by asking bouncer's policyquery endpoint. Terminate
+    -- <rid>. Do this by asking iam's policyquery endpoint. Terminate
     -- request handling upon error or when access is forbidden (return
     -- appropriate status code in both cases). Do not terminate request handling
     -- when action is allowed.
@@ -229,12 +229,12 @@ local function check_acl_triple_or_exit(triple)
     local rid = triple.rid
     local action = triple.action
 
-    -- Build URL pointing to internal policyquery endpoint served by bouncer.
+    -- Build URL pointing to internal policyquery endpoint served by iam.
     local url = "/internal/acs/api/v1/internal/policyquery?rid=" ..
         rid .. "&uid=" .. uid .. "&action=" .. action
     ngx.log(ngx.NOTICE, "Consult policyquery via `".. url .. "`")
 
-    -- So, defer this to bouncer with a subrequest.
+    -- So, defer this to iam with a subrequest.
     -- Ref: https://github.com/openresty/lua-nginx-module#ngxlocationcapture
     res = ngx.location.capture(url)
     ngx.log(ngx.DEBUG, "JSONnized response: " .. cjson.encode(res))
