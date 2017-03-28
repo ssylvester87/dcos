@@ -10,7 +10,7 @@
     "dcos-ui-plugins-private": {
         "kind": "git",
         "git": "git@github.com:mesosphere/dcos-ui-plugins-private.git",
-        "ref": "6f8c8022a3c92665f066b54d94530698f9e1c71f",
+        "ref": "f0c53d07de858dbd24426ba067382a3d12c2eac3",
         "ref_origin": "release/1.9"
     }
   }
