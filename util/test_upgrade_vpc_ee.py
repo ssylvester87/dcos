@@ -68,11 +68,17 @@ class EEVpcClusterUpgradeTest(test_upgrade_vpc.VpcClusterUpgradeTest):
             self.acs_token = token(host)
 
         with cluster.ssher.tunnel(host) as tunnel:
+            security = self.dcos_api_session_factory_upgrade.config['security']
+            protocol = "https"
+
+            if security == 'disabled':
+                protocol = "http"
+
             return json.loads(
                 tunnel.remote_cmd(
                     test_upgrade_vpc.curl_cmd + ['--cacert /run/dcos/pki/CA/certs/ca.crt',
                                                  '-H "Authorization: token={}"'.format(self.acs_token),
-                                                 'https://{}:{}/metrics/snapshot'.format(host.private_ip, port)]
+                                                 '{}://{}:{}/metrics/snapshot'.format(protocol, host.private_ip, port)]
                 ).decode('utf-8')
             )
 
