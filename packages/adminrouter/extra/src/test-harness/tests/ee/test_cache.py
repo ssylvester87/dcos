@@ -2,7 +2,7 @@
 
 import logging
 
-from generic_test_code import ping_mesos_agent, verify_header
+from generic_test_code.common import ping_mesos_agent, verify_header
 from util import LineBufferFilter, SearchCriteria, GuardedSubprocess
 
 log = logging.getLogger(__name__)
@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class TestCacheEE:
     def test_if_service_auth_token_is_sent_to_cache_upstreams(
-            self, nginx_class, mocker, superuser_user_header):
+            self, nginx_class, mocker, valid_user_header):
         service_t_expected = 'CeupyavLegmijFlewd8' * 40
         filter_regexp = {
             'Picked up service authentication token from env.': SearchCriteria(1, False),
@@ -27,7 +27,7 @@ class TestCacheEE:
         with GuardedSubprocess(ar):
             lbf = LineBufferFilter(filter_regexp,
                                    line_buffer=ar.stderr_line_buffer)
-            ping_mesos_agent(ar, superuser_user_header)
+            ping_mesos_agent(ar, valid_user_header)
             lbf.scan_log_buffer()
 
         assert lbf.extra_matches == {}

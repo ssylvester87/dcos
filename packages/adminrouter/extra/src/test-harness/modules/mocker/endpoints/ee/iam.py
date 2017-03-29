@@ -18,19 +18,23 @@ class IamHTTPRequestHandler(RecordingHTTPRequestHandler):
         '^/acs/api/v1/users/([^/]+)/permissions$')
 
     def _calculate_response(self, base_path, url_args, body_args=None):
-        if base_path == '/acs/api/v1/internal/policyquery':
-            return self.__internal_policy_query_request_handler(
-                url_args, body_args)
+        """Determine if the IAM request should be allow/deny.
 
-        result = self.USERS_PERMISSIONS_REGEXP.search(base_path)
-        if result:
-            return self.__users_permissions_request_handler(result.group(1))
+           Please refer to the description of the BaseHTTPRequestHandler class
+           for details on the arguments and return value of this method.
+        """
+        if base_path == '/acs/api/v1/internal/policyquery':
+            return self.__internal_policy_query_request_handler()
+
+        match = self.USERS_PERMISSIONS_REGEXP.search(base_path)
+        if match:
+            return self.__users_permissions_request_handler(match.group(1))
 
         stub_paths = [
             '/acs/api/v1/foo/bar',
         ]
         if base_path in stub_paths:
-            return self._convert_data_to_blob({})
+            return 200, 'application/json', self._convert_data_to_blob({})
 
         raise EndpointException(
             code=500,
@@ -38,16 +42,19 @@ class IamHTTPRequestHandler(RecordingHTTPRequestHandler):
                 base_path))
 
     def __users_permissions_request_handler(self, user):
-        return self._convert_data_to_blob({
+        blob = self._convert_data_to_blob({
             'user': user,
             'permissions': True,
             })
+        return 200, 'application/json', blob
 
-    def __internal_policy_query_request_handler(self, url_args, body_args=None):
+    def __internal_policy_query_request_handler(self):
         ctx = self.server.context
 
         with ctx.lock:
-            return self._convert_data_to_blob({'allowed': ctx.data['allowed']})
+            blob = self._convert_data_to_blob({'allowed': ctx.data['allowed']})
+
+        return 200, 'application/json', blob
 
 
 class IamEndpoint(RecordingTcpIpEndpoint):
