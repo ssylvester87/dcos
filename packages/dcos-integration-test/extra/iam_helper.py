@@ -2,6 +2,13 @@ import test_util.helpers
 
 
 class Iam(test_util.helpers.ApiClientSession):
+    """
+    Helpers for interacting with service user accounts.
+
+    Note that some terminology is confused.
+    The methods here interact with service user accounts and not services.
+    """
+
     def __init__(self, default_url, session=None):
         super().__init__(default_url)
         if session:
@@ -15,9 +22,22 @@ class Iam(test_util.helpers.ApiClientSession):
         r = self.put('/users/{}'.format(uid), json=data)
         assert r.status_code == 201
 
-    def delete_service(self, uid):
-        r = self.delete('/users/{}'.format(uid))
-        assert r.status_code == 204
+    def delete_service(self, uid: str) -> None:
+        """Delete a service account and verify that this worked.
+
+        Args:
+            uid: The user ID of the service account user to delete.
+
+        Raises:
+            AssertionError: The delete operation does not succeed.
+        """
+        resp = self.delete('/users/{}'.format(uid))
+        assert resp.status_code == 204
+
+        # Verify that service does not appear in collection anymore.
+        resp = self.get('/users', query='type=service')
+        uids = [account['uid'] for account in resp.json()['array']]
+        assert uid not in uids
 
     def create_user_permission(self, uid, action, rid):
         rid = rid.replace('/', '%252F')
