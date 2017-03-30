@@ -35,7 +35,7 @@ class TestAuthzBouncerPolicyQuery:
             headers=valid_user_header,
             )
 
-    def test_if_bouncer_invalid_json_reply_is_handled(
+    def test_if_iam_invalid_json_reply_is_handled(
             self,
             master_ar_process,
             valid_user_header,
@@ -60,7 +60,7 @@ class TestAuthzBouncerPolicyQuery:
             headers=valid_user_header,
             )
 
-    def test_if_bouncer_empty_json_reply_is_handled(
+    def test_if_iam_empty_json_reply_is_handled(
             self,
             master_ar_process,
             valid_user_header,

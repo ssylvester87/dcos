@@ -85,12 +85,12 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
       proxy_ssl_verify off;
-      set $upstream_bouncer http://master.mesos;
+      set $upstream_iam http://master.mesos;
 {% case "true" %}
       proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
-      set $upstream_bouncer https://master.mesos;
+      set $upstream_iam https://master.mesos;
 {% endswitch %}
   - path: /etc_slave/adminrouter-listen-ee.conf
     content: |
@@ -114,12 +114,12 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
       proxy_ssl_verify off;
-      set $upstream_bouncer http://master.mesos;
+      set $upstream_iam http://master.mesos;
 {% case "true" %}
       proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
-      set $upstream_bouncer https://master.mesos;
+      set $upstream_iam https://master.mesos;
 {% endswitch %}
   - path: /etc_slave_public/adminrouter-listen-ee.conf
     content: |
