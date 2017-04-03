@@ -28,6 +28,7 @@ acl_endpoints = [
     ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
     ('/package/foo/bar', 'dcos:adminrouter:package'),
+    ('/pkgpanda/foo/bar', "dcos:adminrouter:ops:pkgpanda"),
     ('/pkgpanda/active.buildinfo.full.json', "dcos:adminrouter:ops:metadata"),
     ('/service/nginx-alwaysthere/foo/bar', 'dcos:adminrouter:service:nginx-alwaysthere'),
     ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
