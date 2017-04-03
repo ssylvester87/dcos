@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "31a7b923d31b8d3f5881fff8ac1f8ef50ab9e1fa",
-  "ref_origin": "master"
+  "ref": "2b73956a846f357d40e00ed3e6642dd27939f85a",
+  "ref_origin": "prozlach/DCOS-14583_dedup_auth.lua"
 }
