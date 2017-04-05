@@ -103,7 +103,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object={} .*'.format(rid) +
             'result=allow .*' +
-            'reason="Bouncer PQ response" .*' +
+            'reason="IAM PQ response" .*' +
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
@@ -129,7 +129,7 @@ class TestAuthEnforcementEE:
             'type=audit .*' +
             'object={} .*'.format(rid) +
             'result=deny .*' +
-            'reason="Bouncer PQ response" .*' +
+            'reason="IAM PQ response" .*' +
             'request_uri=' + path: SearchCriteria(1, True),
             }
 
