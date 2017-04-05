@@ -9,8 +9,8 @@ from util import SearchCriteria, iam_denies_all_requests
 EXHIBITOR_PATH = "/exhibitor/foo/bar"
 
 
-class TestAuthzBouncerPolicyQuery:
-    def test_if_bouncer_non200_resp_code_is_handled(
+class TestAuthzIAMQuery:
+    def test_if_iam_non200_resp_code_is_handled(
             self,
             master_ar_process,
             valid_user_header,
@@ -101,3 +101,26 @@ class TestAuthCustomErrorPagesEE:
             resp_content = resp.content.decode('utf-8').strip()
             file_content = f.read().decode('utf-8').strip()
             assert resp_content == file_content
+
+
+class TestAuthnJWTValidatorEE:
+    def test_forged_auth_token(
+            self,
+            master_ar_process,
+            forged_user_header,
+            ):
+        # Different validators emit different log messages, so we create two
+        # tests - one for open, one for EE, each one having different log
+        # message.
+        log_messages = {
+            "Invalid token. Reason: Verification failed":
+                SearchCriteria(1, True),
+            }
+
+        assert_endpoint_response(
+            master_ar_process,
+            EXHIBITOR_PATH,
+            401,
+            assert_stderr=log_messages,
+            headers=forged_user_header,
+            )

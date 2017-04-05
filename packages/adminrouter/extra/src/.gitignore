@@ -14,11 +14,12 @@ Makefile.common
 master/agent.lua
 master/cache.lua
 master/marathon-leader.lua
+common/auth/common.lua
+common/auth/open.lua
 mime.types
 pytest.ini
-resty/http.lua
-resty/http_headers.lua
-resty/lock.lua
+resty/*
+errorpages/*
 test-harness/conftest.py
 test-harness/logs/*
 test-harness/modules/*.py
