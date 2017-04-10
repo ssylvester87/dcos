@@ -15,6 +15,8 @@ master/agent.lua
 master/cache.lua
 master/history-service.lua
 master/marathon-leader.lua
+master/service.lua
+master/url.lua
 common/auth/common.lua
 common/auth/open.lua
 mime.types

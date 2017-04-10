@@ -15,6 +15,8 @@ apply-open:
 			errorpages/ \
 			master/agent.lua \
 			master/cache.lua \
+			master/service.lua \
+			master/url.lua \
 			master/marathon-leader.lua \
 			master/history-service.lua \
 			mime.types \
