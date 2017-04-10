@@ -1,6 +1,7 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
 
 import copy
+
 import pytest
 import requests
 
@@ -9,11 +10,8 @@ from generic_test_code.common import (
     generic_upstream_headers_verify_test,
     verify_header,
 )
-from generic_test_code.ee import (
-    assert_iam_queried_for_uid_and_rid,
-)
+from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
 from util import LineBufferFilter, SearchCriteria, iam_denies_all_requests
-
 
 acl_endpoints = [
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),

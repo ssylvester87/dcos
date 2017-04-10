@@ -2,9 +2,9 @@
 
 """This module provides fixtures that are specific to EE flavour."""
 
-from collections import namedtuple
 import json
 import os
+from collections import namedtuple
 
 import pytest
 

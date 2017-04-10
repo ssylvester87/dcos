@@ -1,7 +1,7 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
 
-import requests
 import pytest
+import requests
 
 from generic_test_code.common import (
     assert_endpoint_response,

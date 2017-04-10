@@ -3,7 +3,7 @@
 import logging
 
 from generic_test_code.common import ping_mesos_agent, verify_header
-from util import LineBufferFilter, SearchCriteria, GuardedSubprocess
+from util import GuardedSubprocess, LineBufferFilter, SearchCriteria
 
 log = logging.getLogger(__name__)
 
