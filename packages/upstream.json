@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/adamtheturtle/dcos",
   "kind": "git",
-  "ref": "b261b8545da8b7e550b494cd353dc378b087096c",
-  "ref_origin": "master"
+  "ref": "6efa6acfafeac52d8f3e1401651332322bd42664",
+  "ref_origin": "disable-admin-router-config-DCOS-13437"
 }
