@@ -1144,3 +1144,11 @@ package:
           }
         ]
       }
+{% switch ca_certificate_enabled %}
+{% case "true" %}
+  - path: /etc_master/ca.crt
+    permissions: "0400"
+    content: |
+      {{ ca_certificate }}
+{% case "false" %}
+{% endswitch %}

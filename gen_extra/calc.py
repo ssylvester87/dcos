@@ -1,8 +1,37 @@
 import hashlib
+import os.path
+import textwrap
 from base64 import b64encode
+from collections import OrderedDict
 
 from gen.calc import validate_true_false
 from gen.internals import validate_one_of
+
+
+class CustomCA:
+    """
+    Custom CA must match given properties so it can be used as DC/OS
+    Root CA
+    """
+
+    def validate(self):
+        """
+        Execute all validation rules and raise exception if some certificate
+        requirements aren't met.
+        """
+
+        # cert and key must match
+        # cert has all required extensions to act as CA certificate
+        # chain must lead to cert
+
+        pass
+
+
+class ValidationError(Exception):
+    """
+    General custom certificate validation error
+    """
+    pass
 
 
 def validate_customer_key(customer_key):
@@ -194,6 +223,107 @@ def calculate_zk_acls_enabled(security):
         }[security]
 
 
+def try_load_file(path):
+    try:
+        with open(path, 'rb') as file:
+            return file.read()
+    except (IOError, ValueError):
+        return b""
+
+
+def calculate_ca_certificate(
+        ca_certificate_path,
+        ca_certificate_key_path,
+        ca_certificate_chain_path
+        ):
+    """
+    This function calculates and returns valid PEM certificate only if provided
+    inputs are valid and don't contain any error. If there is some error this
+    function doesn't raises exception but rather silently returns empty string.
+    Validation is handled by `validate_ca_certificate` that reports particular
+    errors.
+    """
+    cert = try_load_file(ca_certificate_path)
+    # TODO(mh): Remove `noqa` once we start passing cert, key, chain to CustomCA
+    # class.
+    key = try_load_file(ca_certificate_key_path)  # noqa: F841
+    chain = try_load_file(ca_certificate_chain_path)
+
+    # TODO(mh): Use validator and if certificate is valid output
+    # certificate to PEM format and concatenate optional chain
+    # See:
+    #  https://support.ssl.com/Knowledgebase/Article/View/19/0/der-vs-crt-vs-cer-vs-pem-certificates-and-how-to-convert-them
+    try:
+        CustomCA().validate()
+    except ValidationError:
+        return ""
+
+    # TODO(mh): Encode to PEM format and probably move to the CustomCA class
+    cert = cert.decode('utf-8')
+    chain = chain.decode('utf-8')
+    cert = [cert.strip('\n'), chain.strip('\n')]
+    ca = '\n'.join([part for part in cert if part != ''])
+    if len(ca) > 0:
+        ca = ca + '\n'
+
+    # TODO(mh): Is there a better way to figure out indentation in templates for
+    # calculated multiline values.
+    return indent_for_yaml(ca)
+
+
+def indent_for_yaml(text, size=6):
+    """
+    Format given multiline text with proper identation so it can be used as
+    a yaml template value
+    """
+    return textwrap.indent(text, ' ' * size).lstrip(' ')
+
+
+def validate_ca_certificate(
+        ca_certificate_path,
+        ca_certificate_key_path,
+        ca_certificate_chain_path
+        ):
+    file_paths = OrderedDict({
+        'ca_certificate_path': ca_certificate_path,
+        'ca_certificate_key_path': ca_certificate_key_path,
+        'ca_certificate_chain_path': ca_certificate_chain_path,
+    })
+
+    # No validation is required if none of paths is provided. Assuming that
+    # user isn't configuring DC/OS with custom CA certificate
+    non_empty_file_paths = OrderedDict(
+        {key: path for key, path in file_paths.items() if path != ''})
+    if len(non_empty_file_paths) == 0:
+        return
+
+    # Cert and key paths are required when installing custom CA certificate
+    required = ['ca_certificate_path', 'ca_certificate_key_path']
+    for required_key in required:
+        if required_key not in non_empty_file_paths:
+            raise AssertionError(
+                "Path for `{}` is required when defining custom "
+                "CA certificate".format(required_key)
+                )
+
+    # If paths are provided files must exists
+    for name, path in non_empty_file_paths.items():
+        if not os.path.exists(path):
+            raise AssertionError(
+                "Provided path `{}` = `{}` doesn't exists".format(name, path)
+                )
+
+    # Run CA validation
+    try:
+        CustomCA().validate()
+    except ValidationError as e:
+        raise AssertionError(str(e))
+
+
+def calculate_ca_certificate_enabled(ca_certificate):
+    return "true" if not empty(ca_certificate) else "false"
+
+
 def empty(s):
     return s == ''
 
@@ -336,6 +466,8 @@ entry = {
         lambda auth_cookie_secure_flag: validate_true_false(auth_cookie_secure_flag),
         lambda security: validate_one_of(security, ['strict', 'permissive', 'disabled']),
         lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
+        validate_ca_certificate,
+        lambda ca_certificate_enabled: validate_true_false(ca_certificate_enabled),
     ],
     'default': {
         'bouncer_expiration_auth_token_days': '5',
@@ -356,7 +488,10 @@ entry = {
         'ui_banner_header_content': 'null',
         'ui_banner_footer_content': 'null',
         'ui_banner_image_path': 'null',
-        'ui_banner_dismissible': 'null'
+        'ui_banner_dismissible': 'null',
+        'ca_certificate_path': '',
+        'ca_certificate_key_path': '',
+        'ca_certificate_chain_path': '',
     },
     'must': {
         'oauth_available': 'false',
@@ -407,7 +542,9 @@ entry = {
         'zk_acls_enabled': calculate_zk_acls_enabled,
         'marathon_port': calculate_marathon_port,
         'adminrouter_master_port': calculate_adminrouter_master_port,
-        'adminrouter_agent_port': calculate_adminrouter_agent_port
+        'adminrouter_agent_port': calculate_adminrouter_agent_port,
+        'ca_certificate': calculate_ca_certificate,
+        'ca_certificate_enabled': calculate_ca_certificate_enabled,
     }
 }
 
