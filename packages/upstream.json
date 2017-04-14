@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/BenWhitehead/dcos",
+  "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "9cd3f4fd7661ce366021c684ed7b292d919c5f46",
-  "ref_origin": "train-154"
+  "ref": "c73e2c0c5156fd054af342673ca612664f3df114",
+  "ref_origin": "master"
 }
