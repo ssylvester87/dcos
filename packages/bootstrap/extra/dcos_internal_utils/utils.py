@@ -1,3 +1,4 @@
+import base64
 import datetime
 import fcntl
 import ipaddress
@@ -40,6 +41,12 @@ def read_file_line(filename):
 def random_string(length):
     choices = string.ascii_letters + string.digits
     return ''.join(random.choice(choices) for i in range(length))
+
+
+def generate_executor_secret_key():
+    # Generate 256 random bytes and transform to an ascii-safe representation
+    # 5/4 the size (generate 320 random ascii characters).
+    return base64.b85encode(os.urandom(256)).decode('ascii')
 
 
 def generate_RSA_keypair(key_size=2048):
