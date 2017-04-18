@@ -11,7 +11,18 @@ from gen.test_validation import make_arguments
 log = logging.getLogger(__name__)
 
 
-CertificateFile = namedtuple('CertificateFile', 'content path file')
+class CertificateFile:
+    """
+    CertificateFile is a file that represents part of a certificate, i.e.
+    cert, key or CA
+    """
+
+    __slots__ = ('content', 'path', 'file')
+
+    def __init__(self, content, path, file):
+        self.content = content
+        self.path = path
+        self.file = file
 
 
 class Certificate(namedtuple('Certificate', 'cert key chain')):
@@ -45,10 +56,10 @@ def temp_file(value=''):
     if isinstance(value, str):
         value = value.encode('utf-8')
 
-    file = tempfile.NamedTemporaryFile()
-    file.write(value)
-    file.flush()
-    return file
+    temp_file = tempfile.NamedTemporaryFile()
+    temp_file.write(value)
+    temp_file.flush()
+    return temp_file
 
 
 def certificate_file(content=''):
@@ -56,8 +67,8 @@ def certificate_file(content=''):
     Creates a CertificateFile with underlying temporary file and provided
     content.
     """
-    file = temp_file(content)
-    return CertificateFile(content=content, path=file.name, file=file)
+    cert_file = temp_file(content)
+    return CertificateFile(content=content, path=cert_file.name, file=cert_file)
 
 
 @pytest.fixture(scope='session')
@@ -73,13 +84,13 @@ def invalid_certificate():
     yield Certificate(cert, key, chain)
 
     # Clean up underlying temporary files
-    map(lambda file: file.file.close(), [cert, key, chain])
+    map(lambda cert_file: cert_file.file.close(), [cert, key, chain])
 
 
-class TestCustomCA:
+class TestCustomCACertificate:
 
     """
-    Path in `dcos-config.yaml` file where will be Custom CA cert stored.
+    Path in `dcos-config.yaml` file where will be Custom CA certificate stored.
     """
     CA_CONFIG_PATH = '/etc_master/ca.crt'
 
@@ -109,7 +120,7 @@ class TestCustomCA:
 
     def _find_ca_cert_config(self, generated_config):
         """
-        Finds config item for custom CA in `dcos-config.yaml` file
+        Finds config item for custom CA cert in `dcos-config.yaml` file
         """
         package = generated_config.templates['dcos-config.yaml']['package']
         result = [
@@ -192,10 +203,10 @@ class TestCustomCA:
             self, invalid_certificate):
         """
         Valid file paths for certificate, key and chain validates config
-        and generates `dcos-config.yaml` file with Custom CA
+        and generates `dcos-config.yaml` file with Custom CA certificate.
 
         TODO(mh): This test will start failing once we add proper custom
-        CA validation.
+        CA certificate validation.
         """
         arguments = make_arguments(invalid_certificate.to_genconf_arguments())
         result = gen.validate(arguments)
