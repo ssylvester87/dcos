@@ -1,5 +1,6 @@
 import hashlib
 import os.path
+import sys
 import textwrap
 from base64 import b64encode
 from collections import OrderedDict
@@ -7,31 +8,9 @@ from collections import OrderedDict
 from gen.calc import validate_true_false
 from gen.internals import validate_one_of
 
-
-class CustomCACertificate:
-    """
-    Custom CA certificate must match given properties so it can be used as DC/OS
-    Root CA
-    """
-
-    def validate(self):
-        """
-        Execute all validation rules and raise exception if some certificate
-        requirements aren't met.
-        """
-
-        # cert and key must match
-        # cert has all required extensions to act as CA certificate
-        # chain must lead to cert
-
-        pass
-
-
-class ValidationError(Exception):
-    """
-    General custom CA certificate validation error
-    """
-    pass
+# Precisely control import.
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from ca_validate import CustomCACertConfiguration, ValidationError
 
 
 def validate_customer_key(customer_key):
@@ -223,7 +202,7 @@ def calculate_zk_acls_enabled(security):
         }[security]
 
 
-def try_load_file(path):
+def try_load_file_bytes(path):
     try:
         with open(path, 'rb') as file:
             return file.read()
@@ -243,22 +222,21 @@ def calculate_ca_certificate(
     Validation is handled by `validate_ca_certificate` that reports particular
     errors.
     """
-    cert = try_load_file(ca_certificate_path)
-    # TODO(mh): Remove `noqa` once we start passing cert, key, chain to CustomCACertificate
-    # class.
-    key = try_load_file(ca_certificate_key_path)  # noqa: F841
-    chain = try_load_file(ca_certificate_chain_path)
+    cert_bytes = try_load_file_bytes(ca_certificate_path)
+    key_bytes = try_load_file_bytes(ca_certificate_key_path)
+    chain_bytes = try_load_file_bytes(ca_certificate_chain_path)
 
     # TODO(mh): Use validator and if certificate is valid output
     # certificate to PEM format and concatenate optional chain
     # See:
     #  https://support.ssl.com/Knowledgebase/Article/View/19/0/der-vs-crt-vs-cer-vs-pem-certificates-and-how-to-convert-them
     try:
-        CustomCACertificate().validate()
+        custom_ca_cert = CustomCACertConfiguration(cert_bytes, key_bytes, chain_bytes)
+        custom_ca_cert.validate()
     except ValidationError:
         return ""
 
-    # TODO(mh): Encode to PEM format and probably move to the CustomCACertificate class
+    # TODO(mh): Encode to PEM format and probably move to the CustomCACertConfiguration class
     cert = cert.decode('utf-8')
     chain = chain.decode('utf-8')
     cert = [cert.strip('\n'), chain.strip('\n')]
@@ -288,7 +266,7 @@ def validate_ca_certificate(
         'ca_certificate_path': ca_certificate_path,
         'ca_certificate_key_path': ca_certificate_key_path,
         'ca_certificate_chain_path': ca_certificate_chain_path,
-    })
+        })
 
     # No validation is required if none of paths is provided. Assuming that
     # user isn't configuring DC/OS with custom CA certificate
@@ -315,9 +293,14 @@ def validate_ca_certificate(
 
     # Run CA validation
     try:
-        CustomCACertificate().validate()
-    except ValidationError as e:
-        raise AssertionError(str(e))
+        cert_bytes = try_load_file_bytes(ca_certificate_path)
+        key_bytes = try_load_file_bytes(ca_certificate_key_path)
+        chain_bytes = try_load_file_bytes(ca_certificate_chain_path)
+        custom_ca_certificate = CustomCACertConfiguration(
+            cert_bytes, key_bytes, chain_bytes)
+        custom_ca_certificate.validate()
+    except ValidationError as err:
+        raise AssertionError(str(err))
 
 
 def calculate_ca_certificate_enabled(ca_certificate):
