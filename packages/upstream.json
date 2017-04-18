@@ -1,6 +1,11 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mhrabovcin/dcos",
   "kind": "git",
+<<<<<<< HEAD
   "ref": "b6f33ccc2e66287576ca601038862afffe44720a",
   "ref_origin": "master"
+=======
+  "ref": "b10440c88ed665a6222f2550376ec384be01cb42",
+  "ref_origin": "mh/custom-ca-cert"
+>>>>>>> upstream: use gen version that installs python cryptography module
 }
