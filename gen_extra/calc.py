@@ -124,11 +124,34 @@ def calculate_agent_authn_enabled(security):
         }[security]
 
 
+def calculate_executor_authentication_required(security):
+    return {
+        'strict': 'true',
+        'permissive': 'false',
+        'disabled': 'false'
+        }[security]
+
+
+def calculate_executor_secret_generation_enabled(security):
+    return {
+        'strict': 'true',
+        'permissive': 'true',
+        'disabled': 'false'
+        }[security]
+
+
 def calculate_mesos_classic_authenticator(framework_authentication_enabled, agent_authn_enabled):
     if framework_authentication_enabled == 'true' or agent_authn_enabled == 'true':
         return 'com_mesosphere_dcos_ClassicRPCAuthenticator'
     else:
         return 'crammd5'
+
+
+def calculate_mesos_agent_http_authenticators(executor_authentication_required):
+    if executor_authentication_required == 'true':
+        return 'com_mesosphere_dcos_http_Authenticator,com_mesosphere_dcos_executor_Authenticator'
+    else:
+        return 'com_mesosphere_dcos_http_Authenticator'
 
 
 def calculate_default_task_user(security):
@@ -354,12 +377,16 @@ entry = {
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
         'custom_auth_json': get_ui_auth_json,
-        'mesos_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
+        'mesos_master_http_authenticators': 'com_mesosphere_dcos_http_Authenticator',
+        'mesos_agent_http_authenticators': calculate_mesos_agent_http_authenticators,
         'mesos_authenticate_http': calculate_mesos_authenticate_http,
         'mesos_classic_authenticator': calculate_mesos_classic_authenticator,
         'framework_authentication_required': calculate_framework_authentication_required,
         'agent_authentication_required': calculate_agent_authentication_required,
         'agent_authn_enabled': calculate_agent_authn_enabled,
+        'executor_authentication_required': calculate_executor_authentication_required,
+        'executor_secret_generation_enabled': calculate_executor_secret_generation_enabled,
+        'executor_secret_key_path': '/var/lib/dcos/mesos/executor_key',
         'framework_authentication_enabled': calculate_framework_authentication_enabled,
         'mesos_authz_enforced': calculate_mesos_authz_enforced,
         'mesos_master_authorizers': calculate_mesos_authorizer,
