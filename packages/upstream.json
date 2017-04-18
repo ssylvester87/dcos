@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "1911b5eb326c2bdd6c2db01eb91ba666adbee270",
-  "ref_origin": "master"
+  "ref": "6deca327a16e2f30f141f514127dba54e92259f3",
+  "ref_origin": "greg/mesos-bump"
 }
