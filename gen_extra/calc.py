@@ -8,9 +8,9 @@ from gen.calc import validate_true_false
 from gen.internals import validate_one_of
 
 
-class CustomCA:
+class CustomCACertificate:
     """
-    Custom CA must match given properties so it can be used as DC/OS
+    Custom CA certificate must match given properties so it can be used as DC/OS
     Root CA
     """
 
@@ -29,7 +29,7 @@ class CustomCA:
 
 class ValidationError(Exception):
     """
-    General custom certificate validation error
+    General custom CA certificate validation error
     """
     pass
 
@@ -244,7 +244,7 @@ def calculate_ca_certificate(
     errors.
     """
     cert = try_load_file(ca_certificate_path)
-    # TODO(mh): Remove `noqa` once we start passing cert, key, chain to CustomCA
+    # TODO(mh): Remove `noqa` once we start passing cert, key, chain to CustomCACertificate
     # class.
     key = try_load_file(ca_certificate_key_path)  # noqa: F841
     chain = try_load_file(ca_certificate_chain_path)
@@ -254,11 +254,11 @@ def calculate_ca_certificate(
     # See:
     #  https://support.ssl.com/Knowledgebase/Article/View/19/0/der-vs-crt-vs-cer-vs-pem-certificates-and-how-to-convert-them
     try:
-        CustomCA().validate()
+        CustomCACertificate().validate()
     except ValidationError:
         return ""
 
-    # TODO(mh): Encode to PEM format and probably move to the CustomCA class
+    # TODO(mh): Encode to PEM format and probably move to the CustomCACertificate class
     cert = cert.decode('utf-8')
     chain = chain.decode('utf-8')
     cert = [cert.strip('\n'), chain.strip('\n')]
@@ -315,7 +315,7 @@ def validate_ca_certificate(
 
     # Run CA validation
     try:
-        CustomCA().validate()
+        CustomCACertificate().validate()
     except ValidationError as e:
         raise AssertionError(str(e))
 
