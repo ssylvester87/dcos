@@ -583,6 +583,17 @@ class Bootstrapper(object):
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
 
+    def write_executor_secret_key(self, path):
+        if os.path.isfile(path):
+            return
+
+        if os.path.exists(path):
+            raise Exception('Mesos executor secret key path "{}" was found, ' +
+                            'but is not a regular file'.format(path))
+
+        key = utils.generate_executor_secret_key()
+        _write_file(path, key, 0o600)
+
     def write_mesos_master_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
             return
@@ -1150,6 +1161,9 @@ def dcos_mesos_slave(b, opts):
         crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
 
+    if opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
+
     # Service account needed to
     # a) authenticate with master, and/or
     # b) retrieve ACLs from bouncer, and/or
@@ -1174,6 +1188,9 @@ def dcos_mesos_slave_public(b, opts):
         keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
         crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
+
+    if opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
 
     # Service account needed to
     # a) authenticate with master, and/or
