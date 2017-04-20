@@ -4,19 +4,17 @@
 import datetime
 import uuid
 
-import pytest
-
 import cryptography.hazmat.backends
+import pytest
 from cryptography import x509
-from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID, NameOID
-from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec, dsa, rsa
+from cryptography.hazmat.primitives.asymmetric import dsa, ec, rsa
+from cryptography.x509.oid import NameOID
 
-from ca_validate import (
-    CustomCACertValidator,
+from ca_validate import (  # noqa=I100
     CustomCACertValidationError,
+    CustomCACertValidator,
     load_pem_private_key,
     load_pem_x509_cert,
     )
@@ -301,7 +299,6 @@ def serialize_cert_chain_to_pem(chain):
         PEM text representing serialized certificate.
     """
     return ''.join([serialize_cert_to_pem(cert) for cert in chain])
-
 
 
 """List of supported private key types"""
@@ -597,7 +594,7 @@ class TestCertValidation:
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_validator.validate()
         assert str(e_info.value) == \
-         'The custom CA certificate `notBefore` date is in the future'
+            'The custom CA certificate `notBefore` date is in the future'
 
     def test_not_after_date_in_past(self):
         """

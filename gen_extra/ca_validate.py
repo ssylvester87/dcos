@@ -1,6 +1,5 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
 
-
 """
 Validate the custom CA certificate and its related data.
 
@@ -39,12 +38,11 @@ import itertools
 
 import cryptography.hazmat.backends
 from cryptography import x509
-from cryptography.x509.oid import ExtensionOID
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import  hashes
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-
+from cryptography.x509.oid import ExtensionOID
 
 cryptography_default_backend = cryptography.hazmat.backends.default_backend()
 
@@ -176,7 +174,6 @@ class CustomCACertValidator:
         else:
             self._validate_chain()
 
-
     def _validate_chain(self):
         """
         - Parse all certificates individually using OpenSSL (bindings), retain
@@ -203,7 +200,6 @@ class CustomCACertValidator:
         tokens = self.chain.split(endmarker)
         chaincerts = [
             load_pem_x509_cert(t + endmarker) for t in tokens if t.strip() != '']
-
 
         # TODO(JP): improve error messages to contain specifics that make it
         # easy to identify the bad certificate, or the bad pair of certificates
@@ -233,7 +229,6 @@ class CustomCACertValidator:
             if parentcert.subject != childcert.issuer:
                 raise CustomCACertValidationError(
                     'The certificate chain is not coherent')
-
 
     def _validate_signature_hash_algorithm(self):
         """

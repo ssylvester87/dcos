@@ -2,7 +2,6 @@ import hashlib
 import json
 import os.path
 import sys
-import textwrap
 from base64 import b64encode
 from collections import OrderedDict
 
@@ -11,7 +10,7 @@ from gen.internals import validate_one_of
 
 # Precisely control import.
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from ca_validate import CustomCACertValidator, CustomCACertValidationError
+from ca_validate import CustomCACertValidationError, CustomCACertValidator  # noqa=I100
 
 
 def validate_customer_key(customer_key):
