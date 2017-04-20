@@ -416,7 +416,8 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        assert 'required to have a basic constraints extension' in str(e_info.value)
+        assert 'required to have a basic constraints extension' \
+            in str(e_info.value)
 
     def test_basic_constraints_ca_false(self):
         """
@@ -436,8 +437,10 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate basic constraints CA is false'
+        assert str(e_info.value) == (
+            'The custom CA certificate must have the basic constraint '
+            '`CA` set to `true`'
+            )
 
     # TODO(jp): this should just be a warning.
     # def test_basic_constraint_pathlen(self):
@@ -478,8 +481,10 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate misses key usage extension'
+        assert str(e_info.value) == (
+            'The custom CA certificate is required to have a key '
+            'usage extension'
+            )
 
     def test_key_usage_key_cert_sign_flag_false(self):
         """
@@ -498,8 +503,10 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate key usage keyCertSign is false'
+        assert str(e_info.value) == (
+            'The custom CA certificate must have a key usage extension '
+            'defining `keyCertSign` as `true`'
+            )
 
     def test_not_before_date_in_future(self):
         """
@@ -521,8 +528,8 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate notBefore date is in future'
+        assert str(e_info.value) == \
+         'The custom CA certificate `notBefore` date is in the future'
 
     def test_not_after_date_in_past(self):
         """
@@ -546,14 +553,15 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate notAfter date is in past'
+        assert str(e_info.value) == \
+            'The custom CA certificate `notAfter` date is in the past'
 
     def test_not_after_date_ending_soon(self):
         """
         Certificate notAfter date is in past.
         """
-        not_valid_after = datetime.datetime.utcnow() + datetime.timedelta(days=5)
+        not_valid_after = (
+            datetime.datetime.utcnow() + datetime.timedelta(days=5))
 
         private_key = generate_rsa_private_key()
         key_pem = serialize_key_to_pem(private_key)
@@ -568,5 +576,5 @@ class TestCertValidation:
         ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
             ca_cert_config.validate()
-        #assert str(e_info.value) == \
-        #    'Certificate must be valid at least 365 days'
+        assert str(e_info.value) == \
+            'The custom CA certificate must be valid for at least 365 days'

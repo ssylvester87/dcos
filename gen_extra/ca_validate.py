@@ -146,10 +146,14 @@ class CustomCACertValidator:
         try:
             if not self.key_usage.key_cert_sign:
                 raise CustomCACertValidationError(
-                    'The custom CA certificate must have a key usage extension defining `keyCertSign` as `true`')
+                    'The custom CA certificate must have a key usage extension '
+                    'defining `keyCertSign` as `true`'
+                    )
         except x509.ExtensionNotFound:
             raise CustomCACertValidationError(
-                'The custom CA certificate is required to have a key usage extension')
+                'The custom CA certificate is required to have a key '
+                'usage extension'
+                )
 
         if self.cert.not_valid_before > datetime.datetime.utcnow():
             raise CustomCACertValidationError(
@@ -166,18 +170,16 @@ class CustomCACertValidator:
                     self.MIN_VALID_DAYS))
 
         if self.is_root:
-
             if self.chain is not None:
                 raise CustomCACertValidationError(
                     'The custom CA certificate is a root CA certificate. '
                     'Therefore, no corresponding chain must be defined'
                     )
-
         else:
-            _validate_chain()
+            self._validate_chain()
 
 
-    def _validate_chain():
+    def _validate_chain(self):
         """
         - Parse all certificates individually using OpenSSL (bindings), retain
           order.
@@ -234,7 +236,6 @@ class CustomCACertValidator:
         cert_algo = type(self.cert.signature_hash_algorithm)
 
         if cert_algo not in self.SUPPORTED_SIGNATURE_HASH_ALGORITHMS:
-
             # TODO(jp): improve error message, emit detail on mismatch.
             raise CustomCACertValidationError(
                 'The custom CA certificate was signed with a unsupported hash algorithm')
