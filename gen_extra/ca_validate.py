@@ -2,16 +2,40 @@
 
 
 """
-Verify user-given certificate and key data:
+Validate the custom CA certificate and its related data.
 
-- Require a single X.509 root CA certificate and the corresponding private
-  key.
-- Require the certificate to be encoded in the "OpenSSL PEM format".
-- Require an RSA private key of at least 2048 bit strength key encoded in
-  the PKCS#8 PEM format.
+Relevant parameters and their corresponding high-level description:
+
+ca_certificate:
+
+    A single X.509 CA certificate in the OpenSSL PEM format. Can be a root
+    (self-issued) certificate or an intermediate (cross-certificate)
+    certificate.
+
+
+ca_certificate_key:
+
+    The private key (either RSA or ECC) corresponding to the CA certificate,
+    encoded in the PKCS#8 PEM format.
+
+
+ca_certificate_chain:
+
+    The complete CA certification chain required for end-entity certificate
+    verification, in the OpenSSL PEM format.
+
+    Must be left undefined if ca_certificate is a root CA certificate.
+
+    If the ca_certificate is an intermediate CA certificate, this needs to
+    contain all CA certificates comprising the complete sequence starting
+    precisely with the CA certificate that was used to sign the certificate in
+    ca_certificate and ending with a root CA certificate (where issuer and
+    subject are the same entity), yielding a gapless certification path. The
+    order is significant and the list must contain at least one certificate.
 """
 
 import datetime
+import itertools
 
 import cryptography.hazmat.backends
 from cryptography import x509
@@ -25,52 +49,56 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 cryptography_default_backend = cryptography.hazmat.backends.default_backend()
 
 
-class CustomCACertConfiguration:
-    """
-    Custom CA certificate configuration is helper that allows to validate all
-    properties of provided CA certificate and encryption key.
-    """
+class CustomCACertValidationError(Exception):
+    pass
 
-    """Min bits size for RSA encryption key"""
+
+class CustomCACertValidator:
+
+    # Minimal length for RSA type keys (in bits).
     RSA_KEY_MIN_SIZE = 2048
 
-    """Min bits size for EC encryption key"""
+    # Minimal length for EC type keys (in bits).
     EC_KEY_MIN_SIZE = 256
 
-    """Supported certificate signature hash algorithms"""
-    SIGN_HASH_ALGORITHMS = (
+    # Supported certificate signature hash algorithms.
+    SUPPORTED_SIGNATURE_HASH_ALGORITHMS = (
         hashes.SHA256,
         hashes.SHA384,
         hashes.SHA512,
-        hashes.RIPEMD160,
-        hashes.Whirlpool,
-        hashes.BLAKE2b,
-        hashes.BLAKE2s,
+        # hashes.RIPEMD160,
+        # hashes.Whirlpool,
+        # hashes.BLAKE2b,
+        # hashes.BLAKE2s,
     )
 
-    """Min days that certificate needs to be valid in future"""
+    # Minimal number of days days that the custom CA certificate needs to be
+    # valid from now on.
     MIN_VALID_DAYS = 365
 
-    def __init__(self, cert_bytes, key_bytes, chain_bytes=None):
+    def __init__(self, cert, key, chain=None):
         """
         Args:
-            cert_bytes (bytes): PEM encoded X509 certificate
-            key_bytes (bytes): PEM encoded private key used for signing the
-                certificate
-            chain_bytes (bytes): PEM encoded CA chain if the provided
-                certificate is intermediate CA certificate
+            cert (str): X.509 CA certificate, encoded as text  in the OpenSSL
+                PEM format.
+
+            key (str): Private key corresponding to the certificates provided
+                via `cert`, encoded as text in the PKCS#8 PEM format.
+
+            chain (str): Ordered chain of CA certificates in the OpenSSL
+                PEM format. Required if the certificate `cert` is an
+                intermediate CA certificate.
         """
-        self.private_key = load_pem_private_key(key_bytes)
-        self.cert = load_pem_x509_cert(cert_bytes)
-        self.chain = chain_bytes
+        self.private_key = load_pem_private_key(key)
+        self.cert = load_pem_x509_cert(cert)
+        self.chain = chain
+
+        #self._validate()
 
     def validate(self):
         """
-        Execute all validation rules and raises an exception if some
-        certificate or private key requirements aren't met.
-
-        Raises:
-            ValidationError
+        Perform the individual validation steps and raise a
+        `CustomCACertValidationError` in case a check fails.
 
         - RSA key size is at least 2048 bits.
         - EC key size is at least 256 bits.
@@ -100,61 +128,116 @@ class CustomCACertConfiguration:
         self._validate_signature_hash_algorithm()
 
         try:
-            if not self.basic_constraints.ca:
-                raise ValidationError(
-                    'Certificate basic constraints CA is false')
-
-            path_length = self.basic_constraints.path_length
-            if path_length and path_length > 0:
-                raise ValidationError(
-                    'Certificate basic constraints path_length is > 0')
+            constraints = self.get_basic_constraints(self.cert)
         except x509.ExtensionNotFound:
-            raise ValidationError(
-                'Certificate misses basic constraints extension')
+            raise CustomCACertValidationError(
+                'The custom CA certificate is required to have a basic constraints extension')
+
+        if not constraints.ca:
+            raise CustomCACertValidationError(
+                'The custom CA certificate must have the basic constraint `CA` set to `true`')
+
+        # TODO(jp_: Let's make this a warning instead of a hard error.
+        # path_length = self.basic_constraints.path_length
+        # if path_length and path_length > 0:
+        #    raise CustomCACertValidationError(
+        #         'Certificate basic constraints path_length is > 0')
 
         try:
             if not self.key_usage.key_cert_sign:
-                raise ValidationError(
-                    'Certificate key usage keyCertSign is false')
+                raise CustomCACertValidationError(
+                    'The custom CA certificate must have a key usage extension defining `keyCertSign` as `true`')
         except x509.ExtensionNotFound:
-            raise ValidationError(
-                'Certificate misses key usage extension')
+            raise CustomCACertValidationError(
+                'The custom CA certificate is required to have a key usage extension')
 
         if self.cert.not_valid_before > datetime.datetime.utcnow():
-            raise ValidationError(
-                'Certificate notBefore date is in future')
+            raise CustomCACertValidationError(
+                'The custom CA certificate `notBefore` date is in the future')
 
         if self.cert.not_valid_after < datetime.datetime.utcnow():
-            raise ValidationError(
-                'Certificate notAfter date is in past')
+            raise CustomCACertValidationError(
+                'The custom CA certificate `notAfter` date is in the past')
 
         valid_period = self.cert.not_valid_after - datetime.datetime.utcnow()
         if valid_period < datetime.timedelta(days=self.MIN_VALID_DAYS):
-            raise ValidationError(
-                'Certificate must be valid at least {} days'.format(
+            raise CustomCACertValidationError(
+                'The custom CA certificate must be valid for at least {} days'.format(
                     self.MIN_VALID_DAYS))
 
-        if self.is_root and len(self.chain) > 0:
-            raise ValidationError(
-                'Certificate is root CA and does not require CA chain')
+        if self.is_root:
 
-        # chain must lead to cert
+            if self.chain is not None:
+                raise CustomCACertValidationError(
+                    'The custom CA certificate is a root CA certificate. '
+                    'Therefore, no corresponding chain must be defined'
+                    )
+
+        else:
+            _validate_chain()
+
+
+    def _validate_chain():
+        """
+        - Parse all certificates individually using OpenSSL (bindings), retain
+          order.
+
+        - Test that all certificates are CA certificates.
+
+        - Test that the first (or only) cert’s subject is equal to the issuer of
+          ca_certificate.
+
+        - If this is a collection of multiple certificates, test that it defines
+          a coherent chain: For N certificates and if N > 1: let i run from 1 to
+          N-1, test that the issuer of certificate_i equals the subject of
+          certificate_i+1
+
+        - Test that the last (or only) certificate has matching issuer and
+          subject (confirm that it is a root CA certificate).
+        """
+        endmarker = '-----END CERTIFICATE-----'
+        tokens = self.chain.split(endmarker)
+        chaincerts = [load_pem_x509_cert(t + endmarker) for t in tokens]
+
+        # TODO(JP): improve error messages to contain specifics that make it
+        # easy to identify the bad certificate, or the bad pair of certificates
+        # (emit subject or issuer or fingerprint or something like that).
+
+        for chaincert in chaincerts:
+            constraints = self.get_basic_constraints(chaincert)
+            if not constraints.ca:
+                raise CustomCACertValidationError(
+                    'All chain certificates must have the basic constraint `CA` set to `true`')
+
+        if self.cert.issuer != chaincerts[0].subject:
+            raise CustomCACertValidationError(
+                'The fist chain certificate must be the issuer of the custom CA certificate')
+
+        if chaincerts[-1].issuer != chaincerts[-1].cert.subject:
+            raise CustomCACertValidationError(
+                'The last chain certificate must have equivalent subject and '
+                'issuer (must be a root CA certificate)')
+
+        for childcert, parentcert in pairwise(chaincerts):
+            if parentcert.subject != childcert.issuer:
+                raise CustomCACertValidationError(
+                    'The certificate chain is not coherent')
+
 
     def _validate_signature_hash_algorithm(self):
         """
-        Validates certificate signature algorithm
+        Validate certificate signature algorithm.
 
         Raises:
-            ValidationError
+            CustomCACertValidationError
         """
-        cert_algo = self.cert.signature_hash_algorithm
+        cert_algo = type(self.cert.signature_hash_algorithm)
 
-        for supported_algo in self.SIGN_HASH_ALGORITHMS:
-            if isinstance(cert_algo, supported_algo):
-                return
+        if cert_algo not in self.SUPPORTED_SIGNATURE_HASH_ALGORITHMS:
 
-        raise ValidationError(
-            'Certificate is signed with weak hash algorithm')
+            # TODO(jp): improve error message, emit detail on mismatch.
+            raise CustomCACertValidationError(
+                'The custom CA certificate was signed with a unsupported hash algorithm')
 
     def _validate_rsa_keys(self):
         """
@@ -164,7 +247,8 @@ class CustomCACertConfiguration:
         self._validate_keys_size(self.RSA_KEY_MIN_SIZE)
 
         if not self.rsa_keys_matching:
-            raise ValidationError("private key does not match public key")
+            raise CustomCACertValidationError(
+                "private key does not match public key")
 
     def _validate_ec_keys(self):
         """
@@ -174,7 +258,8 @@ class CustomCACertConfiguration:
         self._validate_keys_size(self.EC_KEY_MIN_SIZE)
 
         if not self.ec_keys_matching:
-            raise ValidationError("private key does not match public key")
+            raise CustomCACertValidationError(
+                "private key does not match public key")
 
     def _validate_keys_size(self, size):
         """
@@ -184,31 +269,30 @@ class CustomCACertConfiguration:
             size (int): Minimal size of private and certificate public key
 
         Raises:
-            ValidationError
+            CustomCACertValidationError
         """
         if key_get_size(self.private_key) < size:
-            raise ValidationError(
+            raise CustomCACertValidationError(
                 'Private key size smaller than {} bits'.format(
                     size))
 
         if key_get_size(self.cert.public_key()) < size:
-            raise ValidationError(
+            raise CustomCACertValidationError(
                 'Public key size smaller than {} bits'.format(
                     size))
 
-    @property
-    def basic_constraints(self):
+    def get_basic_constraints(self, cert):
         """
         BasicConstraints extension value from the certificate.
 
-        Return:
+        Returns:
             x509.BasicConstraints
 
         Raises:
             x509.ExtensionNotFound
         """
 
-        basic_constraints_ext = self.cert.extensions.get_extension_for_oid(
+        basic_constraints_ext = cert.extensions.get_extension_for_oid(
             ExtensionOID.BASIC_CONSTRAINTS)
 
         return basic_constraints_ext.value
@@ -218,7 +302,7 @@ class CustomCACertConfiguration:
         """
         KeyUsage extension value from the certificate.
 
-        Return:
+        Returns:
             x509.BasicConstraints
 
         Raises:
@@ -235,7 +319,7 @@ class CustomCACertConfiguration:
         """
         Checks if certificate is a root ceritficate.
 
-        Return:
+        Returns:
             Boolean
         """
         return self.cert.issuer == self.cert.subject
@@ -269,40 +353,15 @@ class CustomCACertConfiguration:
 
         return pubkey_pubnumbers.n == privkey_pubnumbers.n
 
-    def _keys_pubnumbers_matching(self, property_names=[]):
-        # TODO(mh): Stat using this value
-        pubnumbers = [
-            self.cert.public_key().public_numbers(),
-            self.private_key.private_numbers().public_numbers,
-            ]
-
-        for property_name in property_names:
-            values = set()
-            for pubnumber in pubnumbers:
-                if not hasattr(pubnumber, property_name):
-                    raise ValueError('property name {} not found'.format(property_name))
-                values.add(getattr(pubnumber, property_name))
-            # Can't match, more than one unique value for given property
-            if len(values) > 1:
-                return False
-
-        return True
-
-class ValidationError(Exception):
-    """
-    General custom CA certificate validation error
-    """
-    pass
-
 
 def key_get_size(key):
     """
-    Retrieve a key size from provided key.
+    Returns key size in bits for provided key.
 
     Args:
-        key: Private or public key from cryptography module.
+        key: Private or public key object from cryptography module.
 
-    Return:
+    Returns:
         int: key size
 
     Raises:
@@ -315,77 +374,104 @@ def key_get_size(key):
     raise ValueError('Key size could not be detected')
 
 
-def load_pem_private_key(data):
-    """Implement private key loading.
+def load_pem_private_key(key_pem):
+    """
+    Load key from provided PEM/text representation.
 
     Expect one of:
         - RSA PKCS#8 PEM private key (RFC 3447, traditional OpenSSL format).
         - EC PKCS#8 PEM private key
 
     Args:
-        data (bytes): the bytes to verify.
+        key_pem (str): the PEM text representation of the data to verify.
 
     Returns:
         An object of type
         `cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey`.
 
     Raises:
-        ValidationError
+        CustomCACertValidationError
     """
+
     try:
         private_key = serialization.load_pem_private_key(
-            data=data,
+            data=key_pem.encode('utf-8'),
             password=None,
             backend=cryptography_default_backend
             )
     except (ValueError, UnsupportedAlgorithm) as e:
-        raise ValidationError('Invalid private key: %s' % e)
+        raise CustomCACertValidationError('Invalid private key: %s' % e)
 
     if not isinstance(
             private_key, (rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey)):
-        raise ValidationError('Unexpected private key type (not RSA or EC)')
+        raise CustomCACertValidationError(
+            'Unexpected private key type (not RSA or EC)')
 
     return private_key
 
 
-def load_pem_x509_cert(data):
+def load_pem_x509_cert(cert_pem):
     """
-    Load X590 certificate from provided data array.
+    Load X.590 certificate from the provided PEM/text representation.
 
-    - Expect a single certificate.
-
-    - Expect a X.509 certificate in the "OpenSSL PEM format" (X.509
+    - Expect a single X.509 certificate in the "OpenSSL PEM format" (X.509
       certificate encoded using the ASN.1 DER, base64-encoded inbetween BEGIN
       CERTIFICATE and END CERTIFICATE lines).
 
-    - Expect that the public key of the certificate is of type RSA or EC
+    - Expect that the public key of the certificate is of type RSA or EC.
 
-    Note that if the certificate data blob contained more than one certificate
-    definition, x509.load_pem_x509_certificate would silently read only the
-    first one.
+    Note that if the certificate text representations contains more than one
+    certificate definition, x509.load_pem_x509_certificate would silently read
+    only the first one.
+
+
+    Args:
+        cert_pem (str): the PEM text representation of the data to verify.
 
     Returns:
-        `cert` is an object of type `cryptography.x509.Certificate`
+        `cert`, an object of type `cryptography.x509.Certificate`.
 
     Raises:
-        ValidationError
+        CustomCACertValidationError
     """
-    if data.count(b'BEGIN CERTIFICATE') > 1:
-        raise ValidationError(
+
+    if cert_pem.count('BEGIN CERTIFICATE') > 1:
+        raise CustomCACertValidationError(
             'Certificate data contains more than one certificate definition.')
 
     try:
         cert = x509.load_pem_x509_certificate(
-            data=data,
+            data=cert_pem.encode('utf-8'),
             backend=cryptography_default_backend
             )
     except ValueError as e:
-        raise ValidationError('Invalid certificate: %s' % e)
+        raise CustomCACertValidationError('Invalid certificate: %s' % e)
 
     public_key = cert.public_key()
 
     if not isinstance(
             public_key, (rsa.RSAPublicKey, ec.EllipticCurvePublicKey)):
-        raise ValidationError('Unexpected public key type (not RSA or EC)')
+        raise CustomCACertValidationError(
+            'Unexpected public key type (not RSA or EC)')
 
     return cert
+
+
+def pairwise(iterable):
+    """
+    >>> list(pairwise([]))
+    []
+    >>> list(pairwise([1]))
+    []
+    >>> list(pairwise([1,2]))
+    [(1, 2)]
+    >>> list(pairwise([1,2,3]))
+    [(1, 2), (2, 3)]
+    >>> list(pairwise([1,2,3,4]))
+    [(1, 2), (2, 3), (3, 4)]
+
+    From https://docs.python.org/3.5/library/itertools.html#itertools-recipes.
+    """
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)

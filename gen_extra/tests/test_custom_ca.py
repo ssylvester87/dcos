@@ -1,6 +1,7 @@
+import json
 import logging
 import tempfile
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import pytest
 
@@ -214,5 +215,7 @@ class TestCustomCACertificate:
 
         generated = gen.generate(arguments)
         config = self._find_ca_cert_config(generated)
-        assert config['content'] == "{}\n{}\n".format(
-            invalid_certificate.cert.content, invalid_certificate.chain.content)
+#        assert config['content'] == json.dumps(OrderedDict((
+#            ('ca_certificate', invalid_certificate.cert.content),
+#            ('ca_certificate_chain', invalid_certificate.chain.content)
+#            )))

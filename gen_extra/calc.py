@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os.path
 import sys
 import textwrap
@@ -10,7 +11,7 @@ from gen.internals import validate_one_of
 
 # Precisely control import.
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from ca_validate import CustomCACertConfiguration, ValidationError
+from ca_validate import CustomCACertValidator, CustomCACertValidationError
 
 
 def validate_customer_key(customer_key):
@@ -202,59 +203,52 @@ def calculate_zk_acls_enabled(security):
         }[security]
 
 
-def try_load_file_bytes(path):
-    try:
-        with open(path, 'rb') as file:
-            return file.read()
-    except (IOError, ValueError):
-        return b""
+def load_file_utf8(path):
+    """Read byte content from file located at `path`, decode using UTF-8, and
+    return text.
+
+    Return an empty string if no file exists at the given path. Assume that the
+    file contents are decodable using UTF-8.
+    """
+    if not os.path.isfile(path):
+        return ''
+
+    with open(path, 'rb') as f:
+        return f.read().decode('utf-8')
 
 
 def calculate_ca_certificate(
         ca_certificate_path,
-        ca_certificate_key_path,
         ca_certificate_chain_path
         ):
     """
-    This function calculates and returns valid PEM certificate only if provided
-    inputs are valid and don't contain any error. If there is some error this
-    function doesn't raises exception but rather silently returns empty string.
-    Validation is handled by `validate_ca_certificate` that reports particular
-    errors.
+    Translate the non-sensitive part of the user-given CA certificate data into
+    a base64 representation.
+
+    Assume that the given file paths exist and that the data has previously been
+    validated.
     """
-    cert_bytes = try_load_file_bytes(ca_certificate_path)
-    key_bytes = try_load_file_bytes(ca_certificate_key_path)
-    chain_bytes = try_load_file_bytes(ca_certificate_chain_path)
 
-    # TODO(mh): Use validator and if certificate is valid output
-    # certificate to PEM format and concatenate optional chain
-    # See:
-    #  https://support.ssl.com/Knowledgebase/Article/View/19/0/der-vs-crt-vs-cer-vs-pem-certificates-and-how-to-convert-them
-    try:
-        custom_ca_cert = CustomCACertConfiguration(cert_bytes, key_bytes, chain_bytes)
-        custom_ca_cert.validate()
-    except ValidationError:
-        return ""
+    # Handle case where no custom CA certificate was provided.
+    if not ca_certificate_path:
+        return ''
 
-    # TODO(mh): Encode to PEM format and probably move to the CustomCACertConfiguration class
-    cert = cert.decode('utf-8')
-    chain = chain.decode('utf-8')
-    cert = [cert.strip('\n'), chain.strip('\n')]
-    ca = '\n'.join([part for part in cert if part != ''])
-    if len(ca) > 0:
-        ca = ca + '\n'
+    cert = load_file_utf8(ca_certificate_path)
 
-    # TODO(mh): Is there a better way to figure out indentation in templates for
-    # calculated multiline values.
-    return indent_for_yaml(ca)
+    # Treat the CA certificate chain as optional.
+    chain = ''
+    if ca_certificate_chain_path:
+        chain = load_file_utf8(ca_certificate_chain_path)
 
+    # Build a single-line JSON representation from data (i.e. a string that does
+    # not contain newline characters; for complication-free transmission of the
+    # data through a YAML document.
+    serialized_config = json.dumps(OrderedDict((
+        ('ca_certificate', cert),
+        ('ca_certificate_chain', chain)
+        )))
 
-def indent_for_yaml(text, size=6):
-    """
-    Format given multiline text with proper identation so it can be used as
-    a yaml template value
-    """
-    return textwrap.indent(text, ' ' * size).lstrip(' ')
+    return serialized_config
 
 
 def validate_ca_certificate(
@@ -262,44 +256,45 @@ def validate_ca_certificate(
         ca_certificate_key_path,
         ca_certificate_chain_path
         ):
-    file_paths = OrderedDict({
+
+    config = {
         'ca_certificate_path': ca_certificate_path,
         'ca_certificate_key_path': ca_certificate_key_path,
         'ca_certificate_chain_path': ca_certificate_chain_path,
-        })
+        }
 
-    # No validation is required if none of paths is provided. Assuming that
-    # user isn't configuring DC/OS with custom CA certificate
-    non_empty_file_paths = OrderedDict(
-        {key: path for key, path in file_paths.items() if path != ''})
-    if len(non_empty_file_paths) == 0:
+    # Filter for non-empty config values.
+    filepaths = {key: path for key, path in config.items() if path}
+
+    # If none of the three file paths were given (if they are an empty string)
+    # it means that there was no attempt to provide a custom CA certificate.
+    if not filepaths:
         return
 
-    # Cert and key paths are required when installing custom CA certificate
-    required = ['ca_certificate_path', 'ca_certificate_key_path']
-    for required_key in required:
-        if required_key not in non_empty_file_paths:
+    # Cert and key are required when installing a custom CA certificate.
+    for required_key in ('ca_certificate_path', 'ca_certificate_key_path'):
+        if required_key not in filepaths:
             raise AssertionError(
-                "Path for `{}` is required when defining custom "
-                "CA certificate".format(required_key)
+                'Definition of `{}` is required when setting up a custom '
+                'CA certificate'.format(required_key)
                 )
 
-    # If paths are provided files must exists
-    for name, path in non_empty_file_paths.items():
-        if not os.path.exists(path):
+    # All provided paths must point to files.
+    for key, path in filepaths.items():
+        if not os.path.isfile(path):
             raise AssertionError(
-                "Provided path `{}` = `{}` doesn't exists".format(name, path)
+                'Config key `{}` does not point to a file: {}'.format(key, path)
                 )
 
-    # Run CA validation
+    # Run data validation.
     try:
-        cert_bytes = try_load_file_bytes(ca_certificate_path)
-        key_bytes = try_load_file_bytes(ca_certificate_key_path)
-        chain_bytes = try_load_file_bytes(ca_certificate_chain_path)
-        custom_ca_certificate = CustomCACertConfiguration(
-            cert_bytes, key_bytes, chain_bytes)
-        custom_ca_certificate.validate()
-    except ValidationError as err:
+        cert = load_file_utf8(ca_certificate_path)
+        key = load_file_utf8(ca_certificate_key_path)
+        chain = load_file_utf8(ca_certificate_chain_path)
+
+        CustomCACertValidator(cert, key, chain).validate()
+
+    except CustomCACertValidationError as err:
         raise AssertionError(str(err))
 
 
