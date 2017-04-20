@@ -155,8 +155,8 @@ class TestCustomCACertificate:
         result = gen.validate(arguments)
         self._assert_result_errors(result, messages={
             'ca_certificate_key_path':
-                'Path for `ca_certificate_key_path` is required '
-                'when defining custom CA certificate'
+                'Definition of `ca_certificate_key_path` is required '
+                'when setting up a custom CA certificate'
             })
 
     def test_configuring_only_cert_key_path_fails_validation(self):
@@ -169,8 +169,8 @@ class TestCustomCACertificate:
         result = gen.validate(arguments)
         self._assert_result_errors(result, messages={
             'ca_certificate_key_path':
-                'Path for `ca_certificate_path` is required '
-                'when defining custom CA certificate'
+                'Definition of `ca_certificate_path` is required '
+                'when setting up a custom CA certificate'
             })
 
     def test_configuring_only_chain_path_fails_validation(self):
@@ -183,8 +183,8 @@ class TestCustomCACertificate:
         result = gen.validate(arguments)
         self._assert_result_errors(result, messages={
             'ca_certificate_key_path':
-                'Path for `ca_certificate_path` is required '
-                'when defining custom CA certificate'
+                'Definition of `ca_certificate_path` is required '
+                'when setting up a custom CA certificate'
             })
 
     def test_adding_non_existing_paths_fails_validation(self):

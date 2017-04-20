@@ -219,6 +219,7 @@ def load_file_utf8(path):
 
 def calculate_ca_certificate(
         ca_certificate_path,
+        ca_certificate_key_path,
         ca_certificate_chain_path
         ):
     """
@@ -227,6 +228,12 @@ def calculate_ca_certificate(
 
     Assume that the given file paths exist and that the data has previously been
     validated.
+
+    Note: This function accepts `ca_certificate_key_path` parameter that isn't
+    being processed anywhere. This is because how `gen` package processes
+    dependencies and calculates which validation functions can be invoked.
+    Removing the parameter from calculate function will cause that
+    `validate_ca_certificate` wouldn't be invoked.
     """
 
     # Handle case where no custom CA certificate was provided.
@@ -256,7 +263,6 @@ def validate_ca_certificate(
         ca_certificate_key_path,
         ca_certificate_chain_path
         ):
-
     config = {
         'ca_certificate_path': ca_certificate_path,
         'ca_certificate_key_path': ca_certificate_key_path,
@@ -286,14 +292,13 @@ def validate_ca_certificate(
                 'Config key `{}` does not point to a file: {}'.format(key, path)
                 )
 
+    cert = load_file_utf8(ca_certificate_path)
+    key = load_file_utf8(ca_certificate_key_path)
+    chain = load_file_utf8(ca_certificate_chain_path)
+
     # Run data validation.
     try:
-        cert = load_file_utf8(ca_certificate_path)
-        key = load_file_utf8(ca_certificate_key_path)
-        chain = load_file_utf8(ca_certificate_chain_path)
-
         CustomCACertValidator(cert, key, chain).validate()
-
     except CustomCACertValidationError as err:
         raise AssertionError(str(err))
 

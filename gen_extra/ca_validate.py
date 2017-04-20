@@ -79,7 +79,7 @@ class CustomCACertValidator:
     def __init__(self, cert, key, chain=None):
         """
         Args:
-            cert (str): X.509 CA certificate, encoded as text  in the OpenSSL
+            cert (str): X.509 CA certificate, encoded as text in the OpenSSL
                 PEM format.
 
             key (str): Private key corresponding to the certificates provided
