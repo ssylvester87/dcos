@@ -90,10 +90,8 @@ def invalid_certificate():
 
 class TestCustomCACertificate:
 
-    """
-    Path in `dcos-config.yaml` file where will be Custom CA certificate stored.
-    """
-    CA_CONFIG_PATH = '/etc_master/ca.crt'
+    # Path in `dcos-config.yaml` file where will be Custom CA certificate stored.
+    CA_CONFIG_PATH = '/etc_master/ca.json'
 
     def _assert_result_errors(self, result, keys=[], messages={}):
         """

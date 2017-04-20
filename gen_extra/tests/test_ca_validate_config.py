@@ -105,29 +105,45 @@ def cert_key_usage(**kwargs):
     return x509.KeyUsage(**kwargs)
 
 
-def generate_root_ca_cert_builder(
+def cert_name(common_name):
+    """
+    Create x509.Name
+    """
+    return x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mesosphere, Inc."),
+        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+        ])
+
+
+def cert_builder(
         public_key,
-        common_name="Test",
-        valid_days=3650,
+        common_name="Root CA",
+        issuer=None,
         basic_constraints=x509.BasicConstraints(ca=True, path_length=None),
         key_usage=cert_key_usage(key_cert_sign=True),
         not_valid_before=None,
         not_valid_after=None,
+        valid_days=3650,
         ):
     """
-    Generate root CA cert builder with some sensitive defaults. If no values are
-    overriden then the certificate created by builder is a valid custom CA cert.
+    Create cert builder with some sensitive defaults CA cert. If no values are
+    overriden then the certificate created by builder is a valid self signed
+    root CA cert that can be used as a custom CA cert.
 
     Args:
-        common_name (str): Certificate issuer common name
-        valid_days (int): Number of days that cert is valid
+        common_name (str): Certificate subject common name
+        issuer (x509.Name): Issuer name, if not provided subject is used
         basic_constraints (x509.BasicConstraints): Custom basic constraints
             extension value
         key_usage (x509.KeyUsage): Custom key constraints extension value
         not_valid_before (datetime): From which time is a certificate valid
         not_valid_after (datetime): After which time is certificate invalid
+        valid_days (int): Number of days that cert is valid
 
-    Return:
+    Returns:
         x509.CertitificateBuilder
     """
     if not_valid_before is None:
@@ -136,13 +152,10 @@ def generate_root_ca_cert_builder(
     if not_valid_after is None:
         not_valid_after = not_valid_before + datetime.timedelta(days=valid_days)
 
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mesosphere, Inc."),
-        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
-    ])
+    subject = cert_name(common_name)
+    if issuer is None:
+        issuer = subject
+
     builder = x509.CertificateBuilder().subject_name(
         subject
     ).issuer_name(
@@ -225,15 +238,70 @@ def generate_valid_root_ca_cert_pem(private_key):
             should be used for signing the certificate.
 
     Return:
-        bytes array representing certificate.
+        PEM text representing serialized certificate.
     """
     return serialize_cert_to_pem(
         sign_cert_builder(
-            generate_root_ca_cert_builder(
+            cert_builder(
                 private_key.public_key()),
             private_key
             )
         )
+
+
+def generate_root_ca_and_intermediate_ca(
+        number=1,
+        ):
+    """
+    Helper to create root CA cert and intermediate certs.
+
+    Args:
+        number (int): Number of intermediate certs. Not used if `common_names`
+            arg is provided.
+
+    Returns:
+        Certificate chain up to the root self signed certificate.
+
+        List[(x509.Certificate, rsa.RSAPrivateKey)]
+    """
+    chain = []
+
+    root_ca_private_key = generate_rsa_private_key()
+    root_ca = sign_cert_builder(
+        cert_builder(root_ca_private_key.public_key()),
+        root_ca_private_key
+        )
+    chain.append((root_ca, root_ca_private_key))
+
+    parent, parent_private_key = root_ca, root_ca_private_key
+    for i in range(0, number):
+        intermediate_ca_private_key = generate_rsa_private_key()
+        intermediate_ca = sign_cert_builder(
+            cert_builder(
+                intermediate_ca_private_key.public_key(),
+                common_name="Intermediate CA {}".format(i),
+                issuer=parent.subject,
+                ),
+            parent_private_key
+        )
+        chain.append((intermediate_ca, intermediate_ca_private_key))
+        parent, parent_private_key = intermediate_ca, intermediate_ca_private_key
+
+    return list(reversed(chain))
+
+
+def serialize_cert_chain_to_pem(chain):
+    """
+    Serialize chain of certificates to PEM format string.
+
+    Args:
+        chain (List[x509.Certificate]): Chain of certificates to be serialized.
+
+    Return:
+        PEM text representing serialized certificate.
+    """
+    return ''.join([serialize_cert_to_pem(cert) for cert in chain])
+
 
 
 """List of supported private key types"""
@@ -289,7 +357,7 @@ class TestCertLoading:
         key = generator()
         cert_bytes = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     key.public_key()),
                 key
                 )
@@ -304,7 +372,7 @@ class TestCertLoading:
             key = generate_dsa_private_key()
             cert_bytes = serialize_cert_to_pem(
                 sign_cert_builder(
-                    generate_root_ca_cert_builder(
+                    cert_builder(
                         key.public_key()),
                     key
                     )
@@ -330,9 +398,9 @@ class TestRSAKeyValidation:
         key = generate_rsa_private_key(key_size=1024)
         key_pem = serialize_key_to_pem(key)
         cert_pem = generate_valid_root_ca_cert_pem(key)
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == 'Private key size smaller than 2048 bits'
 
     def test_pub_private_key_mismatch(self):
@@ -341,9 +409,9 @@ class TestRSAKeyValidation:
         """
         key = serialize_key_to_pem(generate_rsa_private_key())
         cert = generate_valid_root_ca_cert_pem(generate_rsa_private_key())
-        ca_cert_config = CustomCACertValidator(cert, key)
+        ca_cert_validator = CustomCACertValidator(cert, key)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == 'private key does not match public key'
 
     # TODO(mh) Is there a way to test that public key is smaller than private?
@@ -359,9 +427,9 @@ class TestECKeyValidation:
         key = generate_ec_private_key(curve=ec.SECT163K1())
         key_pem = serialize_key_to_pem(key)
         cert_pem = generate_valid_root_ca_cert_pem(key)
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == 'Private key size smaller than 256 bits'
 
     def test_pub_private_key_mismatch(self):
@@ -370,9 +438,9 @@ class TestECKeyValidation:
         """
         key = serialize_key_to_pem(generate_ec_private_key())
         cert = generate_valid_root_ca_cert_pem(generate_ec_private_key())
-        ca_cert_config = CustomCACertValidator(cert, key)
+        ca_cert_validator = CustomCACertValidator(cert, key)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == 'private key does not match public key'
 
     # TODO(mh) Is there a way to test that public key is smaller than private?
@@ -388,15 +456,15 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key()),
                 private_key,
                 hashes.SHA1()
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert 'unsupported hash algorithm' in str(e_info.value)
 
     def test_basic_constraints_extension_missing(self):
@@ -407,15 +475,15 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     basic_constraints=None),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert 'required to have a basic constraints extension' \
             in str(e_info.value)
 
@@ -427,16 +495,16 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     basic_constraints=x509.BasicConstraints(
                         ca=False, path_length=None)),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == (
             'The custom CA certificate must have the basic constraint '
             '`CA` set to `true`'
@@ -451,16 +519,16 @@ class TestCertValidation:
     #     key_pem = serialize_key_to_pem(private_key)
     #     cert_pem = serialize_cert_to_pem(
     #         sign_cert_builder(
-    #             generate_root_ca_cert_builder(
+    #             cert_builder(
     #                 private_key.public_key(),
     #                 basic_constraints=x509.BasicConstraints(
     #                     ca=True, path_length=10)),
     #             private_key,
     #             )
     #         )
-    #     ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+    #     ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
     #     with pytest.raises(CustomCACertValidationError) as e_info:
-    #         ca_cert_config.validate()
+    #         ca_cert_validator.validate()
     #     assert str(e_info.value) == \
     #         'Certificate basic constraints path_length is > 0'
 
@@ -472,15 +540,15 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     key_usage=None),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == (
             'The custom CA certificate is required to have a key '
             'usage extension'
@@ -494,15 +562,15 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     key_usage=cert_key_usage(key_cert_sign=False)),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == (
             'The custom CA certificate must have a key usage extension '
             'defining `keyCertSign` as `true`'
@@ -519,15 +587,15 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     not_valid_before=not_valid_before),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == \
          'The custom CA certificate `notBefore` date is in the future'
 
@@ -543,16 +611,16 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     not_valid_before=not_valid_before,
                     not_valid_after=not_valid_after),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == \
             'The custom CA certificate `notAfter` date is in the past'
 
@@ -567,14 +635,218 @@ class TestCertValidation:
         key_pem = serialize_key_to_pem(private_key)
         cert_pem = serialize_cert_to_pem(
             sign_cert_builder(
-                generate_root_ca_cert_builder(
+                cert_builder(
                     private_key.public_key(),
                     not_valid_after=not_valid_after),
                 private_key,
                 )
             )
-        ca_cert_config = CustomCACertValidator(cert_pem, key_pem)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as e_info:
-            ca_cert_config.validate()
+            ca_cert_validator.validate()
         assert str(e_info.value) == \
             'The custom CA certificate must be valid for at least 365 days'
+
+    def test_intermediate_without_ca_chain(self):
+        """
+        Intermediate CA certificate was provided without a CA chain
+        """
+        chain = generate_root_ca_and_intermediate_ca(number=3)
+        intermediate_ca, private_key = chain[0][0], chain[0][1]
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(private_key)
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == \
+            'Certificate chain must be provided'
+
+    def test_chain_cert_with_basic_constraints_ca_false(self):
+        """
+        Intermediate CA certificate was provided with CA chain where one
+        of the certificates is with basic constraints CA:FALSE flag
+        """
+        chain = generate_root_ca_and_intermediate_ca()
+
+        parent, parent_private_key = chain[0][0], chain[0][1]
+
+        # Add new "intermediate" CA certificate with basic constrainst CA:FALSE
+        intermediate_ca_private_key = generate_rsa_private_key()
+        intermediate_ca = sign_cert_builder(
+            cert_builder(
+                intermediate_ca_private_key.public_key(),
+                common_name="Intermediate CA with CA:FALSE",
+                issuer=parent.subject,
+                basic_constraints=x509.BasicConstraints(ca=False, path_length=None),
+                ),
+            parent_private_key
+        )
+        chain.append((intermediate_ca, intermediate_ca_private_key))
+        parent, parent_private_key = intermediate_ca, intermediate_ca_private_key
+
+        # Add valid intermediate CA certificate
+        intermediate_ca_private_key = generate_rsa_private_key()
+        intermediate_ca = sign_cert_builder(
+            cert_builder(
+                intermediate_ca_private_key.public_key(),
+                common_name="Intermediate CA Final",
+                issuer=parent.subject,
+                ),
+            parent_private_key
+        )
+
+        chaincerts = [item[0] for item in chain]
+        chain_pem = serialize_cert_chain_to_pem(chaincerts)
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(intermediate_ca_private_key),
+            chain_pem,
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == (
+            'All chain certificates must have the basic constraint '
+            '`CA` set to `true`'
+            )
+
+    def test_chain_cert_without_basic_constraints_extension(self):
+        """
+        Intermediate CA certificate was provided with CA chain where one
+        of the certificates is without basic constraints extension.
+        """
+        chain = generate_root_ca_and_intermediate_ca()
+
+        parent, parent_private_key = chain[0][0], chain[0][1]
+
+        # Add new "intermediate" CA certificate with basic constrainst CA:FALSE
+        intermediate_ca_private_key = generate_rsa_private_key()
+        intermediate_ca = sign_cert_builder(
+            cert_builder(
+                intermediate_ca_private_key.public_key(),
+                common_name="Intermediate CA with CA:FALSE",
+                issuer=parent.subject,
+                basic_constraints=None,
+                ),
+            parent_private_key
+        )
+        chain.append((intermediate_ca, intermediate_ca_private_key))
+        parent, parent_private_key = intermediate_ca, intermediate_ca_private_key
+
+        # Add valid intermediate CA certificate
+        intermediate_ca_private_key = generate_rsa_private_key()
+        intermediate_ca = sign_cert_builder(
+            cert_builder(
+                intermediate_ca_private_key.public_key(),
+                common_name="Intermediate CA Final",
+                issuer=parent.subject,
+                ),
+            parent_private_key
+        )
+
+        chaincerts = [item[0] for item in chain]
+        chain_pem = serialize_cert_chain_to_pem(chaincerts)
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(intermediate_ca_private_key),
+            chain_pem,
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == (
+            'All chain certificates must have the basic constraint '
+            '`CA` set to `true`'
+            )
+
+    def test_intermediate_cert_chain_missing_first_cert(self):
+        """
+        Intermediate CA certificate was provided with CA chain where the
+        certificate issuer is missing.
+
+        [Intermediate CA] -> [missing] -> [Parent CA] -> [Root CA]
+        """
+        chain = generate_root_ca_and_intermediate_ca(number=3)
+        intermediate_ca, private_key = chain[0][0], chain[0][1]
+
+        # Provide chain of certificates with missing certificate to test
+        # that parent subject matches cert issuer
+        chaincerts = [item[0] for item in chain[1:]]
+        chain_pem = serialize_cert_chain_to_pem(chaincerts[1:])
+
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(private_key),
+            chain_pem,
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == (
+            'The fist chain certificate must be the issuer of the '
+            'custom CA certificate'
+            )
+
+    def test_intermediate_cert_chain_without_root_cert(self):
+        """
+        Intermediate CA certificate was provided with CA chain which is missing
+        Root CA cert.
+
+        [Intermediate CA] -> [Parent] -> [MISSING]
+        """
+        chain = generate_root_ca_and_intermediate_ca(number=3)
+        intermediate_ca, private_key = chain[0][0], chain[0][1]
+
+        chaincerts = [item[0] for item in chain[1:]]
+        chain_pem = serialize_cert_chain_to_pem(chaincerts[:-1])
+
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(private_key),
+            chain_pem,
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == (
+            'The last chain certificate must have equivalent subject and '
+            'issuer (must be a root CA certificate)'
+            )
+
+    def test_intermediate_cert_chain_is_not_coherent(self):
+        """
+        Intermediate CA certificate was provided with CA chain where the chain
+        has a "hole" and is not coherent.
+
+        [Intermediate CA] -> [Parent] -> [MISSING] -> [Root CA]
+        """
+        chain = generate_root_ca_and_intermediate_ca(number=3)
+        intermediate_ca, private_key = chain[0][0], chain[0][1]
+
+        chaincerts = [item[0] for item in chain[1:]]
+        chain_pem = (
+            serialize_cert_chain_to_pem(chaincerts[:1]) +
+            serialize_cert_chain_to_pem(chaincerts[2:])
+            )
+
+        ca_cert_validator = CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(private_key),
+            chain_pem,
+            )
+        with pytest.raises(CustomCACertValidationError) as e_info:
+            ca_cert_validator.validate()
+        assert str(e_info.value) == 'The certificate chain is not coherent'
+
+    def test_valid_intermediate_cert_with_complete_chain(self):
+        """
+        Intermediate CA with complete cert chain
+        """
+        chain = generate_root_ca_and_intermediate_ca(number=3)
+        intermediate_ca, private_key = chain[0][0], chain[0][1]
+
+        chaincerts = [item[0] for item in chain[1:]]
+        chain_pem = serialize_cert_chain_to_pem(chaincerts)
+
+        CustomCACertValidator(
+            serialize_cert_to_pem(intermediate_ca),
+            serialize_key_to_pem(private_key),
+            chain_pem,
+        ).validate()

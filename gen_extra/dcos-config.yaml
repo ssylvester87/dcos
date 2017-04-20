@@ -1146,7 +1146,7 @@ package:
       }
 {% switch ca_certificate_enabled %}
 {% case "true" %}
-  - path: /etc_master/ca.crt
+  - path: /etc_master/ca.json
     permissions: "0400"
     content: |
       {{ ca_certificate }}

@@ -93,8 +93,6 @@ class CustomCACertValidator:
         self.cert = load_pem_x509_cert(cert)
         self.chain = chain
 
-        #self._validate()
-
     def validate(self):
         """
         Perform the individual validation steps and raise a
@@ -197,25 +195,36 @@ class CustomCACertValidator:
         - Test that the last (or only) certificate has matching issuer and
           subject (confirm that it is a root CA certificate).
         """
+        if self.chain is None:
+            raise CustomCACertValidationError(
+                'Certificate chain must be provided')
+
         endmarker = '-----END CERTIFICATE-----'
         tokens = self.chain.split(endmarker)
-        chaincerts = [load_pem_x509_cert(t + endmarker) for t in tokens]
+        chaincerts = [
+            load_pem_x509_cert(t + endmarker) for t in tokens if t.strip() != '']
+
 
         # TODO(JP): improve error messages to contain specifics that make it
         # easy to identify the bad certificate, or the bad pair of certificates
         # (emit subject or issuer or fingerprint or something like that).
 
         for chaincert in chaincerts:
-            constraints = self.get_basic_constraints(chaincert)
-            if not constraints.ca:
+            try:
+                constraints = self.get_basic_constraints(chaincert)
+            except x509.ExtensionNotFound:
+                constraints = None
+
+            if constraints is None or not constraints.ca:
                 raise CustomCACertValidationError(
-                    'All chain certificates must have the basic constraint `CA` set to `true`')
+                    'All chain certificates must have the basic constraint '
+                    '`CA` set to `true`')
 
         if self.cert.issuer != chaincerts[0].subject:
             raise CustomCACertValidationError(
                 'The fist chain certificate must be the issuer of the custom CA certificate')
 
-        if chaincerts[-1].issuer != chaincerts[-1].cert.subject:
+        if chaincerts[-1].issuer != chaincerts[-1].subject:
             raise CustomCACertValidationError(
                 'The last chain certificate must have equivalent subject and '
                 'issuer (must be a root CA certificate)')
