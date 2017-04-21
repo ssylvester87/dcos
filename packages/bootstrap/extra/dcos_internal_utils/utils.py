@@ -198,6 +198,7 @@ def detect_ip():
 
 
 def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
+    # TODO(mh): Add support for RSA and ECDSA private key types
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
 
     machine_ip = detect_ip()

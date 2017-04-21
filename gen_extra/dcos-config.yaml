@@ -7,7 +7,7 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-      ca_certificate_path: /run/dcos/pki/CA/certs/ca.crt
+      ca_certificate_path: /run/dcos/pki/CA/ca-bundle.crt
       iam_config_path: /run/dcos/etc/dcos-metrics/service_account.json
       collector:
         mesos_agent:
@@ -74,7 +74,7 @@ package:
       set $upstream_mesos http://leader.mesos:5050;
       set $upstream_marathon http://127.0.0.1:8080;
 {% case "true" %}
-      proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
+      proxy_ssl_trusted_certificate /run/dcos/pki/CA/ca-bundle.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
       set $upstream_mesos https://leader.mesos:5050;
@@ -87,7 +87,7 @@ package:
       proxy_ssl_verify off;
       set $upstream_iam http://master.mesos;
 {% case "true" %}
-      proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
+      proxy_ssl_trusted_certificate /run/dcos/pki/CA/ca-bundle.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
       set $upstream_iam https://master.mesos;
@@ -116,7 +116,7 @@ package:
       proxy_ssl_verify off;
       set $upstream_iam http://master.mesos;
 {% case "true" %}
-      proxy_ssl_trusted_certificate /run/dcos/pki/CA/certs/ca.crt;
+      proxy_ssl_trusted_certificate /run/dcos/pki/CA/ca-bundle.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
       set $upstream_iam https://master.mesos;
@@ -160,7 +160,7 @@ package:
         "MesosHTTPSOn": false,
 {% case "true" %}
         "MesosHTTPSOn": true,
-        "CACertFile": "/run/dcos/pki/CA/certs/ca.crt",
+        "CACertFile": "/run/dcos/pki/CA/ca-bundle.crt",
         "CertFile": "/run/dcos/pki/tls/certs/mesos-dns.crt",
         "KeyFile": "/run/dcos/pki/tls/private/mesos-dns.key",
 {% endswitch %}
@@ -198,7 +198,7 @@ package:
       TLS_ENABLED=true
       TLS_CERT_FILE=/run/dcos/pki/tls/certs/dcos-secrets.crt
       TLS_KEY_FILE=/run/dcos/pki/tls/private/dcos-secrets.key
-      TLS_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      TLS_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
 {% endswitch %}
   - path: /etc/dcos-vault.env
     content: |
@@ -215,7 +215,7 @@ package:
       TLS_ENABLED=false
 {% case "true" %}
       TLS_ENABLED=true
-      TLS_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      TLS_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       TLS_CERT_FILE=/run/dcos/pki/tls/certs/cosmos.crt
       TLS_KEY_FILE=/run/dcos/pki/tls/private/cosmos.key
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts_cosmos.jks
@@ -226,7 +226,7 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-        "ca_cert_path": "/run/dcos/pki/CA/certs/ca.crt",
+        "ca_cert_path": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
         "customer_key": "{{ customer_key }}",
         "diagnostics_urls": [
@@ -264,7 +264,7 @@ package:
       {
 {% switch ssl_enabled %}
 {% case "true" %}
-        "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+        "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% case "false" %}
 {% endswitch %}
         "auth": {{ mesos_authz_enforced }},
@@ -275,7 +275,7 @@ package:
       {
 {% switch ssl_enabled %}
 {% case "true" %}
-        "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+        "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% case "false" %}
 {% endswitch %}
         "auth": {{ mesos_authz_enforced }},
@@ -286,7 +286,7 @@ package:
       {
 {% switch ssl_enabled %}
 {% case "true" %}
-        "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+        "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% case "false" %}
 {% endswitch %}
         "auth": {{ mesos_authz_enforced }},
@@ -333,7 +333,7 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
             "pull": true,
             "diagnostics-bundle-dir": "/var/lib/dcos/3dt/diag-bundles",
@@ -350,7 +350,7 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
             "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
@@ -364,7 +364,7 @@ package:
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt",
+            "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
             "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
@@ -602,11 +602,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/minuteman.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/minuteman.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/minuteman.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/minuteman.crt
       SERVER_VERIFY=verify_peer
@@ -619,11 +619,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/navstar.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/navstar.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/navstar.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/navstar.crt
       SERVER_VERIFY=verify_peer
@@ -639,11 +639,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
       SERVER_VERIFY=verify_peer
@@ -656,11 +656,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/spartan.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/spartan.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/certs/ca.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/spartan.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/spartan.crt
       SERVER_VERIFY=verify_peer
@@ -715,7 +715,7 @@ package:
       LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
       LIBPROCESS_SSL_REQUIRE_CERT=false
-      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-master.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-master.key
       DCOS_AUDIT_LOG={{ dcos_audit_logging }}
@@ -748,7 +748,7 @@ package:
       LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
       LIBPROCESS_SSL_REQUIRE_CERT=false
-      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/mesos-slave.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/mesos-slave.key
 {% switch mesos_authenticate_http %}
@@ -809,7 +809,7 @@ package:
       LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
       LIBPROCESS_SSL_REQUIRE_CERT=false
-      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/marathon.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/marathon.key
 {% endswitch %}
@@ -868,7 +868,7 @@ package:
       LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
       LIBPROCESS_SSL_REQUIRE_CERT=false
-      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/certs/ca.crt
+      LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/metronome.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/metronome.key
       TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts_metronome.jks
@@ -955,7 +955,7 @@ package:
 {% switch ssl_enabled %}
 {% case "true" %}
       STATE_SUMMARY_URI=https://leader.mesos/mesos/state-summary
-      TLS_VERIFY=/run/dcos/pki/CA/certs/ca.crt
+      TLS_VERIFY=/run/dcos/pki/CA/ca-bundle.crt
 {% case "false" %}
       STATE_SUMMARY_URI=http://leader.mesos/mesos/state-summary
 {% endswitch %}
@@ -1103,7 +1103,7 @@ package:
                 "parameters":[
                    {
                       "key":"ca_file",
-                      "value":"/run/dcos/pki/CA/certs/ca.crt"
+                      "value":"/run/dcos/pki/CA/ca-bundle.crt"
                    },
                    {
                       "key":"cert_file",
@@ -1124,7 +1124,7 @@ package:
                 "parameters":[
                    {
                       "key":"ca_file",
-                      "value":"/run/dcos/pki/CA/certs/ca.crt"
+                      "value":"/run/dcos/pki/CA/ca-bundle.crt"
                    },
                    {
                       "key":"cert_file",

@@ -175,22 +175,39 @@ class Bootstrapper(object):
     def write_CA_key(self, filename):
         key = self.secrets['CA']['RootCA']['key']
         key = key.encode('ascii')
-        log.info('Writing root CA key to {}'.format(filename))
+        log.info('Writing CA key to {}'.format(filename))
         _write_file(filename, key, 0o600)
         return key
 
     def write_CA_certificate(self, filename='/run/dcos/pki/CA/certs/ca.crt'):
-        """"
-        CA_certificate on the masters will happen after
-        consensus has been reached about the master secrets,
-        which include the root CA key and certificate
+        crt = self.secrets['CA']['RootCA']['certificate']
+        crt = crt.encode('ascii')
+        log.info('Writing CA cert to {}'.format(filename))
+        _write_file(filename, crt, 0o644)
+        return crt
+
+    def write_CA_certificate_chain(self, filename):
+        crt = self.secrets['CA']['RootCA']['chain']
+        crt = crt.encode('ascii')
+        log.info('Writing CA cert chain to {}'.format(filename))
+        _write_file(filename, crt, 0o644)
+        return crt
+
+    def write_CA_certificate_root(
+            self, filename='/run/dcos/pki/CA/ca-bundle.crt'):
         """
+        Writes root CA certificate that should be used as a bundle certificate
+        for certificate verification.
+
+        Consensus has to be reached on masters severs and agents are supposed
+        to read the cert from ZK.
+        """
+        # Read value if not generated
+        crt = None
+
         if 'CA' in self.secrets:
-            crt = self.secrets['CA']['RootCA']['certificate']
+            crt = self.secrets['CA']['RootCA']['root']
             crt = crt.encode('ascii')
-        else:
-            # consensus value will only be read
-            crt = None
 
         crt = self._consensus('/dcos/RootCA', crt, ANYONE_READ)
 
@@ -257,16 +274,13 @@ class Bootstrapper(object):
                 'private_key': utils.generate_RSA_keypair(2048)[0],
             }
 
-        # always generate the CA cert, regardless of whether
-        # SSL is being used in the cluster
-        ca_key, ca_crt = utils.generate_CA_key_certificate(
-            valid_days=3650,
-            cn_suffix=self.cluster_id(),
-            )
+        ca_crt, ca_key, ca_chain, ca_root = self._load_or_generate_ca_cert()
         ca_certs = {
             'RootCA': {
                 'key': ca_key,
                 'certificate': ca_crt,
+                'chain': ca_chain,
+                'root': ca_root
             }
         }
 
@@ -285,6 +299,90 @@ class Bootstrapper(object):
         secrets = self._create_secrets(path, secrets, acl)
         utils.dict_merge(self.secrets, secrets)
         return secrets
+
+    def _load_or_generate_ca_cert(self):
+        """
+        Loads existing custom CA cert or generates new root CA cert.
+
+        If custom CA certificate was provided the configuration is loaded
+        from `/opt/mesosphere/etc/ca.json` file. The file should contain
+        `ca_certificate` and `ca_certificate_chain` (which contains certs
+        up to the Root CA cert including). Private key is loaded from
+        `/etc/custom_ca.key` file.
+
+        If custom CA certitificate was not configured the new Root CA
+        certificate is created.
+
+        Returns:
+            ca_crt (str): CA certificate (PEM encoded)
+
+            ca_key (str): Private key (PEM encoded)
+
+            ca_chain (str, None): If custom CA certificate was configured with
+                chain of intermediate certs, this string contains all
+                intermediate certs. (PEM encoded)
+
+            ca_root (str): Root CA certificate (PEM encoded). When generating
+                new Root CA this value is identical to `ca_crt`
+        """
+        ca_chain = None
+
+        # Paths where custom CA parts would be found
+        custom_ca_cert_conf_path = '/opt/mesosphere/etc/ca.json'
+        custom_ca_priv_key_path = '/etc/custom_ca.key'
+
+        # DC/OS could be configured with custom CA certificate that is written
+        # to /opt/mesosphere/etc/ca.json
+        if os.path.isfile(custom_ca_cert_conf_path):
+
+            # Read JSON configuration that contains custom CA cert and optionally
+            # cert chain.
+            with open(custom_ca_cert_conf_path, 'rb') as conf_file:
+                custom_ca_cert_config = json.loads(
+                    conf_file.read().decode('utf-8'))
+
+            # If custom CA is a root certificate use the certificate
+            # as a CA cert and Root CA cert
+            ca_crt = ca_root = custom_ca_cert_config['ca_certificate']
+
+            # Custom chain was provided, load data and split it to
+            # intermediate CA chain and Root CA
+            if custom_ca_cert_config['ca_certificate_chain'] != '':
+                # Split chain string to separate certificates
+                endmarker = '-----END CERTIFICATE-----\n'
+                chaincerts = \
+                    custom_ca_cert_config['ca_certificate_chain'].split(
+                        endmarker)
+                chaincerts = [
+                    item + endmarker for item in chaincerts
+                    if item.strip() != ''
+                    ]
+
+                # Split to root CA cert and use rest as intermediate CA certs
+                ca_root = chaincerts[-1]
+                ca_chain = ''.join(chaincerts[:-1])
+
+            # Read private key in PEM format from pre defined location
+            with open(custom_ca_priv_key_path) as custom_ca_key_file:
+                try:
+                    ca_key = custom_ca_key_file.read().decode('utf-8')
+                except IOError as err:
+                    raise Exception(
+                        'Failed to read custom CA certificate private key '
+                        'from file `%s`. Error: %s' % (
+                            custom_ca_priv_key_path, err)
+                        )
+
+        # If custom CA was not configured generate a CA cert, regardless of
+        # whether TLS is being used in the cluster
+        else:
+            ca_key, ca_crt = utils.generate_CA_key_certificate(
+                valid_days=3650,
+                cn_suffix=self.cluster_id(),
+                )
+            ca_root = ca_crt
+
+        return ca_crt, ca_key, ca_chain, ca_root
 
     def create_agent_secrets(self, digest):
         if self.opts.config['zk_acls_enabled']:
@@ -853,8 +951,20 @@ class Bootstrapper(object):
         log.info(msg_fmt.format(self.ca_url, service_account))
         crt = cacli.sign(csr_pem)
 
+        crt = self._append_ca_chain_to_certificate(crt)
+
         _write_file(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
         _write_file(crt_filename, bytes(crt, 'ascii'), 0o644)
+
+    def _append_ca_chain_to_certificate(self, crt):
+        """
+        Appends CA chain to the certificate
+        """
+        if 'CA' in self.secrets:
+            if self.secrets['CA']['RootCA']['chain'] not in crt:
+                crt += self.secrets['CA']['RootCA']['chain']
+
+        return crt
 
     def _key_cert_is_valid(self, key_filename, crt_filename):
         try:
@@ -1128,10 +1238,17 @@ def dcos_ca(b, opts):
 
     path = opts.rundir + '/pki/CA/certs/ca.crt'
     b.write_CA_certificate(filename=path)
+    shutil.chown(path, user=opts.dcos_ca_user)
 
     path = opts.rundir + '/pki/CA/private/ca.key'
     b.write_CA_key(path)
     shutil.chown(path, user=opts.dcos_ca_user)
+
+    path = opts.rundir + '/pki/CA/ca-chain.crt'
+    b.write_CA_certificate_chain(filename=path)
+
+    path = opts.rundir + '/pki/CA/ca-bundle.crt'
+    b.write_CA_certificate_root(filename=path)
 
 
 def dcos_mesos_master(b, opts):
@@ -1161,7 +1278,7 @@ def dcos_mesos_master(b, opts):
 
 def dcos_mesos_slave(b, opts):
     b.read_agent_secrets()
-    b.write_CA_certificate()
+    b.write_CA_certificate_root()
 
     if opts.config['ssl_enabled']:
         keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
@@ -1190,7 +1307,7 @@ def dcos_mesos_slave_public(b, opts):
     b.read_agent_secrets()
 
     if opts.config['ssl_enabled']:
-        b.write_CA_certificate()
+        b.write_CA_certificate_root()
 
         keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
         crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
@@ -1233,8 +1350,8 @@ def dcos_marathon(b, opts):
         shutil.chown(key, user='dcos_marathon')
         shutil.chown(crt, user='dcos_marathon')
 
-        ca = opts.rundir + '/pki/CA/certs/ca.crt'
-        b.write_CA_certificate(filename=ca)
+        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+        b.write_CA_certificate_root(filename=ca)
 
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
@@ -1270,9 +1387,9 @@ def dcos_metronome(b, opts):
         b.ensure_key_certificate('Metronome', key, crt, master=True)
         shutil.chown(key, user='dcos_metronome')
         shutil.chown(crt, user='dcos_metronome')
-        # ca.crt also only for libmesos SSL.
-        ca = opts.rundir + '/pki/CA/certs/ca.crt'
-        b.write_CA_certificate(filename=ca)
+        # ca-bundle.crt also only for libmesos SSL.
+        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+        b.write_CA_certificate_root(filename=ca)
 
         # For Metronome UI/API SSL.
         ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
@@ -1302,8 +1419,8 @@ def dcos_mesos_dns(b, opts):
     b.create_service_account('dcos_mesos_dns', superuser=True)
 
     if opts.config['ssl_enabled']:
-        path = opts.rundir + '/pki/CA/certs/ca.crt'
-        b.write_CA_certificate(filename=path)
+        path = opts.rundir + '/pki/CA/ca-bundle.crt'
+        b.write_CA_certificate_root(filename=path)
 
         # Generate client certificate (In strict security mode, Mesos-DNS is
         # required to present this to the Mesos master during the TLS handshake).
@@ -1378,7 +1495,7 @@ def dcos_adminrouter_agent(b, opts):
     b.read_agent_secrets()
 
     if opts.config['ssl_enabled']:
-        b.write_CA_certificate()
+        b.write_CA_certificate_root()
 
         keypath = opts.rundir + '/pki/tls/private/adminrouter-agent.key'
         crtpath = opts.rundir + '/pki/tls/certs/adminrouter-agent.crt'
@@ -1404,7 +1521,7 @@ def dcos_spartan_master(b, opts):
     b.create_master_secrets()
 
     if opts.config['ssl_enabled']:
-        b.write_CA_certificate()
+        b.write_CA_certificate_root()
 
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1415,7 +1532,7 @@ def dcos_spartan_agent(b, opts):
     b.read_agent_secrets()
 
     if opts.config['ssl_enabled']:
-        b.write_CA_certificate()
+        b.write_CA_certificate_root()
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
         crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1446,8 +1563,8 @@ def dcos_erlang_service_master(servicename, b, opts):
 
     user = 'dcos_' + servicename
 
-    ca = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(filename=ca)
+    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+    b.write_CA_certificate_root(filename=ca)
 
     friendly_name = servicename[0].upper() + servicename[1:]
     key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
@@ -1469,8 +1586,8 @@ def dcos_erlang_service_agent(servicename, b, opts):
     user = 'dcos_' + servicename
 
     if opts.config['ssl_enabled']:
-        ca = opts.rundir + '/pki/CA/certs/ca.crt'
-        b.write_CA_certificate(filename=ca)
+        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+        b.write_CA_certificate_root(filename=ca)
 
         friendly_name = servicename[0].upper() + servicename[1:]
         key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
@@ -1498,8 +1615,8 @@ def dcos_cosmos(b, opts):
     shutil.chown(key, user='dcos_cosmos')
     shutil.chown(crt, user='dcos_cosmos')
 
-    ca = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(filename=ca)
+    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+    b.write_CA_certificate_root(filename=ca)
 
     ts = opts.rundir + '/pki/CA/certs/cacerts_cosmos.jks'
     b.write_truststore(ts, ca)
@@ -1569,8 +1686,8 @@ def dcos_history(b, opts):
     b.write_service_account_credentials('dcos_history_service', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_history')
 
-    ca = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(filename=ca)
+    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
+    b.write_CA_certificate_bundle(filename=ca)
 
     os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
