@@ -102,7 +102,6 @@ def test_ee_signal_service(superuser_api_session):
         'gen-resolvconf-timer',
         'navstar-service',
         'pkgpanda-api-service',
-        'pkgpanda-api-socket',
         'signal-timer',
         'spartan-service',
         'spartan-watchdog-service',
