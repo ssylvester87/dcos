@@ -1,6 +1,6 @@
 {
   "kind": "git",
-  "git": "https://github.com/dcos/dcos",
-  "ref": "afd955a75d04e93d29f2602b210f13c5266bbdfb",
-  "ref_origin": "1.8.9"
+  "git": "https://github.com/aquamatthias/dcos",
+  "ref": "eb2397f876091b4ea417a5864e61f73ee4b01b23",
+  "ref_origin": "mv/189/metronome_0_2_3"
 }
