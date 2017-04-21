@@ -1420,26 +1420,43 @@
             <table>
               <tr>
                 <td>
-                  Regex:
+                  Rewrite:
                 </td>
                 <td>
-                  <code>^/marathon/(.*)$</code>
+                  <table>
+                    <tr>
+                      <td>
+                        Regex:
+                      </td>
+                      <td>
+                        <code>^/marathon/(.*)$</code>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Replacement:
+                      </td>
+                      <td>
+                        <code>/service/marathon/$1</code>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Type:
+                      </td>
+                      <td>
+                        <code>last</code>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               <tr>
                 <td>
-                  Replacement:
+                  Deprecated:
                 </td>
                 <td>
-                  <code>/service/marathon/$1</code>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  Type:
-                </td>
-                <td>
-                  <code>last</code>
+                  Use <code>/service/marathon/</code>
                 </td>
               </tr>
             </table>
