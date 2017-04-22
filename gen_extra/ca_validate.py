@@ -42,9 +42,75 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.x509.oid import ExtensionOID
+from cryptography.x509.oid import ExtensionOID, nameOID
 
 cryptography_default_backend = cryptography.hazmat.backends.default_backend()
+
+
+class CertName:
+    """
+    An X.509 name (subject or issuer) is an ordered list of sets of attributes
+    whereas each attribute has its own structured object identifier (OID). An
+    established and simplified representation of that data structure is a
+    comma-separated string (text) where each attribute name is abbreviated with
+    letters like CN or O. This is more or less well-standardized via RFC 5280
+    and RFC 1779.
+
+    Example usage:
+
+        >>> from cryptography import x509
+        >>> from cryptography.hazmat.backends import default_backend
+        >>> pemdata = open('cert.crt', 'rb').read()
+        >>> cert = x509.load_pem_x509_certificate(pemdata, default_backend())
+        >>> CertName(cert).subject
+        'C=US, ST=CA, L=San Francisco, O=Mesosphere, Inc., CN=Root CA'
+
+    Refs:
+        - https://tools.ietf.org/html/rfc5280#section-4.1.2.4 (defines the set
+            of attributes to be expected)
+        - https://tools.ietf.org/html/rfc1779 (defines how distinguished names
+            should be represented as strings, defines some shortnames)
+    """
+
+    _longname_shortname_mapping = {
+        'commonName': 'CN',
+        'countryName': 'C',
+        'organizationalUnit': 'OU',
+        'stateOrProvinceName': 'ST',
+        'localityName': 'L',
+        'organizationName': 'O',
+        }
+
+    def __init__(self, cert):
+        """
+        Args:
+            cert: an object of type `cryptography.x509.Certificate`
+
+        The resulting object has the attributes `subject` and `issuer`, both
+        beging text representations (type `str`) of the subject and issuer
+        data in the provided certificate.
+        """
+        assert isinstance(cert, x509.Certificate)
+
+        subject_parts = []
+        for nameattr in cert.subject:
+            try:
+                key = self._longname_shortname_mapping[nameattr.oid._name]
+            except KeyError:
+                # Fall back to long name.
+                key = nameattr.name
+            subject_parts.append('{}={}'.format(key, nameattr.value))
+        self.subject = ', '.join(subject_parts)
+
+        issuer_parts = []
+        for nameattr in cert.issuer:
+            try:
+                key = self._longname_shortname_mapping[nameattr.oid._name]
+            except KeyError:
+                # Fall back to long name.
+                key = nameattr.name
+            issuer_parts.append('{}={}'.format(key, nameattr.value))
+        self.issuer = ', '.join(issuer_parts)
 
 
 class CustomCACertValidationError(Exception):
