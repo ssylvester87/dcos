@@ -35,6 +35,8 @@ ca_certificate_chain:
 
 import datetime
 import itertools
+import subprocess
+from tempfile import NamedTemporaryFile
 
 import cryptography.hazmat.backends
 from cryptography import x509
@@ -294,7 +296,55 @@ class CustomCACertValidator:
         for childcert, parentcert in pairwise(chaincerts):
             if parentcert.subject != childcert.issuer:
                 raise CustomCACertValidationError(
-                    'The certificate chain is not coherent')
+                    'The certificate chain is not coherent: the issuer of the '
+                    'child certificate with the subject `{}` is not equivalent '
+                    'to the subject `{}` of the parent certificate'.format(
+                        CertName(childcert).subject,
+                        CertName(parentcert).subject)
+                        )
+
+        for childcert_pem, parentcert_pem in pairwise(chaincerts_pem):
+
+            # Verify that the (alleged) parent certificate cryptographically
+            # signed the (alleged) child certificate. Only after this
+            # verification step it is sure if the inspected pair really is in a
+            # proper parent/child relationship.
+
+            with NamedTemporaryFile() as pfile, NamedTemporaryFile() as cfile:
+
+                # The temporary files are automatically removed upon closing
+                # them, i.e. upon leaving this context.
+                pfile.write(parentcert_pem.encode('utf-8'))
+                pfile.flush()
+                cfile.write(childcert_pem.encode('utf-8'))
+                cfile.flush()
+
+                # Props to https://security.stackexchange.com/q/118062/103960
+                cmd = [
+                    'openssl',
+                    'verify',
+                    '-CApath', '/dev/null',
+                    '-partial_chain',
+                    '-trusted', pfile.name,
+                    cfile.name
+                    ]
+
+                p = subprocess.Popen(
+                    cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+                stdout_bytes, _ = p.communicate()
+                stdout = stdout_bytes.decode('utf-8', errors='backslashreplace')
+
+            if 'OK' not in stdout:
+                raise CustomCACertValidationError(
+                    'The certificate chain is not coherent: the child '
+                    'certificate with the subject `{}` is not signed by '
+                    'the parent certificate with the subject `{}`. OpenSSL '
+                    'output:\n{}'.format(
+                        CertName(childcert).subject,
+                        CertName(parentcert).subject,
+                        stdout
+                        ))
+
 
     def _validate_signature_hash_algorithm(self):
         """
