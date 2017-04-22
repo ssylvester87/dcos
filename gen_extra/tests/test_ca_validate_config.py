@@ -327,18 +327,18 @@ class TestPrivateKeyLoading:
         """
         Loading unsupported private key (DSA) fails.
         """
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             pem = serialize_key_to_pem(generate_dsa_private_key())
             load_pem_private_key(pem)
-        assert str(e_info.value) == 'Unexpected private key type (not RSA or EC)'
+        assert str(exc.value) == 'Unexpected private key type (not RSA or EC)'
 
     def test_invalid_data(self):
         """
         Loading from invalid data fails.
         """
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             load_pem_private_key('INVALID')
-        assert 'Invalid private key: ' in str(e_info.value)
+        assert 'Invalid private key: ' in str(exc.value)
 
 
 class TestCertLoading:
@@ -365,7 +365,7 @@ class TestCertLoading:
         """
         Load valid X.509 certificate signed with unsupported (DSA) key.
         """
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             key = generate_dsa_private_key()
             cert_bytes = serialize_cert_to_pem(
                 sign_cert_builder(
@@ -375,15 +375,15 @@ class TestCertLoading:
                     )
                 )
             load_pem_x509_cert(cert_bytes)
-        assert str(e_info.value) == 'Unexpected public key type (not RSA or EC)'
+        assert str(exc.value) == 'Unexpected public key type (not RSA or EC)'
 
     def test_invalid_data(self):
         """
         Load certificate from invalid data fails.
         """
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             load_pem_x509_cert('INVALID')
-        assert 'Invalid certificate: ' in str(e_info.value)
+        assert 'Invalid certificate: ' in str(exc.value)
 
 
 class TestRSAKeyValidation:
@@ -396,9 +396,9 @@ class TestRSAKeyValidation:
         key_pem = serialize_key_to_pem(key)
         cert_pem = generate_valid_root_ca_cert_pem(key)
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == 'Private key size smaller than 2048 bits'
+        assert str(exc.value) == 'Private key size smaller than 2048 bits'
 
     def test_pub_private_key_mismatch(self):
         """
@@ -407,9 +407,9 @@ class TestRSAKeyValidation:
         key = serialize_key_to_pem(generate_rsa_private_key())
         cert = generate_valid_root_ca_cert_pem(generate_rsa_private_key())
         ca_cert_validator = CustomCACertValidator(cert, key)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == 'private key does not match public key'
+        assert str(exc.value) == 'private key does not match public key'
 
     # TODO(mh) Is there a way to test that public key is smaller than private?
 
@@ -425,9 +425,9 @@ class TestECKeyValidation:
         key_pem = serialize_key_to_pem(key)
         cert_pem = generate_valid_root_ca_cert_pem(key)
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == 'Private key size smaller than 256 bits'
+        assert str(exc.value) == 'Private key size smaller than 256 bits'
 
     def test_pub_private_key_mismatch(self):
         """
@@ -436,9 +436,9 @@ class TestECKeyValidation:
         key = serialize_key_to_pem(generate_ec_private_key())
         cert = generate_valid_root_ca_cert_pem(generate_ec_private_key())
         ca_cert_validator = CustomCACertValidator(cert, key)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == 'private key does not match public key'
+        assert str(exc.value) == 'private key does not match public key'
 
     # TODO(mh) Is there a way to test that public key is smaller than private?
 
@@ -460,9 +460,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert 'unsupported hash algorithm' in str(e_info.value)
+        assert 'unsupported hash algorithm' in str(exc.value)
 
     def test_basic_constraints_extension_missing(self):
         """
@@ -479,10 +479,10 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
         assert 'required to have a basic constraints extension' \
-            in str(e_info.value)
+            in str(exc.value)
 
     def test_basic_constraints_ca_false(self):
         """
@@ -500,9 +500,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
+        assert str(exc.value) == (
             'The custom CA certificate must have the basic constraint '
             '`CA` set to `true`'
             )
@@ -524,9 +524,9 @@ class TestCertValidation:
     #             )
     #         )
     #     ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-    #     with pytest.raises(CustomCACertValidationError) as e_info:
+    #     with pytest.raises(CustomCACertValidationError) as exc:
     #         ca_cert_validator.validate()
-    #     assert str(e_info.value) == \
+    #     assert str(exc.value) == \
     #         'Certificate basic constraints path_length is > 0'
 
     def test_key_usage_extension_missing(self):
@@ -544,9 +544,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
+        assert str(exc.value) == (
             'The custom CA certificate is required to have a key '
             'usage extension'
             )
@@ -566,9 +566,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
+        assert str(exc.value) == (
             'The custom CA certificate must have a key usage extension '
             'defining `keyCertSign` as `true`'
             )
@@ -591,9 +591,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == \
+        assert str(exc.value) == \
             'The custom CA certificate `notBefore` date is in the future'
 
     def test_not_after_date_in_past(self):
@@ -616,9 +616,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == \
+        assert str(exc.value) == \
             'The custom CA certificate `notAfter` date is in the past'
 
     def test_not_after_date_ending_soon(self):
@@ -639,9 +639,9 @@ class TestCertValidation:
                 )
             )
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == \
+        assert str(exc.value) == \
             'The custom CA certificate must be valid for at least 365 days'
 
     def test_intermediate_without_ca_chain(self):
@@ -654,9 +654,9 @@ class TestCertValidation:
             serialize_cert_to_pem(intermediate_ca),
             serialize_key_to_pem(private_key)
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == \
+        assert str(exc.value) == \
             'Certificate chain must be provided'
 
     def test_chain_cert_with_basic_constraints_ca_false(self):
@@ -700,11 +700,11 @@ class TestCertValidation:
             serialize_key_to_pem(intermediate_ca_private_key),
             chain_pem,
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
-            'All chain certificates must have the basic constraint '
-            '`CA` set to `true`'
+        assert exc.match(
+            'The chain certificate with subject .* does not have '
+            'the basic constraint `CA` set to `true`'
             )
 
     def test_chain_cert_without_basic_constraints_extension(self):
@@ -748,11 +748,11 @@ class TestCertValidation:
             serialize_key_to_pem(intermediate_ca_private_key),
             chain_pem,
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
-            'All chain certificates must have the basic constraint '
-            '`CA` set to `true`'
+        assert exc.match(
+            'The chain certificate with subject .* does not have '
+            'the basic constraint `CA` set to `true`'
             )
 
     def test_intermediate_cert_chain_missing_first_cert(self):
@@ -775,11 +775,11 @@ class TestCertValidation:
             serialize_key_to_pem(private_key),
             chain_pem,
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
-            'The fist chain certificate must be the issuer of the '
-            'custom CA certificate'
+        exc.match(
+            'The first chain certificate \(subject .*\) must be the issuer of '
+            'the custom CA certificate'
             )
 
     def test_intermediate_cert_chain_without_root_cert(self):
@@ -800,12 +800,10 @@ class TestCertValidation:
             serialize_key_to_pem(private_key),
             chain_pem,
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == (
-            'The last chain certificate must have equivalent subject and '
-            'issuer (must be a root CA certificate)'
-            )
+        exc.match(
+            'The last chain certificate .* \(must be a root CA certificate\)')
 
     def test_intermediate_cert_chain_is_not_coherent(self):
         """
@@ -828,9 +826,13 @@ class TestCertValidation:
             serialize_key_to_pem(private_key),
             chain_pem,
             )
-        with pytest.raises(CustomCACertValidationError) as e_info:
+        with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert str(e_info.value) == 'The certificate chain is not coherent'
+        exc.match(
+            'The certificate chain is not coherent: the issuer of the child '
+            'certificate with the subject `.*` is not equivalent to the '
+            'subject `.*` of the parent certificate'
+            )
 
     def test_valid_intermediate_cert_with_complete_chain(self):
         """

@@ -126,6 +126,11 @@ class CustomCACertValidator:
     EC_KEY_MIN_SIZE = 256
 
     # Supported certificate signature hash algorithms.
+
+    # TODO(jp): we should check for algorithm OIDs.
+    # We should use `SignatureAlgorithmOID.RSA_WITH_SHA1` etc.
+    # https://cryptography.io/en/latest/x509/reference/#cryptography.x509.Certificate.signature_algorithm_oid
+
     SUPPORTED_SIGNATURE_HASH_ALGORITHMS = (
         hashes.SHA256,
         hashes.SHA384,
@@ -161,24 +166,6 @@ class CustomCACertValidator:
         """
         Perform the individual validation steps and raise a
         `CustomCACertValidationError` in case a check fails.
-
-        - RSA key size is at least 2048 bits.
-        - EC key size is at least 256 bits.
-
-        - Private and public key are matching.
-
-        - Signed with a strong hash algorithm.
-
-        - BasicConstraints extension is present and `CA` is enabled.
-        - BasicConstraints `path_length` is 0.
-
-        - KeyUsage extension is present and `keyCertSign` is enabled.
-
-        - `notBefore` date is not in future.
-        - `notAfter` date is not in past.
-        - `notAfter` date makes certificate valid at least 1 year.
-
-        - Root CA is not configured with any certificate chain.
         """
 
         if isinstance(self.private_key, rsa.RSAPrivateKey):
@@ -234,14 +221,21 @@ class CustomCACertValidator:
         if self.is_root:
             if self.chain is not None:
                 raise CustomCACertValidationError(
-                    'The custom CA certificate is a root CA certificate. '
-                    'Therefore, no corresponding chain must be defined'
-                    )
+                'The custom CA certificate is a root CA certificate. '
+                'Therefore, no corresponding chain must be defined'
+                )
         else:
             self._validate_chain()
 
     def _validate_chain(self):
         """
+        Validate given CA certificate chain. The goal is to detect various kinds
+        of pitfalls early on and to provide insightful error messages in case
+        a problem is detected.
+
+        First, perform basic logical checks that do not involve signature
+        verification:
+
         - Parse all certificates individually using OpenSSL (bindings), retain
           order.
 
@@ -257,6 +251,8 @@ class CustomCACertValidator:
 
         - Test that the last (or only) certificate has matching issuer and
           subject (confirm that it is a root CA certificate).
+
+        Subsequently, verify the chain cryptographically.
         """
         if self.chain is None:
             raise CustomCACertValidationError(
@@ -264,8 +260,8 @@ class CustomCACertValidator:
 
         endmarker = '-----END CERTIFICATE-----'
         tokens = self.chain.split(endmarker)
-        chaincerts = [
-            load_pem_x509_cert(t + endmarker) for t in tokens if t.strip() != '']
+        chaincerts_pem = [t + endmarker for t in tokens if t.strip()]
+        chaincerts = [load_pem_x509_cert(c) for c in chaincerts_pem]
 
         # TODO(JP): improve error messages to contain specifics that make it
         # easy to identify the bad certificate, or the bad pair of certificates
@@ -279,17 +275,21 @@ class CustomCACertValidator:
 
             if constraints is None or not constraints.ca:
                 raise CustomCACertValidationError(
-                    'All chain certificates must have the basic constraint '
-                    '`CA` set to `true`')
+                    'The chain certificate with subject `{}` does not have the '
+                    'basic constraint `CA` set to `true`'.format(
+                        CertName(chaincert).subject))
 
         if self.cert.issuer != chaincerts[0].subject:
             raise CustomCACertValidationError(
-                'The fist chain certificate must be the issuer of the custom CA certificate')
+                'The first chain certificate (subject `{}`) must be the issuer '
+                'of the custom CA certificate'.format(
+                    CertName(chaincerts[0]).subject))
 
         if chaincerts[-1].issuer != chaincerts[-1].subject:
             raise CustomCACertValidationError(
-                'The last chain certificate must have equivalent subject and '
-                'issuer (must be a root CA certificate)')
+                'The last chain certificate (subject `{}`) must have equivalent '
+                'subject and issuer (must be a root CA certificate)'.format(
+                    CertName(chaincerts[-1]).subject))
 
         for childcert, parentcert in pairwise(chaincerts):
             if parentcert.subject != childcert.issuer:
@@ -373,7 +373,7 @@ class CustomCACertValidator:
         """
         KeyUsage extension value from the certificate.
 
-        Returns:
+            Returns:
             x509.BasicConstraints
 
         Raises:
