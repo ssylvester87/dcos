@@ -193,6 +193,17 @@ class Bootstrapper(object):
         _write_file(filename, crt, 0o644)
         return crt
 
+    def write_CA_certificate_chain_complete(self, filename):
+        crt = (
+            self.secrets['CA']['RootCA']['certificate'] +
+            self.secrets['CA']['RootCA']['chain'] +
+            self.secrets['CA']['RootCA']['root']
+            )
+        crt = crt.encode('ascii')
+        log.info('Writing complete CA cert chain to {}'.format(filename))
+        _write_file(filename, crt, 0o644)
+        return crt
+
     def write_CA_certificate_root(
             self, filename='/run/dcos/pki/CA/ca-bundle.crt'):
         """
@@ -1360,14 +1371,17 @@ def dcos_marathon(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
 
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        b.write_CA_certificate_chain_complete(ca_chain_complete)
+
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
         # file also used by the adminrouter /ca/cacerts.jks endpoint
         ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
-        b.write_truststore(ts, ca)
+        b.write_truststore(ts, ca_chain_complete)
 
         env = opts.rundir + '/etc/marathon/tls.env'
-        b.write_marathon_tls_env(key, crt, ca, env)
+        b.write_marathon_tls_env(key, crt, ca_chain_complete, env)
         shutil.chown(env, user='dcos_marathon')
         shutil.chown(opts.rundir + '/pki/tls/private/marathon.jks', user='dcos_marathon')
 
@@ -1398,12 +1412,15 @@ def dcos_metronome(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
 
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        b.write_CA_certificate_chain_complete(ca_chain_complete)
+
         # For Metronome UI/API SSL.
         ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
-        b.write_truststore(ts, ca)
+        b.write_truststore(ts, ca_chain_complete)
 
         env = opts.rundir + '/etc/metronome/tls.env'
-        b.write_metronome_env(key, crt, ca, env)
+        b.write_metronome_env(key, crt, ca_chain_complete, env)
         shutil.chown(env, user='dcos_metronome')
         shutil.chown(opts.rundir + '/pki/tls/private/metronome.jks', user='dcos_metronome')
 
@@ -1694,7 +1711,7 @@ def dcos_history(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_history')
 
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_certificate_bundle(filename=ca)
+    b.write_CA_certificate_root(filename=ca)
 
     os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
