@@ -11,12 +11,7 @@ test-harness/logs/*.log
 #Overlay things, must not be included in the EE repository:
 .flake8
 Makefile.common
-master/agent.lua
-master/cache.lua
-master/history-service.lua
-master/marathon-leader.lua
-master/service.lua
-master/url.lua
+master/*
 common/auth/common.lua
 common/auth/open.lua
 mime.types
