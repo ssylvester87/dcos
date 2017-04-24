@@ -193,13 +193,21 @@ class Bootstrapper(object):
         _write_file(filename, crt, 0o644)
         return crt
 
-    def write_CA_certificate_chain_complete(self, filename):
-        crt = (
-            self.secrets['CA']['RootCA']['certificate'] +
-            self.secrets['CA']['RootCA']['chain'] +
-            self.secrets['CA']['RootCA']['root']
-            )
-        crt = crt.encode('ascii')
+    def write_CA_certificate_chain_complete(
+            self, filename='/run/dcos/pki/CA/ca-chain-complete.crt'):
+        # Read value if not generated
+        crt = None
+
+        if 'CA' in self.secrets:
+            crt = (
+                self.secrets['CA']['RootCA']['certificate'] +
+                self.secrets['CA']['RootCA']['chain'] +
+                self.secrets['CA']['RootCA']['root']
+                )
+            crt = crt.encode('ascii')
+
+        crt = self._consensus('/dcos/CAChainComplete', crt, ANYONE_READ)
+
         log.info('Writing complete CA cert chain to {}'.format(filename))
         _write_file(filename, crt, 0o644)
         return crt
@@ -1547,9 +1555,7 @@ def dcos_spartan_master(b, opts):
 
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
-
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
-        b.write_CA_certificate_chain_complete(ca_chain_complete)
+        b.write_CA_certificate_chain_complete()
 
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1561,6 +1567,7 @@ def dcos_spartan_agent(b, opts):
 
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
+        b.write_CA_certificate_chain_complete()
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
         crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1619,6 +1626,9 @@ def dcos_erlang_service_agent(servicename, b, opts):
     if opts.config['ssl_enabled']:
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
+
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        b.write_CA_certificate_chain_complete(ca_chain_complete)
 
         friendly_name = servicename[0].upper() + servicename[1:]
         key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
