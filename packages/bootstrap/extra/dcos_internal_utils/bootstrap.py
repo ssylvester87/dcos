@@ -961,6 +961,13 @@ class Bootstrapper(object):
         Appends CA chain to the certificate
         """
         if 'CA' in self.secrets:
+            # If custom CA cert isn't also the Root CA cert add it to the
+            # chain
+            ca_root = self.secrets['CA']['RootCA']['root']
+            ca_cert = self.secrets['CA']['RootCA']['certificate']
+            if ca_cert != ca_root:
+                crt += self.secrets['CA']['RootCA']['certificate']
+            # Add additional CA certs to complete the chain
             if self.secrets['CA']['RootCA']['chain'] not in crt:
                 crt += self.secrets['CA']['RootCA']['chain']
 
