@@ -102,13 +102,15 @@ def with_peter_in_superuser_group(peter, superuser_api_session):
 def iam_reset_undecorated(superuser_api_session, superuser, peter):
     """
     FIXME: change these fixtures to cleanup state after a test
-        so that it matches state at the beginning. This current implemtation
+        so that it matches state at the beginning. This current implementation
         will produce unexpected behavior if a cluster is not 'fresh'
     1) Remove unexpected users.
     2) Remove unexpected groups.
     3) Remove ACLs that are not part of the initially seen ones.
     4) Remove Peter's direct permissions.
     5) Remove Peter's group memberships.
+
+    This does not account for service accounts.
     """
     # Remove unexpected users.
     r = superuser_api_session.iam.get('/users')
@@ -206,6 +208,9 @@ def iam_verify_and_reset(superuser_api_session, superuser, peter):
     Only yield into test code if pre-test has succeeded. Perform post-test even
     if pre-test failed, i.e. always try to perform cleanup.
     """
+    resp = superuser_api_session.iam.get('/users', query='type=service')
+    pre_test_service_uids = set([item['uid'] for item in resp.json()['array']])
+
     try:
         logging.info('Verifying superuser and peter are in original state')
         iam_verify_undecorated(superuser_api_session, superuser, peter)
@@ -217,6 +222,12 @@ def iam_verify_and_reset(superuser_api_session, superuser, peter):
     finally:
         logging.info('Returning superuser and peter to original state')
         iam_reset_undecorated(superuser_api_session, superuser, peter)
+
+        resp = superuser_api_session.iam.get('/users', query='type=service')
+        post_test_service_uids = set([item['uid'] for item in resp.json()['array']])
+        new_service_uids = post_test_service_uids - pre_test_service_uids
+        for uid in new_service_uids:
+            superuser_api_session.iam.delete_service(uid=uid)
 
 
 @pytest.fixture(scope='session')
