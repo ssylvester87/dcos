@@ -420,6 +420,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:master:volume', 'create'),
                 ('dcos:mesos:master:volume', 'delete'),
+                ('dcos:mesos:agent:task', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -438,7 +439,9 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:task:user:nobody', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
                 ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
-                ('dcos:mesos:master:volume:role:slave_public', 'create')
+                ('dcos:mesos:master:volume:role:slave_public', 'create'),
+                ('dcos:mesos:agent:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -454,7 +457,9 @@ class Bootstrapper(object):
         if self.opts.config['security'] == 'permissive':
             permissive_acls = [
                 ('dcos:mesos:master:framework', 'create'),
-                ('dcos:mesos:master:task', 'create')]
+                ('dcos:mesos:master:task', 'create'),
+                ('dcos:mesos:agent:task', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(permissive_acls, 'dcos_metronome')
@@ -466,7 +471,9 @@ class Bootstrapper(object):
             strict_acls = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
-                ('dcos:mesos:master:task:user:nobody', 'create')
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
