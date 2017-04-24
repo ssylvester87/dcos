@@ -100,7 +100,7 @@ class CertName:
                 key = self._longname_shortname_mapping[nameattr.oid._name]
             except KeyError:
                 # Fall back to long name.
-                key = nameattr.name
+                key = nameattr.oid._name
             subject_parts.append('{}={}'.format(key, nameattr.value))
         self.subject = ', '.join(subject_parts)
 
@@ -110,7 +110,7 @@ class CertName:
                 key = self._longname_shortname_mapping[nameattr.oid._name]
             except KeyError:
                 # Fall back to long name.
-                key = nameattr.name
+                key = nameattr.oid._name
             issuer_parts.append('{}={}'.format(key, nameattr.value))
         self.issuer = ', '.join(issuer_parts)
 
