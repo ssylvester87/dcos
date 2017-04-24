@@ -44,7 +44,7 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.x509.oid import ExtensionOID, nameOID
+from cryptography.x509.oid import ExtensionOID
 
 cryptography_default_backend = cryptography.hazmat.backends.default_backend()
 
@@ -223,9 +223,9 @@ class CustomCACertValidator:
         if self.is_root:
             if self.chain is not None:
                 raise CustomCACertValidationError(
-                'The custom CA certificate is a root CA certificate. '
-                'Therefore, no corresponding chain must be defined'
-                )
+                    'The custom CA certificate is a root CA certificate. '
+                    'Therefore, no corresponding chain must be defined'
+                    )
         else:
             self._validate_chain()
 
@@ -300,8 +300,9 @@ class CustomCACertValidator:
                     'child certificate with the subject `{}` is not equivalent '
                     'to the subject `{}` of the parent certificate'.format(
                         CertName(childcert).subject,
-                        CertName(parentcert).subject)
+                        CertName(parentcert).subject
                         )
+                    )
 
         for childcert_pem, parentcert_pem in pairwise(chaincerts_pem):
 
@@ -344,7 +345,6 @@ class CustomCACertValidator:
                         CertName(parentcert).subject,
                         stdout
                         ))
-
 
     def _validate_signature_hash_algorithm(self):
         """
