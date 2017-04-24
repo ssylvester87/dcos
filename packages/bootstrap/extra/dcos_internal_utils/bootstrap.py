@@ -363,7 +363,7 @@ class Bootstrapper(object):
                 ca_chain = ''.join(chaincerts[:-1])
 
             # Read private key in PEM format from pre defined location
-            with open(custom_ca_priv_key_path) as custom_ca_key_file:
+            with open(custom_ca_priv_key_path, 'rb') as custom_ca_key_file:
                 try:
                     ca_key = custom_ca_key_file.read().decode('utf-8')
                 except IOError as err:
