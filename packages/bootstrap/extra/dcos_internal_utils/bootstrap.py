@@ -285,7 +285,8 @@ class Bootstrapper(object):
                 'private_key': utils.generate_RSA_keypair(2048)[0],
             }
 
-        ca_crt, ca_key, ca_chain, ca_root = self._load_or_generate_ca_cert()
+        ca_crt, ca_key, ca_chain, ca_root = self._load_or_generate_ca_cert(
+            self.cluster_id())
         ca_certs = {
             'RootCA': {
                 'key': ca_key,
@@ -311,7 +312,7 @@ class Bootstrapper(object):
         utils.dict_merge(self.secrets, secrets)
         return secrets
 
-    def _load_or_generate_ca_cert(self):
+    def _load_or_generate_ca_cert(self, cluster_id):
         """
         Loads existing custom CA cert or generates new root CA cert.
 
@@ -389,7 +390,7 @@ class Bootstrapper(object):
         else:
             ca_key, ca_crt = utils.generate_CA_key_certificate(
                 valid_days=3650,
-                cn_suffix=self.cluster_id(),
+                cn_suffix=cluster_id,
                 )
             ca_root = ca_crt
 
