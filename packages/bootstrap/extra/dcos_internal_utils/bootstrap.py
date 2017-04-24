@@ -1548,6 +1548,9 @@ def dcos_spartan_master(b, opts):
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
 
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        b.write_CA_certificate_chain_complete(ca_chain_complete)
+
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
         b.ensure_key_certificate('Spartan Master', key, crt, master=True)
@@ -1590,6 +1593,9 @@ def dcos_erlang_service_master(servicename, b, opts):
 
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
     b.write_CA_certificate_root(filename=ca)
+
+    ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+    b.write_CA_certificate_chain_complete(ca_chain_complete)
 
     friendly_name = servicename[0].upper() + servicename[1:]
     key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)

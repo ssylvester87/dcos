@@ -602,11 +602,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/minuteman.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/minuteman.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/minuteman.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/minuteman.crt
       SERVER_VERIFY=verify_peer
@@ -619,11 +619,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/navstar.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/navstar.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/navstar.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/navstar.crt
       SERVER_VERIFY=verify_peer
@@ -639,11 +639,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/networking_api.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/networking_api.crt
       SERVER_VERIFY=verify_peer
@@ -656,11 +656,11 @@ package:
 {% case "true" %}
       MESOS_STATE_SSL_ENABLED=true
       ERLANG_DISTRIBUTION=inet_tls
-      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      CLIENT_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       CLIENT_KEYFILE=/run/dcos/pki/tls/private/spartan.key
       CLIENT_CERTFILE=/run/dcos/pki/tls/certs/spartan.crt
       CLIENT_VERIFY=verify_peer
-      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-bundle.crt
+      SERVER_CACERTFILE=/run/dcos/pki/CA/ca-chain-complete.crt
       SERVER_KEYFILE=/run/dcos/pki/tls/private/spartan.key
       SERVER_CERTFILE=/run/dcos/pki/tls/certs/spartan.crt
       SERVER_VERIFY=verify_peer
