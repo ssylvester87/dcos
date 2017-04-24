@@ -10,7 +10,6 @@ from gen.internals import validate_one_of
 
 # Precisely control import.
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from ca_validate import CustomCACertValidationError, CustomCACertValidator  # noqa=I100
 
 
 def validate_customer_key(customer_key):
@@ -295,6 +294,9 @@ def validate_ca_certificate(
     key = load_file_utf8(ca_certificate_key_path)
     chain = load_file_utf8(ca_certificate_chain_path)
 
+    # Import here becuase `cryptography` module loaded in `ca_validate` isn't
+    # available in the build time
+    from ca_validate import CustomCACertValidationError, CustomCACertValidator  # noqa=I100
     # Run data validation.
     try:
         CustomCACertValidator(cert, key, chain).validate()
