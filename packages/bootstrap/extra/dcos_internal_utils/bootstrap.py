@@ -187,8 +187,14 @@ class Bootstrapper(object):
         return crt
 
     def write_CA_certificate_chain(self, filename):
-        crt = self.secrets['CA']['RootCA']['chain']
-        crt = crt.encode('ascii')
+        crt = None
+
+        if 'CA' in self.secrets:
+            crt = self.secrets['CA']['RootCA']['chain']
+            crt = crt.encode('ascii')
+
+        crt = self._consensus('/dcos/CAChain', crt, ANYONE_READ)
+
         log.info('Writing CA cert chain to {}'.format(filename))
         _write_file(filename, crt, 0o644)
         return crt
@@ -200,7 +206,6 @@ class Bootstrapper(object):
 
         if 'CA' in self.secrets:
             crt = (
-                self.secrets['CA']['RootCA']['certificate'] +
                 self.secrets['CA']['RootCA']['chain'] +
                 self.secrets['CA']['RootCA']['root']
                 )
@@ -370,9 +375,12 @@ class Bootstrapper(object):
             if custom_ca_cert_config['ca_certificate_chain'] != '':
                 # Split chain string to separate certificates
                 endmarker = '-----END CERTIFICATE-----\n'
-                chaincerts = \
-                    custom_ca_cert_config['ca_certificate_chain'].split(
-                        endmarker)
+                # Custom CA cert acts as one of intermediate certs for end-entity
+                # certificates
+                chaincerts = (
+                    ca_crt +
+                    custom_ca_cert_config['ca_certificate_chain']
+                    ).split(endmarker)
                 chaincerts = [
                     item + endmarker for item in chaincerts
                     if item.strip() != ''
@@ -981,15 +989,7 @@ class Bootstrapper(object):
         Appends CA chain to the certificate
         """
         if 'CA' in self.secrets:
-            # If custom CA cert isn't also the Root CA cert add it to the
-            # chain
-            ca_root = self.secrets['CA']['RootCA']['root']
-            ca_cert = self.secrets['CA']['RootCA']['certificate']
-            if ca_cert != ca_root:
-                crt += self.secrets['CA']['RootCA']['certificate']
-            # Add additional CA certs to complete the chain
-            if self.secrets['CA']['RootCA']['chain'] not in crt:
-                crt += self.secrets['CA']['RootCA']['chain']
+            crt += self.secrets['CA']['RootCA']['chain']
 
         return crt
 
@@ -1557,6 +1557,9 @@ def dcos_spartan_master(b, opts):
         b.write_CA_certificate_root()
         b.write_CA_certificate_chain_complete()
 
+        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
+        b.write_CA_certificate_chain(filename=ca_chain)
+
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
         b.ensure_key_certificate('Spartan Master', key, crt, master=True)
@@ -1568,6 +1571,9 @@ def dcos_spartan_agent(b, opts):
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
         b.write_CA_certificate_chain_complete()
+
+        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
+        b.write_CA_certificate_chain(filename=ca_chain)
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
         crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1604,6 +1610,9 @@ def dcos_erlang_service_master(servicename, b, opts):
     ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
     b.write_CA_certificate_chain_complete(ca_chain_complete)
 
+    ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
+    b.write_CA_certificate_chain(filename=ca_chain)
+
     friendly_name = servicename[0].upper() + servicename[1:]
     key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
     crt = opts.rundir + '/pki/tls/certs/{}.crt'.format(servicename)
@@ -1629,6 +1638,9 @@ def dcos_erlang_service_agent(servicename, b, opts):
 
         ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
+
+        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
+        b.write_CA_certificate_chain(filename=ca_chain)
 
         friendly_name = servicename[0].upper() + servicename[1:]
         key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
