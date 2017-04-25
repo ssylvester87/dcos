@@ -409,6 +409,7 @@ class Bootstrapper(object):
                 cn_suffix=cluster_id,
                 )
             ca_root = ca_crt
+            ca_chain = ''
 
         return ca_crt, ca_key, ca_chain, ca_root
 
