@@ -194,8 +194,8 @@ class Bootstrapper(object):
             crt = crt.encode('ascii')
 
         crt = self._consensus('/dcos/CAChain', crt, ANYONE_READ)
-
         log.info('Writing CA cert chain to {}'.format(filename))
+
         _write_file(filename, crt, 0o644)
         return crt
 
@@ -990,6 +990,9 @@ class Bootstrapper(object):
         """
         if 'CA' in self.secrets:
             crt += self.secrets['CA']['RootCA']['chain']
+        else:
+            crt += self._consensus(
+                '/dcos/CAChain', None, ANYONE_READ).decode('ascii')
 
         return crt
 
