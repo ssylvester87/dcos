@@ -4,6 +4,7 @@ Test IAM/Bouncer functionality through Admin Router.
 import base64
 import json
 import time
+import uuid
 
 import jwt
 import pytest
@@ -159,6 +160,17 @@ def test_invalid_auth_header(noauth_api_session, headers):
 @pytest.mark.usefixtures('iam_verify_and_reset')
 class TestIAMUserGroupCRUD:
 
+    @pytest.fixture()
+    def service_account_uid(self, superuser_api_session) -> str:
+        """Return the UID of a service user account."""
+        uid = str(uuid.uuid4())
+        superuser_api_session.iam.create_service(
+            uid=uid,
+            pubkey=default_rsa_pubkey,
+            description=str(uuid.uuid4()),
+        )
+        return uid
+
     def test_create_user_account_log_in_delete(self, superuser_api_session, noauth_api_session):
 
         # Specify user details.
@@ -239,6 +251,34 @@ class TestIAMUserGroupCRUD:
         r = superuser_api_session.iam.get('/users', query='type=service')
         uids = [o['uid'] for o in r.json()['array']]
         assert uid not in uids
+
+    def test_delete_service_user_in_superusers_group(self,
+                                                     superuser_api_session,
+                                                     service_account_uid):
+        """
+        A service user which has been granted superuser privileges by being
+        added to the `superusers` group can be deleted.
+        """
+        resp = superuser_api_session.iam.put(
+            '/groups/superusers/users/{uid}'.format(uid=service_account_uid))
+        assert resp.status_code == 204
+
+        superuser_api_session.iam.delete_service(uid=service_account_uid)
+
+    def test_delete_service_user_assigned_superuser(self,
+                                                    superuser_api_session,
+                                                    service_account_uid):
+        """
+        A service user which has been granted superuser privileges by being
+        assigned to the `dcos:superuser` ACL can be deleted.
+        """
+        superuser_api_session.iam.create_user_permission(
+            uid=service_account_uid,
+            action='full',
+            rid='dcos:superuser',
+            )
+
+        superuser_api_session.iam.delete_service(uid=service_account_uid)
 
     def test_group_membership(self, superuser_api_session, peter):
         # Create group.
