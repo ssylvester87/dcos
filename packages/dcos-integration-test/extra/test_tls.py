@@ -12,8 +12,6 @@ from cryptography.hazmat.backends import default_backend as crypto_backend
 
 from ee_helpers import bootstrap_config
 
-from pkgpanda.util import load_string
-
 log = logging.getLogger(__name__)
 
 strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
@@ -109,9 +107,16 @@ def test_verify_server_cert_against_root_cert(tls_netlocs, superuser_api_session
         assert cert_pem, 'Failed to verify cert against root for : {}'.format(str(netloc))
 
 
-def test_cert_issuer_and_subject(tls_netlocs):
-    expected_issuer_cn = "DC/OS Root CA {}".format(
-        load_string('/var/lib/dcos/cluster-id').strip())
+def test_cert_issuer_and_subject(tls_netlocs, superuser_api_session):
+    # Retrieve CA cert
+    r = superuser_api_session.ca.post('/info', json={'profile': ''})
+    assert r.status_code == 200
+
+    data = r.json()
+    ca_cert = x509.load_pem_x509_certificate(
+        data['result']['certificate'].encode('ascii'), crypto_backend())
+    expected_issuer_cn = ca_cert.subject.get_attributes_for_oid(
+        x509.oid.NameOID.COMMON_NAME)[0].value
 
     for netloc in tls_netlocs:
         cert_pem = ssl.get_server_certificate(
