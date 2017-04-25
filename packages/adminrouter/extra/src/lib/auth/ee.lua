@@ -2,8 +2,8 @@ local cjson = require "cjson"
 local cjson_safe = require "cjson.safe"
 local jwt = require "resty.jwt"
 
-local authcommon = require "common.auth.common"
-local util = require "common.util"
+local authcommon = require "auth.common"
+local util = require "util"
 
 local SECRET_KEY = nil
 
