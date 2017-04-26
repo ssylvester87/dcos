@@ -75,7 +75,7 @@ class Bootstrapper(object):
         self.secrets = {}
 
         self.CA_certificate = None
-        self.CA_certificate_filename = None
+        self.CA_certificate_path = None
 
         self.agent_services = [
             'dcos_3dt_agent',
@@ -511,7 +511,7 @@ class Bootstrapper(object):
         pubkey_pem = utils.public_key_pem(private_key)
         account['public_key'] = pubkey_pem
 
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
         iamcli.create_service_account(uid, public_key=pubkey_pem, exist_ok=True)
 
         # TODO fine-grained permissions for all service accounts
@@ -572,7 +572,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
             iamcli.create_acls(permissive_acls, 'dcos_marathon')
 
         elif self.opts.config['security'] == 'strict':
@@ -593,7 +593,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
             iamcli.create_acls(strict_acls, 'dcos_marathon')
 
     def metronome_zk_acls(self):
@@ -610,7 +610,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
             iamcli.create_acls(permissive_acls, 'dcos_metronome')
 
         elif self.opts.config['security'] == 'strict':
@@ -625,7 +625,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
             iamcli.create_acls(strict_acls, 'dcos_metronome')
 
     def cosmos_acls(self):
@@ -956,7 +956,7 @@ class Bootstrapper(object):
         os.chmod(ts_fn, 0o644)
 
     def service_auth_token(self, uid, exp=None):
-        iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+        iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
         acc = self.secrets['services'][uid]
         log.info('Service account login as service {}'.format(uid))
         token = iam_cli.service_account_login(uid, private_key=acc['private_key'], exp=exp)
@@ -996,7 +996,7 @@ class Bootstrapper(object):
         if service_account:
             token = self.service_auth_token(service_account)
             headers = {'Authorization': 'token=' + token}
-        cacli = ca.CAClient(self.ca_url, headers, self.CA_certificate_filename)
+        cacli = ca.CAClient(self.ca_url, headers, self.CA_certificate_path)
 
         msg_fmt = 'Signing CSR at {} with service account {}'
         log.info(msg_fmt.format(self.ca_url, service_account))
@@ -1056,7 +1056,7 @@ class Bootstrapper(object):
             log.debug('Certificate {} already exists'.format(crt_filename))
 
     def write_jwks_public_keys(self, filename):
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
+        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
         jwks = iamcli.jwks()
         output = utils.jwks_to_public_keys(jwks)
         _write_file(filename, bytes(output, 'ascii'), 0o644)
