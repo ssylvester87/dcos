@@ -162,7 +162,7 @@ class Bootstrapper(object):
             self.ensure_zk_path(basepath, acl=acl)
 
             path = '/'.join([basepath, k])
-            js = bytes(json.dumps(v), 'ascii')
+            js = json.dumps(v, ensure_ascii=True).encode('ascii')
             js = self._consensus(path, js, acl)
             secrets[k] = json.loads(js.decode('ascii'))
 
@@ -172,76 +172,76 @@ class Bootstrapper(object):
 
         return secrets
 
-    def write_CA_key(self, filename):
+    def write_CA_key(self, path):
         key = self.secrets['CA']['RootCA']['key']
-        key = key.encode('ascii')
-        log.info('Writing CA key to {}'.format(filename))
-        _write_file(filename, key, 0o600)
+        key = key.encode('utf-8')
+        log.info('Writing CA key to {}'.format(path))
+        _write_file(path, key, 0o600)
         return key
 
-    def write_CA_certificate(self, filename='/run/dcos/pki/CA/certs/ca.crt'):
-        crt = self.secrets['CA']['RootCA']['certificate']
-        crt = crt.encode('ascii')
-        log.info('Writing CA cert to {}'.format(filename))
-        _write_file(filename, crt, 0o644)
+    def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
+        certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
+        log.info('Writing CA cert to {}'.format(path))
+        _write_file(path, crt, 0o644)
         return crt
 
-    def write_CA_certificate_chain(self, filename):
-        crt = None
+    def write_CA_certificate_chain(self, path):
+        """Write the CA certificate chain (comprised of exclusively intermediate
+        CA certificates) to a file.
+        """
+        chainbytes = None
 
         if 'CA' in self.secrets:
-            crt = self.secrets['CA']['RootCA']['chain']
-            crt = crt.encode('ascii')
+            chainbytes = self.secrets['CA']['RootCA']['chain'].encode('utf-8')
 
-        crt = self._consensus('/dcos/CAChain', crt, ANYONE_READ)
-        log.info('Writing CA cert chain to {}'.format(filename))
+        chainbytes = self._consensus('/dcos/CAChain', chainbytes, ANYONE_READ)
+        log.info('Writing CA cert chain to {}'.format(path))
 
-        _write_file(filename, crt, 0o644)
-        return crt
+        _write_file(path, chainbytes, 0o644)
+        return chainbytes
 
     def write_CA_certificate_chain_complete(
-            self, filename='/run/dcos/pki/CA/ca-chain-complete.crt'):
-        # Read value if not generated
-        crt = None
+            self, path='/run/dcos/pki/CA/ca-chain-inclroot.crt'):
+        """Like `write_CA_certificate_chain()`, but add the root CA certificate.
+        """
+        chainbytes = None
 
         if 'CA' in self.secrets:
-            crt = (
+            chain = (
                 self.secrets['CA']['RootCA']['chain'] +
                 self.secrets['CA']['RootCA']['root']
                 )
-            crt = crt.encode('ascii')
+            chainbytes = crt.encode('utf-8')
 
-        crt = self._consensus('/dcos/CAChainComplete', crt, ANYONE_READ)
+        chainbytes = self._consensus('/dcos/CAChainInclRoot', crt, ANYONE_READ)
 
-        log.info('Writing complete CA cert chain to {}'.format(filename))
-        _write_file(filename, crt, 0o644)
+        log.info('Writing CA cert chain (including root) to {}'.format(path))
+        _write_file(path, crt, 0o644)
         return crt
 
     def write_CA_certificate_root(
-            self, filename='/run/dcos/pki/CA/ca-bundle.crt'):
+            self, path='/run/dcos/pki/CA/ca-bundle.crt'):
         """
-        Writes root CA certificate that should be used as a bundle certificate
-        for certificate verification.
+        Writes root CA certificate to the trust bundle file (intended to be used
+        for certificate verification).
 
         Consensus has to be reached on masters severs and agents are supposed
         to read the cert from ZK.
         """
-        # Read value if not generated
-        crt = None
+        certbytes = None
 
         if 'CA' in self.secrets:
-            crt = self.secrets['CA']['RootCA']['root']
-            crt = crt.encode('ascii')
+            certbytes = self.secrets['CA']['RootCA']['root'].encode('utf-8')
 
-        crt = self._consensus('/dcos/RootCA', crt, ANYONE_READ)
+        certbytes = self._consensus('/dcos/RootCA', certbytes, ANYONE_READ)
 
-        log.info('Writing root CA certificate to {}'.format(filename))
-        _write_file(filename, crt, 0o644)
+        log.info('Writing root CA certificate to {}'.format(path))
+        _write_file(path, certbytes, 0o644)
 
-        self.CA_certificate = crt
-        self.CA_certificate_filename = filename
+        self.CA_certificate = certbytes
+        self.CA_certificate_path = path
 
-        return crt
+        return certbytes
 
     def create_master_secrets(self):
         creds = self.opts.zk_master_creds
@@ -1384,7 +1384,7 @@ def dcos_marathon(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
 
     # For Marathon UI/API SSL.
@@ -1425,7 +1425,7 @@ def dcos_metronome(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
 
         # For Metronome UI/API SSL.
@@ -1611,7 +1611,7 @@ def dcos_erlang_service_master(servicename, b, opts):
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
     b.write_CA_certificate_root(filename=ca)
 
-    ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+    ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
     b.write_CA_certificate_chain_complete(ca_chain_complete)
 
     ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
@@ -1640,7 +1640,7 @@ def dcos_erlang_service_agent(servicename, b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(filename=ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-complete.crt'
+        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
