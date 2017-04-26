@@ -362,13 +362,13 @@ class Bootstrapper(object):
             ca_key (str): Private key (PEM-encoded) corresponding to the
                 certificate encoded in `ca_crt`.
 
-            ca_chain (str, None): If the custom CA certificate is an
-                intermediate CA certificate then this string includes the custom
-                CA certificate and all intermediate CA certificates in the
-                hierarchy between the custom CA certificate and the root CA
-                certificate (PEM-encoded). `ca_chain` is `None` when the custom
-                CA certificate is a root CA certificate or when no custom CA
-                certificate has been provided.
+            ca_chain (str): If the custom CA certificate is an intermediate CA
+                certificate then this string includes the custom CA certificate
+                and all intermediate CA certificates in the hierarchy between
+                the custom CA certificate and the root CA certificate
+                (PEM-encoded). `ca_chain` is an empty string when the custom CA
+                certificate is a root CA certificate or when no
+                custom CA certificate has been provided.
 
             ca_root (str): root CA certificate (PEM-encoded). When generating a
                 new globally unique root CA certificate or when the custom CA
@@ -395,7 +395,7 @@ class Bootstrapper(object):
             # certificate.
             if custom_ca_cert_config['ca_certificate_chain'] == '':
                 ca_root = custom_ca_cert_config['ca_certificate']
-                ca_chain = None
+                ca_chain = ''
 
             else:
                 # Make it so that `ca_chain` contains all CA certificates
@@ -430,7 +430,7 @@ class Bootstrapper(object):
                 cn_suffix=cluster_id,
                 )
             ca_root = ca_crt
-            ca_chain = None
+            ca_chain = ''
 
         return ca_crt, ca_key, ca_chain, ca_root
 
