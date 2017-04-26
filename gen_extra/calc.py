@@ -222,7 +222,7 @@ def calculate_ca_certificate(
         ):
     """
     Translate the non-sensitive part of the user-given CA certificate data into
-    a base64 representation.
+    a JSON document.
 
     Assume that the given file paths exist and that the data has previously been
     validated.

@@ -25,7 +25,7 @@ ca_certificate_chain:
 
     Must be left undefined if ca_certificate is a root CA certificate.
 
-    If the ca_certificate is an intermediate CA certificate, this needs to
+    If the CA certificate is an intermediate CA certificate, this needs to
     contain all CA certificates comprising the complete sequence starting
     precisely with the CA certificate that was used to sign the certificate in
     ca_certificate and ending with a root CA certificate (where issuer and
