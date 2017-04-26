@@ -182,8 +182,8 @@ class Bootstrapper(object):
     def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing CA cert to {}'.format(path))
-        _write_file(path, crt, 0o644)
-        return crt
+        _write_file(path, certbytes, 0o644)
+        return certbytes
 
     def write_CA_certificate_chain(self, path):
         """Write the CA certificate chain (comprised of exclusively intermediate
@@ -211,13 +211,14 @@ class Bootstrapper(object):
                 self.secrets['CA']['RootCA']['chain'] +
                 self.secrets['CA']['RootCA']['root']
                 )
-            chainbytes = crt.encode('utf-8')
+            chainbytes = chain.encode('utf-8')
 
-        chainbytes = self._consensus('/dcos/CAChainInclRoot', crt, ANYONE_READ)
+        chainbytes = self._consensus(
+            '/dcos/CAChainInclRoot', chainbytes, ANYONE_READ)
 
         log.info('Writing CA cert chain (including root) to {}'.format(path))
-        _write_file(path, crt, 0o644)
-        return crt
+        _write_file(path, chainbytes, 0o644)
+        return chainbytes
 
     def write_CA_certificate_root(
             self, path='/run/dcos/pki/CA/ca-bundle.crt'):
@@ -406,7 +407,7 @@ class Bootstrapper(object):
                     ca_crt +
                     custom_ca_cert_config['ca_certificate_chain']
                     ).split(endmarker)
-                all_ca_certs = [c + endmarker for c in chaincerts if c.strip()]
+                all_ca_certs = [c + endmarker for c in all_ca_certs if c.strip()]
                 ca_root = all_ca_certs[-1]
                 ca_chain = ''.join(all_ca_certs[:-1])
 
@@ -1289,7 +1290,7 @@ def dcos_ca(b, opts):
     b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
 
     path = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(filename=path)
+    b.write_CA_certificate(path=path)
     shutil.chown(path, user=opts.dcos_ca_user)
 
     path = opts.rundir + '/pki/CA/private/ca.key'
@@ -1297,10 +1298,10 @@ def dcos_ca(b, opts):
     shutil.chown(path, user=opts.dcos_ca_user)
 
     path = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(filename=path)
+    b.write_CA_certificate_chain(path=path)
 
     path = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_certificate_root(filename=path)
+    b.write_CA_certificate_root(path=path)
 
 
 def dcos_mesos_master(b, opts):
@@ -1403,7 +1404,7 @@ def dcos_marathon(b, opts):
         shutil.chown(crt, user='dcos_marathon')
 
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_certificate_root(filename=ca)
+        b.write_CA_certificate_root(ca)
 
         ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
@@ -1444,7 +1445,7 @@ def dcos_metronome(b, opts):
         shutil.chown(crt, user='dcos_metronome')
         # ca-bundle.crt also only for libmesos SSL.
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_certificate_root(filename=ca)
+        b.write_CA_certificate_root(ca)
 
         ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
@@ -1478,7 +1479,7 @@ def dcos_mesos_dns(b, opts):
 
     if opts.config['ssl_enabled']:
         path = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_certificate_root(filename=path)
+        b.write_CA_certificate_root(path)
 
         # Generate client certificate (In strict security mode, Mesos-DNS is
         # required to present this to the Mesos master during the TLS handshake).
@@ -1583,7 +1584,7 @@ def dcos_spartan_master(b, opts):
         b.write_CA_certificate_chain_complete()
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(filename=ca_chain)
+        b.write_CA_certificate_chain(ca_chain)
 
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1598,7 +1599,7 @@ def dcos_spartan_agent(b, opts):
         b.write_CA_certificate_chain_complete()
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(filename=ca_chain)
+        b.write_CA_certificate_chain(ca_chain)
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
         crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1630,13 +1631,13 @@ def dcos_erlang_service_master(servicename, b, opts):
     user = 'dcos_' + servicename
 
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_certificate_root(filename=ca)
+    b.write_CA_certificate_root(ca)
 
     ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
     b.write_CA_certificate_chain_complete(ca_chain_complete)
 
     ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(filename=ca_chain)
+    b.write_CA_certificate_chain(ca_chain)
 
     friendly_name = servicename[0].upper() + servicename[1:]
     key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
@@ -1659,13 +1660,13 @@ def dcos_erlang_service_agent(servicename, b, opts):
 
     if opts.config['ssl_enabled']:
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_certificate_root(filename=ca)
+        b.write_CA_certificate_root(ca)
 
         ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_complete(ca_chain_complete)
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(filename=ca_chain)
+        b.write_CA_certificate_chain(ca_chain)
 
         friendly_name = servicename[0].upper() + servicename[1:]
         key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
@@ -1694,7 +1695,7 @@ def dcos_cosmos(b, opts):
     shutil.chown(crt, user='dcos_cosmos')
 
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_certificate_root(filename=ca)
+    b.write_CA_certificate_root(ca)
 
     ts = opts.rundir + '/pki/CA/certs/cacerts_cosmos.jks'
     b.write_truststore(ts, ca)
@@ -1765,7 +1766,7 @@ def dcos_history(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_history')
 
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_certificate_root(filename=ca)
+    b.write_CA_certificate_root(ca)
 
     os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
