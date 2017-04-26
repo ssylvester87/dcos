@@ -2,6 +2,7 @@
 
 
 import datetime
+import os
 import uuid
 
 import cryptography.hazmat.backends
@@ -847,5 +848,29 @@ class TestCertValidation:
         CustomCACertValidator(
             serialize_cert_to_pem(intermediate_ca),
             serialize_key_to_pem(private_key),
+            chain_pem,
+        ).validate()
+
+    def test_valid_intermediate_cert_with_complete_chain_by_openssl(self):
+        """
+        Intermediate CA with complete cert chain generated with openssl utility
+        See: https://github.com/mesosphere/dcos-custom-ca-cert-configs
+        """
+
+        fixtures_dir = os.path.join(
+            os.path.dirname(__file__), 'fixtures', 'test_03')
+
+        with open(os.path.join(fixtures_dir, 'dcos-ca-certificate.crt'), 'rb') as f:
+            intermediate_ca = f.read().decode('utf-8')
+
+        with open(os.path.join(fixtures_dir, 'dcos-ca-certificate-key.key'), 'rb') as f:
+            private_key = f.read().decode('utf-8')
+
+        with open(os.path.join(fixtures_dir, 'dcos-ca-certificate-chain.crt'), 'rb') as f:
+            chain_pem = f.read().decode('utf-8')
+
+        CustomCACertValidator(
+            intermediate_ca,
+            private_key,
             chain_pem,
         ).validate()

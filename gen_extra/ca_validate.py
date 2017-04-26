@@ -35,6 +35,7 @@ ca_certificate_chain:
 
 import datetime
 import itertools
+import os
 import subprocess
 from tempfile import NamedTemporaryFile
 
@@ -260,7 +261,7 @@ class CustomCACertValidator:
             raise CustomCACertValidationError(
                 'Certificate chain must be provided')
 
-        endmarker = '-----END CERTIFICATE-----'
+        endmarker = '-----END CERTIFICATE-----\n'
         tokens = self.chain.split(endmarker)
         chaincerts_pem = [t + endmarker for t in tokens if t.strip()]
         chaincerts = [load_pem_x509_cert(c) for c in chaincerts_pem]
@@ -320,9 +321,31 @@ class CustomCACertValidator:
                 cfile.write(childcert_pem.encode('utf-8'))
                 cfile.flush()
 
+                # Process executing the validation runs in a `alpine` docker
+                # container that contains all dependencies built by `pkgpanda`
+                # including the `openssl`. Unfortunately `openssl` package
+                # depends on `glibc` which we don't build and expect to be
+                # on a host machine. `alpine` linux doesn't come with `glibc`
+                # and thus `openssl` built by `pkgpanda` cannot run in `alpine`
+                # container.
+                # https://github.com/dcos/dcos/blob/b261b8545da8b7e550b494cd353dc378b087096c/gen/build_deploy/bash/Dockerfile.in
+                #
+                # To override this problem we install `openssl` provided by
+                # `alpine` package system. As this python file is executed
+                # in context of `pkgpanda` build packages we have to remove
+                # custom `bin` directory from path in order to launch `openssl`
+                # binary that will work in `alpine` system.
+
+                openssl_binary = 'openssl'
+                process_env = os.environ.copy()
+
+                if '/opt/mesosphere/bin' in os.environ['PATH']:
+                    openssl_binary = '/usr/bin/openssl'
+                    process_env.pop('LD_LIBRARY_PATH', None)
+
                 # Props to https://security.stackexchange.com/q/118062/103960
                 cmd = [
-                    'openssl',
+                    openssl_binary,
                     'verify',
                     '-CApath', '/dev/null',
                     '-partial_chain',
@@ -331,7 +354,11 @@ class CustomCACertValidator:
                     ]
 
                 p = subprocess.Popen(
-                    cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+                    cmd,
+                    stderr=subprocess.STDOUT,
+                    stdout=subprocess.PIPE,
+                    env=process_env,
+                    )
                 stdout_bytes, _ = p.communicate()
                 stdout = stdout_bytes.decode('utf-8', errors='backslashreplace')
 
