@@ -327,89 +327,110 @@ class Bootstrapper(object):
 
     def _load_or_generate_ca_cert(self, cluster_id):
         """
-        Loads existing custom CA cert or generates new root CA cert.
+        Get data for 'the signing CA certificate': load custom CA certificate or
+        generate new root CA certificate.
 
-        If custom CA certificate was provided the configuration is loaded
-        from `/opt/mesosphere/etc/ca.json` file. The file should contain
-        `ca_certificate` and `ca_certificate_chain` (which contains certs
-        up to the Root CA cert including). Private key is loaded from
-        `/etc/custom_ca.key` file.
+        The 'custom CA certificate' is a root or intermediate CA certificate
+        that is intended to be used by the DC/OS CA as 'the signing CA
+        certificate', i.e. for signing (issuing) the individual component
+        (end-entity) certificates.
 
-        If custom CA certitificate was not configured the new Root CA
-        certificate is created.
+        If a custom CA certificate was provided the corresponding configuration
+        data is loaded from the file located at `/opt/mesosphere/etc/ca.json`.
+        The file is expected to contain a JSON document specifying the keys
+        `ca_certificate` and `ca_certificate_chain`. If the certificate encoded
+        by `ca_certificate` is not a root CA certificate, `ca_certificate_chain`
+        is expected to contain all CA certificates comprising the complete
+        sequence starting precisely with the CA certificate that was used to
+        sign the certificate in `ca_certificate` and ending with a root CA
+        certificate (where issuer and subject are the same entity), yielding a
+        gapless certification path (the order is significant). The private key
+        corresponding to the custom CA certificate is loaded from the file
+        located at `/etc/custom_ca.key`.
+
+        If no custom CA certitificate was not configured then generate a
+        globally unique root CA certificate is created.
+
+        TODO(jp): improve path /etc/custom_ca.key
 
         Returns:
-            ca_crt (str): CA certificate (PEM encoded)
+            ca_crt (str): The signing CA certificate (PEM-encoded). Intended to
+                be used for signing component (end-entity) certificates. A newly
+                generated globally unique root CA certificate or the custom CA
+                certificate.
 
-            ca_key (str): Private key (PEM encoded)
+            ca_key (str): Private key (PEM-encoded) corresponding to the
+                certificate encoded in `ca_crt`.
 
-            ca_chain (str, None): If custom CA certificate was configured with
-                chain of intermediate certs, this string contains all
-                intermediate certs. (PEM encoded)
+            ca_chain (str, None): If the custom CA certificate is an
+                intermediate CA certificate then this string includes the custom
+                CA certificate and all intermediate CA certificates in the
+                hierarchy between the custom CA certificate and the root CA
+                certificate (PEM-encoded). `ca_chain` is `None` when the custom
+                CA certificate is a root CA certificate or when no custom CA
+                certificate has been provided.
 
-            ca_root (str): Root CA certificate (PEM encoded). When generating
-                new Root CA this value is identical to `ca_crt`
+            ca_root (str): root CA certificate (PEM-encoded). When generating a
+                new globally unique root CA certificate or when the custom CA
+                certificate `ca_crt` is a root CA certificate then this value is
+                identical to `ca_crt`.
         """
-        ca_chain = None
 
-        # Paths where custom CA parts would be found
+        # Filesystem paths where custom CA parts are expected to be found.
         custom_ca_cert_conf_path = '/opt/mesosphere/etc/ca.json'
         custom_ca_priv_key_path = '/etc/custom_ca.key'
 
-        # DC/OS could be configured with custom CA certificate that is written
-        # to /opt/mesosphere/etc/ca.json
+        # Handle the case when a custom CA certificate was provided.
         if os.path.isfile(custom_ca_cert_conf_path):
 
-            # Read JSON configuration that contains custom CA cert and optionally
-            # cert chain.
-            with open(custom_ca_cert_conf_path, 'rb') as conf_file:
+            with open(custom_ca_cert_conf_path, 'rb') as f:
                 custom_ca_cert_config = json.loads(
-                    conf_file.read().decode('utf-8'))
+                    f.read().decode('utf-8'))
 
-            # If custom CA is a root certificate use the certificate
-            # as a CA cert and Root CA cert
-            ca_crt = ca_root = custom_ca_cert_config['ca_certificate']
+            # Use the custom CA certificate as 'the signing CA certificate'.
+            ca_crt = custom_ca_cert_config['ca_certificate']
 
-            # Custom chain was provided, load data and split it to
-            # intermediate CA chain and Root CA
-            if custom_ca_cert_config['ca_certificate_chain'] != '':
-                # Split chain string to separate certificates
+            # If the `'ca_certificate_chain'` key has set an empty string value
+            # it precisely means that the custom CA certificate is a root CA
+            # certificate.
+            if custom_ca_cert_config['ca_certificate_chain'] == '':
+                ca_root = custom_ca_cert_config['ca_certificate']
+                ca_chain = None
+
+            else:
+                # Make it so that `ca_chain` contains all CA certificates
+                # (including the signing CA certificate) but not the root CA
+                # certificate.
                 endmarker = '-----END CERTIFICATE-----\n'
-                # Custom CA cert acts as one of intermediate certs for end-entity
-                # certificates
-                chaincerts = (
+                all_ca_certs = (
                     ca_crt +
                     custom_ca_cert_config['ca_certificate_chain']
                     ).split(endmarker)
-                chaincerts = [
-                    item + endmarker for item in chaincerts
-                    if item.strip() != ''
-                    ]
+                all_ca_certs = [c + endmarker for c in chaincerts if c.strip()]
+                ca_root = all_ca_certs[-1]
+                ca_chain = ''.join(all_ca_certs[:-1])
 
-                # Split to root CA cert and use rest as intermediate CA certs
-                ca_root = chaincerts[-1]
-                ca_chain = ''.join(chaincerts[:-1])
-
-            # Read private key in PEM format from pre defined location
+            # Expect private key file at pre-defined location, read key.
             with open(custom_ca_priv_key_path, 'rb') as custom_ca_key_file:
                 try:
                     ca_key = custom_ca_key_file.read().decode('utf-8')
-                except IOError as err:
+                except OSError as err:
                     raise Exception(
                         'Failed to read custom CA certificate private key '
                         'from file `%s`. Error: %s' % (
                             custom_ca_priv_key_path, err)
                         )
 
-        # If custom CA was not configured generate a CA cert, regardless of
-        # whether TLS is being used in the cluster
+        # Handle the case where no custom CA certificate data was provided:
+        # generate a new globally unique root CA certificate plus its
+        # corresponding private key.
         else:
             ca_key, ca_crt = utils.generate_CA_key_certificate(
                 valid_days=3650,
                 cn_suffix=cluster_id,
                 )
             ca_root = ca_crt
-            ca_chain = ''
+            ca_chain = None
 
         return ca_crt, ca_key, ca_chain, ca_root
 
