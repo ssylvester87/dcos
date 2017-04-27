@@ -72,13 +72,10 @@ def make_session_fixture():
 
     # If SSL enabled and no CA cert is given, then grab it
     if bootstrap_config['ssl_enabled']:
-        logging.info('Attempt to get CA bundle via CA HTTP API')
-        r = cluster_api.post('ca/api/v2/info', json={'profile': ''}, verify=False)
-
+        logging.info('Attempt to get CA bundle via Admin Router')
+        r = cluster_api.get('/ca/dcos-ca.crt', verify=False)
         assert r.status_code == 200
-        data = r.json()
-        crt = data['result']['certificate']
-        cluster_api.session.verify = session_tempfile(crt.encode())
+        cluster_api.session.verify = session_tempfile(r.content)
 
     cluster_api.wait_for_dcos()
 
