@@ -10,6 +10,7 @@ test-harness/logs/*.log
 
 #Overlay things, must not be included in the EE repository:
 .flake8
+.isort.cfg
 Makefile.common
 mime.types
 pytest.ini
