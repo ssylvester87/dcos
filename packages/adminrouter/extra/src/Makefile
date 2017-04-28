@@ -18,7 +18,7 @@ apply-open:
 			test-harness/ \
 			; \
 		do \
-		rsync -av ${AR_OPEN_PATH}$${f} ./$${f} --exclude 'logs/*'; \
+		rsync -av ${AR_OPEN_PATH}$${f} ./$${f} --exclude 'logs/*' --exclude '.*.s??'; \
 	done
 	rm -vR ./test-harness/tests/open
 
