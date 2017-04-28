@@ -27,6 +27,7 @@ test-harness/modules/runner/__init__.py
 test-harness/modules/runner/common.py
 test-harness/modules/runner/open.py
 test-harness/tests/*.py
+test-harness/tests/*.yml
 test-harness/tests/open/*
 lib/agent.lua
 lib/auth/common.lua
