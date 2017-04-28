@@ -1,0 +1,11 @@
+endpoint_tests:
+  - tests:
+      is_upstream_correct:
+        enabled: true
+        test_paths:
+          - /system/health/v1/foo/bar
+        upstream: http:///run/dcos/3dt.sock
+    type:
+      - master
+location_header_rewrite_tests: []
+redirect_tests: []

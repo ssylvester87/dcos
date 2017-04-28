@@ -3,11 +3,7 @@
 import pytest
 import requests
 
-from generic_test_code.common import (
-    assert_endpoint_response,
-    generic_correct_upstream_dest_test,
-    verify_header,
-)
+from generic_test_code.common import assert_endpoint_response, verify_header
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
 from util import SearchCriteria, iam_denies_all_requests
 
@@ -301,16 +297,3 @@ class TestAuthEnforcementEE:
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names
         assert "Authorization" not in header_names
-
-
-class TestHealthEndpointEE:
-    def test_if_request_is_sent_to_correct_upstream(self,
-                                                    master_ar_process,
-                                                    valid_user_header
-                                                    ):
-
-        generic_correct_upstream_dest_test(master_ar_process,
-                                           valid_user_header,
-                                           '/system/health/v1/foo/bar',
-                                           'http:///run/dcos/3dt.sock',
-                                           )
