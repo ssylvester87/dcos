@@ -16,7 +16,6 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util import Retry
 
-
 from dcos_internal_utils import bootstrap
 from dcos_internal_utils import utils
 
