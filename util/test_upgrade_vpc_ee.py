@@ -87,7 +87,7 @@ class EEDcosApiSessionFactory(test_upgrade_vpc.VpcClusterUpgradeTestDcosApiSessi
     def __init__(self, config: dict):
         self.config = config
 
-    def apply(self, dcos_url: str, masters: List[str], public_masters: List[str], slaves: List[str],
+    def apply(self, dcos_url: str, masters: List[str], slaves: List[str],
               public_slaves: List[str], default_os_user: str) -> DcosApiSession:
         uid = os.environ['TEST_ADD_ENV_DCOS_LOGIN_UNAME']
         password = os.environ['TEST_ADD_ENV_DCOS_LOGIN_PW']
@@ -103,7 +103,7 @@ class EEDcosApiSessionFactory(test_upgrade_vpc.VpcClusterUpgradeTestDcosApiSessi
             url = dcos_url.replace('http', 'https')
             os_user = 'nobody'
             logger.normal('Attempt to get CA bundle via CA HTTP API')
-            dcos_api = DcosApiSession(url, masters, public_masters, slaves, public_slaves,
+            dcos_api = DcosApiSession(url, masters, slaves, public_slaves,
                                       os_user, superuser)
             r = dcos_api.post('ca/api/v2/info', json={'profile': ''}, verify=False)
 
@@ -114,7 +114,7 @@ class EEDcosApiSessionFactory(test_upgrade_vpc.VpcClusterUpgradeTestDcosApiSessi
             dcos_api.session.verify = ca_cert_path  # eww object mutation :(
             return dcos_api
         else:
-            return DcosApiSession(dcos_url, masters, public_masters, slaves, public_slaves, default_os_user,
+            return DcosApiSession(dcos_url, masters, slaves, public_slaves, default_os_user,
                                   superuser)
 
 
