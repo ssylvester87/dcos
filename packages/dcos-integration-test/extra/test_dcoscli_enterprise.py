@@ -23,10 +23,14 @@ def service_accounts_fixture(dcoscli):
         sa_base + ["create", "-p", public_key, "-d", "test", name])
     os.chmod(private_key, 0o600)
 
-    yield (name, private_key, public_key)
+    stdout, _ = dcoscli.exec_command(
+        ["dcos", "cluster", "list", "--attached", "--json"])
+    cluster_id = json.loads(stdout)[0].get("cluster_id")
 
-    # need to be superuser to delete sa user
-    dcoscli.login()
+    yield (dcoscli, name, private_key, public_key)
+
+    # switch back to superuser to delete sa user
+    dcoscli.exec_command(["dcos", "cluster", "attach", cluster_id])
     dcoscli.exec_command(sa_base + ["delete", name])
     try:
         os.close(fd)
@@ -46,7 +50,7 @@ def secrets_fixture(dcoscli, request):
     assert stdout == ''
     assert stderr == ''
 
-    yield
+    yield dcoscli
 
     # delete secret
     stdout, stderr = dcoscli.exec_command(
@@ -63,52 +67,49 @@ def secrets_fixture(dcoscli, request):
 
 class TestDCOSCLI:
     def test_cli(self, dcoscli):
-        dcoscli.login()
+        dcoscli.setup()
 
-    def test_service_accounts(self, dcoscli, service_accounts_fixture):
-        name, private_key, public_key = service_accounts_fixture
+    def test_service_accounts(self, service_accounts_fixture):
+        cli, name, private_key, public_key = service_accounts_fixture
+
         # create non strict sa secret in default store
-        stdout, stderr = dcoscli.exec_command(
+        stdout, stderr = cli.exec_command(
             ["dcos", "security", "secrets", "create-sa-secret",
              private_key, "sa-secret", "/sa-secret"])
         assert stdout == ''
         assert stderr == ''
 
         # delete secret
-        stdout, stderr = dcoscli.exec_command(
+        stdout, stderr = cli.exec_command(
             ["dcos", "security", "secrets", "delete", "/sa-secret"])
         assert stdout == ''
-        assert stderr == ''
-
-        # login using service account
-        stdout, stderr = dcoscli.exec_command(
-            ["dcos", "auth", "login", "--username={}".format(name), "--private-key={}".format(private_key)])
-        assert stdout == 'Login successful!\n'
         assert stderr == ''
 
     @pytest.mark.parametrize('secrets_fixture', [
         ("newsecret", "/foo")
         ], indirect=True)
-    def test_secrets_management(self, dcoscli, secrets_fixture):
+    def test_secrets_management(self, secrets_fixture):
 
         # get secret
-        stdout, stderr = dcoscli.exec_command(
+        stdout, stderr = secrets_fixture.exec_command(
             ["dcos", "security", "secrets", "get", "/foo"])
         assert stdout == 'value: newsecret\n\n'
         assert stderr == ''
 
         # update secret
-        stdout, stderr = dcoscli.exec_command(
+        stdout, stderr = secrets_fixture.exec_command(
             ["dcos", "security", "secrets", "update", "--value=newestsecret", "/foo"])
         assert stderr == ''
 
         # list secret
-        stdout, stderr = dcoscli.exec_command(
+        stdout, stderr = secrets_fixture.exec_command(
             ["dcos", "security", "secrets", "list", "/"])
         assert stdout == '- foo\n\n'
         assert stderr == ''
 
     def test_cluster_management(self, dcoscli):
+        dcoscli.setup_enterprise()
+
         # show secret stores
         stdout, stderr = dcoscli.exec_command(
             ["dcos", "security", "cluster", "secret-store", "show"])
@@ -173,6 +174,8 @@ class TestDCOSCLI:
         assert stderr == ''
 
     def test_users_and_groups(self, dcoscli, iam_verify_and_reset):
+        dcoscli.setup_enterprise()
+
         users = ["dcos", "security", "org", "users"]
         groups = ["dcos", "security", "org", "groups"]
 
