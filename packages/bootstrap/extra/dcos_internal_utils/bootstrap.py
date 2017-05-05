@@ -420,6 +420,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:master:volume', 'create'),
                 ('dcos:mesos:master:volume', 'delete'),
+                ('dcos:mesos:agent:task', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -438,7 +439,9 @@ class Bootstrapper(object):
                 ('dcos:mesos:master:task:user:nobody', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
                 ('dcos:mesos:master:volume:principal:dcos_marathon', 'delete'),
-                ('dcos:mesos:master:volume:role:slave_public', 'create')
+                ('dcos:mesos:master:volume:role:slave_public', 'create'),
+                ('dcos:mesos:agent:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -454,7 +457,9 @@ class Bootstrapper(object):
         if self.opts.config['security'] == 'permissive':
             permissive_acls = [
                 ('dcos:mesos:master:framework', 'create'),
-                ('dcos:mesos:master:task', 'create')]
+                ('dcos:mesos:master:task', 'create'),
+                ('dcos:mesos:agent:task', 'create')
+            ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
             iamcli.create_acls(permissive_acls, 'dcos_metronome')
@@ -466,7 +471,9 @@ class Bootstrapper(object):
             strict_acls = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
-                ('dcos:mesos:master:task:user:nobody', 'create')
+                ('dcos:mesos:master:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:user:nobody', 'create'),
+                ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_filename)
@@ -582,6 +589,17 @@ class Bootstrapper(object):
 
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
+
+    def write_executor_secret_key(self, path):
+        if os.path.isfile(path):
+            return
+
+        if os.path.exists(path):
+            raise Exception('Mesos executor secret key path "{}" was found, ' +
+                            'but is not a regular file'.format(path))
+
+        key = utils.generate_executor_secret_key()
+        _write_file(path, key, 0o600)
 
     def write_mesos_master_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
@@ -1150,6 +1168,9 @@ def dcos_mesos_slave(b, opts):
         crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
 
+    if opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
+
     # Service account needed to
     # a) authenticate with master, and/or
     # b) retrieve ACLs from bouncer, and/or
@@ -1174,6 +1195,9 @@ def dcos_mesos_slave_public(b, opts):
         keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
         crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
+
+    if opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
 
     # Service account needed to
     # a) authenticate with master, and/or
