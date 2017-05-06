@@ -38,7 +38,15 @@ def test_component_auth_direct_no_auth(
         noauth_api_session, method, path, host, port):
     r = make_request(noauth_api_session, method, path, host, port)
     assert r.status_code == 401
-    assert r.headers['WWW-Authenticate'] == 'acsjwt'
+    # We must adjust the expectation for Mesos agent API endpoints (currently
+    # just '/containers') because the agent loads two authenticators in strict
+    # mode, so its 'WWW-Authenticate' header will contain two challenges.
+    if path == '/containers':
+        challenges = r.headers['WWW-Authenticate'].split(',')
+        assert 'Bearer' in challenges
+        assert 'acsjwt' in challenges
+    else:
+        assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
 @pytest.mark.parametrize('method, path, host, port', ENDPOINT_PARAMS)
@@ -46,7 +54,15 @@ def test_component_auth_direct_forged_token(
         forged_superuser_session, method, path, host, port):
     r = make_request(forged_superuser_session, method, path, host, port)
     assert r.status_code == 401
-    assert r.headers['WWW-Authenticate'] == 'acsjwt'
+    # We must adjust the expectation for Mesos agent API endpoints (currently
+    # just '/containers') because the agent loads two authenticators in strict
+    # mode, so its 'WWW-Authenticate' header will contain two challenges.
+    if path == '/containers':
+        challenges = r.headers['WWW-Authenticate'].split(',')
+        assert 'Bearer' in challenges
+        assert 'acsjwt' in challenges
+    else:
+        assert r.headers['WWW-Authenticate'] == 'acsjwt'
 
 
 @pytest.mark.parametrize('method, path, host, port', ENDPOINT_PARAMS)
