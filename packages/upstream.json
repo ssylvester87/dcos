@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/branden/dcos",
   "kind": "git",
-  "ref": "1fef47e89a576bfedbb8bdb739536a061f53a2b0",
-  "ref_origin": "1.9.1"
+  "ref": "ce4c2ad75cdffc85ae4d9a32b118713efe9d8556",
+  "ref_origin": "upgrade-exhibitor-http-auth-1.9"
 }
