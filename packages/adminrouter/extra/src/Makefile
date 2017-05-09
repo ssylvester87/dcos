@@ -16,6 +16,7 @@ apply-open:
 			master/agent.lua \
 			master/cache.lua \
 			master/marathon-leader.lua \
+			master/history-service.lua \
 			mime.types \
 			pytest.ini \
 			resty/ \
