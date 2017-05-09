@@ -200,7 +200,7 @@ class Bootstrapper(object):
         _write_file(path, chainbytes, 0o644)
         return chainbytes
 
-    def write_CA_certificate_chain_complete(
+    def write_CA_certificate_chain_with_root_cert(
             self, path='/run/dcos/pki/CA/ca-chain-inclroot.crt'):
         """Like `write_CA_certificate_chain()`, but add the root CA certificate.
         """
@@ -1406,8 +1406,7 @@ def dcos_marathon(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
-        b.write_CA_certificate_chain_complete(ca_chain_complete)
+        b.write_CA_certificate_chain_with_root_cert()
 
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
@@ -1447,8 +1446,7 @@ def dcos_metronome(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
-        b.write_CA_certificate_chain_complete(ca_chain_complete)
+        b.write_CA_certificate_chain_with_root_cert()
 
         # For Metronome UI/API SSL.
         ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
@@ -1581,7 +1579,7 @@ def dcos_spartan_master(b, opts):
 
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
-        b.write_CA_certificate_chain_complete()
+        b.write_CA_certificate_chain_with_root_cert()
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
         b.write_CA_certificate_chain(ca_chain)
@@ -1596,7 +1594,7 @@ def dcos_spartan_agent(b, opts):
 
     if opts.config['ssl_enabled']:
         b.write_CA_certificate_root()
-        b.write_CA_certificate_chain_complete()
+        b.write_CA_certificate_chain_with_root_cert()
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
         b.write_CA_certificate_chain(ca_chain)
@@ -1633,8 +1631,7 @@ def dcos_erlang_service_master(servicename, b, opts):
     ca = opts.rundir + '/pki/CA/ca-bundle.crt'
     b.write_CA_certificate_root(ca)
 
-    ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
-    b.write_CA_certificate_chain_complete(ca_chain_complete)
+    b.write_CA_certificate_chain_with_root_cert()
 
     ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
     b.write_CA_certificate_chain(ca_chain)
@@ -1662,8 +1659,7 @@ def dcos_erlang_service_agent(servicename, b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(ca)
 
-        ca_chain_complete = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
-        b.write_CA_certificate_chain_complete(ca_chain_complete)
+        b.write_CA_certificate_chain_with_root_cert()
 
         ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
         b.write_CA_certificate_chain(ca_chain)
