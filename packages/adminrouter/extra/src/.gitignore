@@ -13,6 +13,7 @@ test-harness/logs/*.log
 Makefile.common
 master/agent.lua
 master/cache.lua
+master/history-service.lua
 master/marathon-leader.lua
 mime.types
 pytest.ini
