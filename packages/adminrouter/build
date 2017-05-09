@@ -16,6 +16,11 @@ make apply-open DCOS_OPEN_PATH=/pkg/src/dcos_open/
 # Build AR:
 $OPENRESTY_COMPILE_SCRIPT --with-cc-opt="-I /opt/mesosphere/include" --with-ld-opt="-L /opt/mesosphere/lib -Wl,-rpath=/opt/mesosphere/lib"
 
+# AR start script:
+ar_wrapper="$PKG_PATH/nginx/sbin/adminrouter.sh"
+envsubst '$PKG_PATH' < /pkg/extra/systemd/adminrouter.sh > "$ar_wrapper"
+chmod a+x $ar_wrapper
+
 # Incorporate the adminrouter configuration:
 rm -vfR $PKG_PATH/nginx/conf/*
 cp -vR $PKG_PATH/merged_repos/{common,errorpages,master,mime.types,nginx.agent.conf,nginx.master.conf,resty} $PKG_PATH/nginx/conf/
