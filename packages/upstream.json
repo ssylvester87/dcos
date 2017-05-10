@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "c56dc7df231cad336349fc33091c660ad9ece7d8",
-  "ref_origin": "master"
+  "ref": "a09122e7b90574b78673ba346ebe86b7dbdd9afa",
+  "ref_origin": "prozlach/ar-train-1"
 }
