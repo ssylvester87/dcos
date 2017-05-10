@@ -244,6 +244,29 @@ class Bootstrapper(object):
 
         return certbytes
 
+    def get_CA_private_key_type(self):
+        """
+        Retrieves type of private key used for CA certificate.
+
+        Returns:
+            Class representing key type:
+            - rsa.RSAPrivateKey
+            - ec.EllipticCurvePrivateKey
+        """
+        private_key_type_name = None
+
+        if 'CA' in self.secrets:
+            private_key = utils.load_pem_private_key(
+                self.secrets['CA']['RootCA']['key'])
+            private_key_type_name = utils.get_private_key_type_name_from_object(
+                private_key).encode('utf-8')
+
+        private_key_type_name = self._consensus(
+            '/dcos/CACertKeyType', private_key_type_name, ANYONE_READ)
+
+        return utils.get_private_key_type_from_name(
+            private_key_type_name.decode('utf-8'))
+
     def create_master_secrets(self):
         creds = self.opts.zk_master_creds
 
@@ -985,12 +1008,14 @@ class Bootstrapper(object):
     def create_key_certificate(self, cn, key_filename, crt_filename,
                                service_account=None, master=False,
                                marathon=False, extra_san=None,
-                               key_mode=0o600):
+                               key_mode=0o600, private_key_type=None):
         log.info('Generating CSR for key {}'.format(key_filename))
-        privkey_pem, csr_pem = utils.generate_key_CSR(cn,
-                                                      master=master,
-                                                      marathon=marathon,
-                                                      extra_san=extra_san)
+        privkey_pem, csr_pem = utils.generate_key_CSR(
+            cn,
+            master=master,
+            marathon=marathon,
+            extra_san=extra_san,
+            private_key_type=private_key_type)
 
         headers = {}
         if service_account:
@@ -1051,7 +1076,8 @@ class Bootstrapper(object):
             log.info('Generating certificate {}'.format(crt_filename))
             self.create_key_certificate(cn, key_filename, crt_filename,
                                         service_account, master, marathon,
-                                        extra_san, key_mode)
+                                        extra_san, key_mode,
+                                        self.get_CA_private_key_type())
         else:
             log.debug('Certificate {} already exists'.format(crt_filename))
 
@@ -1406,16 +1432,17 @@ def dcos_marathon(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(ca)
 
-        b.write_CA_certificate_chain_with_root_cert()
+        ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
+        b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
         # file also used by the adminrouter /ca/cacerts.jks endpoint
         ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
-        b.write_truststore(ts, ca_chain_complete)
+        b.write_truststore(ts, ca_chain_with_root_cert)
 
         env = opts.rundir + '/etc/marathon/tls.env'
-        b.write_marathon_tls_env(key, crt, ca_chain_complete, env)
+        b.write_marathon_tls_env(key, crt, ca_chain_with_root_cert, env)
         shutil.chown(env, user='dcos_marathon')
         shutil.chown(opts.rundir + '/pki/tls/private/marathon.jks', user='dcos_marathon')
 
@@ -1446,14 +1473,15 @@ def dcos_metronome(b, opts):
         ca = opts.rundir + '/pki/CA/ca-bundle.crt'
         b.write_CA_certificate_root(ca)
 
-        b.write_CA_certificate_chain_with_root_cert()
+        ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
+        b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
         # For Metronome UI/API SSL.
         ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
-        b.write_truststore(ts, ca_chain_complete)
+        b.write_truststore(ts, ca_chain_with_root_cert)
 
         env = opts.rundir + '/etc/metronome/tls.env'
-        b.write_metronome_env(key, crt, ca_chain_complete, env)
+        b.write_metronome_env(key, crt, ca_chain_with_root_cert, env)
         shutil.chown(env, user='dcos_metronome')
         shutil.chown(opts.rundir + '/pki/tls/private/metronome.jks', user='dcos_metronome')
 
