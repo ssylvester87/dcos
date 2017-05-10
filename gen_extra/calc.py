@@ -293,6 +293,8 @@ def validate_ca_certificate(
     cert = load_file_utf8(ca_certificate_path)
     key = load_file_utf8(ca_certificate_key_path)
     chain = load_file_utf8(ca_certificate_chain_path)
+    if chain == '':
+        chain = None
 
     # Import here becuase `cryptography` module loaded in `ca_validate` isn't
     # available in the build time
