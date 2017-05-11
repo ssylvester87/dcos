@@ -1,13 +1,13 @@
 import json
 import logging
+import os
 import tempfile
 from collections import namedtuple, OrderedDict
 
 import pytest
 
 import gen
-# TODO(mh): Sync with Adam's work
-from gen.test_validation import make_arguments
+from gen.tests.utils import make_arguments
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class CertificateFile:
 
     __slots__ = ('content', 'path', 'file')
 
-    def __init__(self, content, path, file):
+    def __init__(self, content, path, file=None):
         self.content = content
         self.path = path
         self.file = file
@@ -86,6 +86,50 @@ def invalid_certificate():
 
     # Clean up underlying temporary files
     map(lambda cert_file: cert_file.file.close(), [cert, key, chain])
+
+
+def certificate_file_from_file(path):
+    """
+    Load CertificateFile from file on disk.
+    """
+    with open(path, 'rb') as f:
+        content = f.read().decode('utf-8')
+    return CertificateFile(content=content, path=path)
+
+
+def certificate_from_fixture_directory(name):
+    """
+    Load certificate files from fixtures directory.
+    """
+    base = os.path.join(os.path.dirname(__file__), 'fixtures', name)
+
+    cert = certificate_file_from_file(
+        os.path.join(base, 'dcos-ca-certificate.crt'))
+    key = certificate_file_from_file(
+        os.path.join(base, 'dcos-ca-certificate-key.key'))
+
+    chain = None
+    chain_path = os.path.join(base, 'dcos-ca-certificate-chain.crt')
+    if os.path.isfile(chain_path):
+        chain = certificate_file_from_file(chain_path)
+
+    return Certificate(cert, key, chain)
+
+
+@pytest.fixture(scope='session')
+def rsa_root_only_certificate():
+    """
+    Loads RSA root only certificate from fixtures directory
+    """
+    return certificate_from_fixture_directory('test_02')
+
+
+@pytest.fixture(scope='session')
+def rsa_intermediate_certificate():
+    """
+    Loads RSA root only certificate from fixtures directory
+    """
+    return certificate_from_fixture_directory('test_03')
 
 
 class TestCustomCACertificate:
@@ -198,22 +242,44 @@ class TestCustomCACertificate:
         result = gen.validate(arguments)
         self._assert_result_errors(result, ca_arguments.keys())
 
-    def test_configuring_valid_file_paths_outputs_ca_in_yaml(
-            self, invalid_certificate):
+    def test_configuring_valid_rsa_root_ca(
+            self, rsa_root_only_certificate):
         """
         Valid file paths for certificate, key and chain validates config
         and generates `dcos-config.yaml` file with Custom CA certificate.
-
-        TODO(mh): This test will start failing once we add proper custom
-        CA certificate validation.
         """
-        arguments = make_arguments(invalid_certificate.to_genconf_arguments())
+        arguments = make_arguments({
+            'ca_certificate_path': rsa_root_only_certificate.cert.path,
+            'ca_certificate_key_path': rsa_root_only_certificate.key.path,
+            'ca_certificate_chain_path': '',
+        })
         result = gen.validate(arguments)
         assert result['status'] == 'ok'
 
         generated = gen.generate(arguments)
         config = self._find_ca_cert_config(generated)
-        assert config['content'] == json.dumps(OrderedDict((
-            ('ca_certificate', invalid_certificate.cert.content),
-            ('ca_certificate_chain', invalid_certificate.chain.content)
+        assert config['content'].strip() == json.dumps(OrderedDict((
+            ('ca_certificate', rsa_root_only_certificate.cert.content),
+            ('ca_certificate_chain', ''),
+            )))
+
+    def test_configuring_valid_rsa_intermediate_ca(
+            self, rsa_intermediate_certificate):
+        """
+        Valid file paths for certificate, key and chain validates config
+        and generates `dcos-config.yaml` file with Custom CA certificate.
+        """
+        arguments = make_arguments({
+            'ca_certificate_path': rsa_intermediate_certificate.cert.path,
+            'ca_certificate_key_path': rsa_intermediate_certificate.key.path,
+            'ca_certificate_chain_path': rsa_intermediate_certificate.chain.path,
+        })
+        result = gen.validate(arguments)
+        assert result['status'] == 'ok'
+
+        generated = gen.generate(arguments)
+        config = self._find_ca_cert_config(generated)
+        assert config['content'].strip() == json.dumps(OrderedDict((
+            ('ca_certificate', rsa_intermediate_certificate.cert.content),
+            ('ca_certificate_chain', rsa_intermediate_certificate.chain.content),
             )))
