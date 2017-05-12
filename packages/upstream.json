@@ -1,6 +1,6 @@
 {
   "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "4ddbe26c01921e0d1be48e6cc549c9a867bd0508",
-  "ref_origin": "prozlach/DCOS-15335_history_service_on_localhost_1.9_port"
+  "ref": "8d5a96136a4c7fbf26361a287cbe15ee1b22af7e",
+  "ref_origin": "train191"
 }
