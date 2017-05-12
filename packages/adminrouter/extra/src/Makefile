@@ -12,11 +12,13 @@ apply-open:
 			master/agent.lua \
 			master/cache.lua \
 			master/marathon-leader.lua \
+			master/history-service.lua \
 			mime.types \
 			pytest.ini \
 			resty/http.lua \
 			resty/http_headers.lua \
 			resty/lock.lua \
+			resty/resolver.lua \
 			test-harness/ \
 			; \
 		do \
