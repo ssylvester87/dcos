@@ -4,10 +4,6 @@ backends:
     server: '127.0.0.1:8888'
     name: DC/OS Certificate Authority
     reference: 'https://docs.mesosphere.com/1.9/networking/tls-ssl/ca-api/'
-  dcos_history_service:
-    server: 'leader.mesos:15055'
-    name: DC/OS History
-    reference: 'https://github.com/dcos/dcos/tree/master/packages/dcos-history/extra#api'
   dddt:
     server: 'unix:/run/dcos/3dt.sock'
     name: DC/OS Diagnostics (3DT)
@@ -204,8 +200,7 @@ routes:
     group: History
     matcher: path
     proxy:
-      path: 'http://$backend/'
-      backend: dcos_history_service
+      path: $historyservice_upstream
     path: /dcos-history-service/
   /internal/acs/api/v1/internal/policyquery:
     group: Internal
@@ -320,6 +315,13 @@ routes:
         replacement: /$1
         type: break
     path: /networking/api/v1/
+  /internal/mesos_dns/:
+    group: Other
+    matcher: path
+    proxy:
+      path: 'http://$backend/'
+      backend: mesos_dns
+    path: /internal/mesos_dns/
   /pkgpanda/:
     group: Other
     matcher: path

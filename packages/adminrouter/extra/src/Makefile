@@ -9,15 +9,17 @@ apply-open:
 	mkdir -v resty/ errorpages/ || true
 	for f in \
 			.flake8 \
+			.isort.cfg \
 			Makefile.common \
+			common/auth/ \
+			errorpages/ \
 			master/agent.lua \
 			master/cache.lua \
 			master/marathon-leader.lua \
+			master/history-service.lua \
 			mime.types \
 			pytest.ini \
-			common/auth/ \
 			resty/ \
-			errorpages/ \
 			test-harness/ \
 			; \
 		do \

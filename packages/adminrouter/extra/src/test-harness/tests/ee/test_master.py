@@ -1,7 +1,7 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
 
-import requests
 import pytest
+import requests
 
 from generic_test_code.common import (
     assert_endpoint_response,
@@ -24,13 +24,15 @@ acl_endpoints = [
     ('/dcos-metadata/bootstrap-config.json', "dcos:adminrouter:ops:metadata"),
     ('/exhibitor/foo/bar', 'dcos:adminrouter:ops:exhibitor'),
     ('/mesos/master/state-summary', 'dcos:adminrouter:ops:mesos'),
-    ('/mesos_dns/foo/bar', 'dcos:adminrouter:ops:mesos-dns'),
+    ('/mesos_dns/v1/services/_scheduler-alwaysthere._tcp.marathon.mesos',
+     'dcos:adminrouter:ops:mesos-dns'),
     ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
     ('/package/foo/bar', 'dcos:adminrouter:package'),
     ('/pkgpanda/foo/bar', "dcos:adminrouter:ops:pkgpanda"),
     ('/pkgpanda/active.buildinfo.full.json', "dcos:adminrouter:ops:metadata"),
-    ('/service/nginx-alwaysthere/foo/bar', 'dcos:adminrouter:service:nginx-alwaysthere'),
+    ('/service/scheduler-alwaysthere/foo/bar',
+        'dcos:adminrouter:service:scheduler-alwaysthere'),
     ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
     ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
