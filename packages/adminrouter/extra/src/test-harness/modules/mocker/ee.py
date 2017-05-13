@@ -32,8 +32,6 @@ class Mocker(MockerBase):
         ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=8123))
         # Networking API
         ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=61430))
-        # DC/OS history service
-        ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.2', port=15055))
         # Metrics(agent):
         ee_endpoints.append(
             ReflectingUnixSocketEndpoint(path='/run/dcos/dcos-metrics-agent.sock'))

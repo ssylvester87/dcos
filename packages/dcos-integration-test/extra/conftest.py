@@ -249,4 +249,5 @@ def forged_superuser_session(peter, superuser, noauth_api_session):
 
 @pytest.fixture(scope='session')
 def dcoscli(superuser_api_session):
+    pytest.skip('dcos-cli was updated with version 0.5 to be incompatible with this fixture')
     return dcoscli_fixture(superuser_api_session)
