@@ -77,4 +77,21 @@ task_wrapper('mesos-sec', master_branches) {
             }
         }
     }
+
+    dir("dcos-ee/gen_extra") {
+        stage('Prepare devkit container') {
+            sh 'make update-devkit'
+        }
+
+        try {
+            stage('make test') {
+                sh 'make test'
+            }
+        } finally {
+            stage('Cleanup docker container'){
+                sh 'make clean-containers'
+                sh "docker rmi -f dcos-ee-gen_extra-devkit || true"
+            }
+        }
+    }
 }
