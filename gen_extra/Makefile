@@ -49,7 +49,7 @@ shell: devkit clean
 
 .PHONY: test
 test: devkit clean
-	docker run --rm -it \
+	docker run --rm \
 		$(DEVKIT_COMMON_DOCKER_OPTS) \
 		mesosphereci/$(DEVKIT_CONTAINER_NAME):full /bin/bash -x -c " \
 			source cache/build_venv/bin/activate && \
