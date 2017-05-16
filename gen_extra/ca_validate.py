@@ -43,9 +43,8 @@ import cryptography.hazmat.backends
 from cryptography import x509
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.x509.oid import ExtensionOID
+from cryptography.x509.oid import ExtensionOID, SignatureAlgorithmOID
 
 cryptography_default_backend = cryptography.hazmat.backends.default_backend()
 
@@ -128,20 +127,18 @@ class CustomCACertValidator:
     # Minimal length for EC type keys (in bits).
     EC_KEY_MIN_SIZE = 256
 
-    # Supported certificate signature hash algorithms.
-
-    # TODO(jp): we should check for algorithm OIDs.
-    # We should use `SignatureAlgorithmOID.RSA_WITH_SHA1` etc.
-    # https://cryptography.io/en/latest/x509/reference/#cryptography.x509.Certificate.signature_algorithm_oid
-
-    SUPPORTED_SIGNATURE_HASH_ALGORITHMS = (
-        hashes.SHA256,
-        hashes.SHA384,
-        hashes.SHA512,
-        # hashes.RIPEMD160,
-        # hashes.Whirlpool,
-        # hashes.BLAKE2b,
-        # hashes.BLAKE2s,
+    # Supported certificate signature algorithms OIDs.
+    SUPPORTED_SIGNATURE_ALGORITHM_OIDS = (
+        # RSA
+        SignatureAlgorithmOID.RSA_WITH_SHA256,
+        SignatureAlgorithmOID.RSA_WITH_SHA384,
+        SignatureAlgorithmOID.RSA_WITH_SHA512,
+        # ECDSA
+        SignatureAlgorithmOID.ECDSA_WITH_SHA256,
+        SignatureAlgorithmOID.ECDSA_WITH_SHA384,
+        SignatureAlgorithmOID.ECDSA_WITH_SHA512,
+        # DSA
+        SignatureAlgorithmOID.DSA_WITH_SHA256,
     )
 
     # Minimal number of days days that the custom CA certificate needs to be
@@ -380,9 +377,8 @@ class CustomCACertValidator:
         Raises:
             CustomCACertValidationError
         """
-        cert_algo = type(self.cert.signature_hash_algorithm)
-
-        if cert_algo not in self.SUPPORTED_SIGNATURE_HASH_ALGORITHMS:
+        algo_oid = self.cert.signature_algorithm_oid
+        if algo_oid not in self.SUPPORTED_SIGNATURE_ALGORITHM_OIDS:
             # TODO(jp): improve error message, emit detail on mismatch.
             raise CustomCACertValidationError(
                 'The custom CA certificate was signed with a unsupported hash algorithm')
