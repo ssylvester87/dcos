@@ -9,8 +9,8 @@
     "dcos-signal": {
       "kind": "git",
       "git": "git@github.com:dcos/dcos-signal.git",
-      "ref": "40a23b4dcba6b3053379235a96bc3ac53996e146",
-      "ref_origin": "1.3.0"
+      "ref": "a1771632a3bc1298fdd422a5544a405bdf733784",
+      "ref_origin": "master"
     }
   },
   "username": "dcos_signal"
