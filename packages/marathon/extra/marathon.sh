@@ -14,9 +14,9 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
 fi
 
 MARATHON_EXTRA_ARGS="${MARATHON_EXTRA_ARGS-} --mesos_user ${MESOS_USER}"
+MARATHON_EXTRA_ARGS="${MARATHON_EXTRA_ARGS-} --mesos_authentication_principal dcos_marathon"
 if [ "${MESOS_FRAMEWORK_AUTHN-}" = "true" ]; then
     MARATHON_EXTRA_ARGS="${MARATHON_EXTRA_ARGS-} --mesos_authentication"
-    MARATHON_EXTRA_ARGS="${MARATHON_EXTRA_ARGS-} --mesos_authentication_principal dcos_marathon"
 fi
 
 exec /opt/mesosphere/bin/java \
