@@ -112,6 +112,18 @@ routes:
       path: 'http://$backend~ ^/acs/api/v1/users/(?<uid_path>.*)/permissions$'
       backend: iam
     path: /acs/api/v1/users/(?<uid_path>.*)/permissions
+  /internal/acs/api/v1/internal/policyquery:
+    group: Authentication
+    matcher: path
+    description: 'Access Control Service policy query (unauthenticated, internal-only)'
+    proxy:
+      path: 'http://$backend/internal/acs/api/v1/internal/policyquery'
+      backend: iam
+    rewrites:
+      - regex: ^/internal/(.*)
+        replacement: /$1
+        type: break
+    path: /internal/acs/api/v1/internal/policyquery
   /capabilities:
     group: Capabilities
     matcher: path
@@ -202,18 +214,6 @@ routes:
     proxy:
       path: $historyservice_upstream
     path: /dcos-history-service/
-  /internal/acs/api/v1/internal/policyquery:
-    group: Internal
-    matcher: path
-    description: Access Control Service policy query (internal-only)
-    proxy:
-      path: 'http://$backend/internal/acs/api/v1/internal/policyquery'
-      backend: iam
-    rewrites:
-      - regex: ^/internal/(.*)
-        replacement: /$1
-        type: break
-    path: /internal/acs/api/v1/internal/policyquery
   /marathon:
     group: Marathon
     matcher: exact
@@ -255,6 +255,14 @@ routes:
         replacement: /$1
         type: break
     path: /mesos/
+  /internal/mesos_dns/:
+    group: Mesos DNS
+    matcher: path
+    description: 'Domain-based service discovery (unauthenticated, internal-only)'
+    proxy:
+      path: 'http://$backend/'
+      backend: mesos_dns
+    path: /internal/mesos_dns/
   /mesos_dns:
     group: Mesos DNS
     matcher: exact
@@ -268,6 +276,7 @@ routes:
   /mesos_dns/:
     group: Mesos DNS
     matcher: path
+    description: Domain-based service discovery
     proxy:
       path: 'http://$backend/'
       backend: mesos_dns
@@ -315,20 +324,6 @@ routes:
         replacement: /$1
         type: break
     path: /networking/api/v1/
-  /internal/mesos_dns/:
-    group: Other
-    matcher: path
-    proxy:
-      path: 'http://$backend/'
-      backend: mesos_dns
-    path: /internal/mesos_dns/
-  /pkgpanda/:
-    group: Other
-    matcher: path
-    proxy:
-      path: 'http://$backend'
-      backend: pkgpanda
-    path: /pkgpanda/
   /package/:
     group: Package
     matcher: path
@@ -336,6 +331,14 @@ routes:
     proxy:
       path: $upstream_cosmos
     path: /package/
+  /pkgpanda/:
+    group: Pkgpanda
+    matcher: path
+    description: DC/OS component package management
+    proxy:
+      path: 'http://$backend'
+      backend: pkgpanda
+    path: /pkgpanda/
   /pkgpanda/active.buildinfo.full.json:
     group: Pkgpanda
     matcher: path
