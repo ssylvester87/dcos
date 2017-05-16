@@ -370,12 +370,10 @@ class Bootstrapper(object):
         certificate (where issuer and subject are the same entity), yielding a
         gapless certification path (the order is significant). The private key
         corresponding to the custom CA certificate is loaded from the file
-        located at `/etc/custom_ca.key`.
+        located at `/var/lib/dcos/pki/tls/CA/private/custom_ca.key`.
 
         If no custom CA certitificate was not configured then generate a
         globally unique root CA certificate is created.
-
-        TODO(jp): improve path /etc/custom_ca.key
 
         Returns:
             ca_crt (str): The signing CA certificate (PEM-encoded). Intended to
@@ -402,7 +400,7 @@ class Bootstrapper(object):
 
         # Filesystem paths where custom CA parts are expected to be found.
         custom_ca_cert_conf_path = '/opt/mesosphere/etc/ca.json'
-        custom_ca_priv_key_path = '/etc/custom_ca.key'
+        custom_ca_priv_key_path = '/var/lib/dcos/pki/tls/CA/private/custom_ca.key'
 
         # Handle the case when a custom CA certificate was provided.
         if os.path.isfile(custom_ca_cert_conf_path):
