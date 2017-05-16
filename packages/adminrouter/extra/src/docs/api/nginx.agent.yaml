@@ -30,6 +30,12 @@ routes:
         replacement: /$1
         type: break
     path: /internal/acs/api/v1/internal/policyquery
+  /dcos-metadata/dcos-version.json:
+    group: Metadata
+    matcher: path
+    description: DC/OS version (unauthenticated)
+    file: /opt/mesosphere/active/dcos-metadata/etc/dcos-version.json
+    path: /dcos-metadata/dcos-version.json
   /pkgpanda/:
     group: Other
     matcher: path
