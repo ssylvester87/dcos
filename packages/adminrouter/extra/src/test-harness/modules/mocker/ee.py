@@ -2,10 +2,7 @@ import logging
 
 from mocker.common import MockerBase
 from mocker.endpoints.ee.iam import IamEndpoint
-from mocker.endpoints.reflectors import (
-    ReflectingTcpIpEndpoint,
-    ReflectingUnixSocketEndpoint,
-)
+from mocker.endpoints.reflectors import ReflectingTcpIpEndpoint
 
 log = logging.getLogger(__name__)
 
