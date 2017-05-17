@@ -202,6 +202,36 @@ class Bootstrapper(object):
 
         return crt
 
+    def write_CA_certificate_for_libcurl(self):
+        """
+        Writes a CA certificate that can be picked up by curl from well known
+        location.
+        """
+        # Hardcoded libcurl trusted certificates path
+        # https://github.com/dcos/dcos/blob/4f5f15e363025327139b313737ab4d7fbb0b389d/packages/curl/build#L43-L44
+        basepath = '/var/lib/dcos/pki/tls/certs'
+        os.makedirs(basepath, exist_ok=True)
+        # Allow anybody to read certs
+        os.chmod(basepath, 0o755)
+
+        # Write root CA certificate
+        path = os.path.join(basepath, 'dcos-ca.crt')
+        self.write_CA_certificate(filename=path)
+
+        # Hash the certificate subject so it is recognised by libcurl and openssl
+        # https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/tools/c_rehash.in#L150
+        cert_hash = subprocess.check_output(
+            ['openssl', 'x509', '-hash', '-noout', '-in', path]
+            ).decode('ascii').strip()
+        cert_hash = cert_hash + '.0'
+
+        cert_hash_path = os.path.join(basepath, cert_hash)
+
+        # Create a symlink if doesn't exists yet
+        if not os.path.islink(cert_hash_path):
+            os.symlink(path, cert_hash_path)
+            os.chmod(cert_hash_path, 0o644)
+
     def create_master_secrets(self):
         creds = self.opts.zk_master_creds
 
@@ -1115,6 +1145,8 @@ def dcos_ca(b, opts):
     b.write_CA_key(path)
     shutil.chown(path, user=opts.dcos_ca_user)
 
+    b.write_CA_certificate_for_libcurl()
+
 
 def dcos_mesos_master(b, opts):
     b.init_zk_acls()
@@ -1144,6 +1176,7 @@ def dcos_mesos_master(b, opts):
 def dcos_mesos_slave(b, opts):
     b.read_agent_secrets()
     b.write_CA_certificate()
+    b.write_CA_certificate_for_libcurl()
 
     if opts.config['ssl_enabled']:
         keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
