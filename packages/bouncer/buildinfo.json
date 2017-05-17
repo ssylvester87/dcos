@@ -24,7 +24,7 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "c6bff7bdbb334c8dbcf3286af1efe907e73f7ca3",
+      "ref": "7dc9c43259f329a88a3709d30e9659dced07c5ac",
       "ref_origin": "dcos/1.8"
     },
     "python3-saml": {
