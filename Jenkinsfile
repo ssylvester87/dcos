@@ -24,11 +24,11 @@ def builders = [:]
 
 builders['adminrouter'] = {
     task_wrapper('mesos-sec', master_branches) {
-        stage('Cleanup workspace') {
+        stage('Admin Router: Cleanup workspace') {
             deleteDir()
         }
 
-        stage('Checkout') {
+        stage('Admin Router: Checkout') {
             def repo_url
             def repo_sha
 
@@ -48,11 +48,11 @@ builders['adminrouter'] = {
         }
 
         dir("dcos-ee/packages/adminrouter/extra/src/") {
-            stage('Apply EE overlay on top of Open') {
+            stage('Admin Router: Apply EE overlay on top of Open') {
                 sh 'make apply-open'
             }
 
-            stage('Prepare adminrouter devkit container') {
+            stage('Admin Router: Prepare devkit container') {
                 sh 'make update-devkit'
             }
 
@@ -61,20 +61,20 @@ builders['adminrouter'] = {
                     sh 'make check-api-docs'
                 }
 
-                stage('make flake8') {
+                stage('Admin Router: make flake8') {
                     sh 'make flake8'
                 }
 
-                stage('make test') {
+                stage('Admin Router: make test') {
                     sh 'make test'
                 }
 
             } finally {
-	    	stage('archive build artifacts') {
-	    	    archiveArtifacts artifacts: 'test-harness/logs/*.log', allowEmptyArchive: true, excludes: 'test_harness/', fingerprint: true
-	    	}
+                stage('Admin Router: archive build artifacts') {
+                    archiveArtifacts artifacts: 'test-harness/logs/*.log', allowEmptyArchive: true, excludes: 'test_harness/', fingerprint: true
+                }
 
-                stage('Cleanup docker container'){
+                stage('Admin Router: Cleanup docker container'){
                     sh 'make clean-containers'
                     sh "docker rmi -f adminrouter-devkit || true"
                 }
@@ -85,27 +85,27 @@ builders['adminrouter'] = {
 
 builders['gen_extra'] = {
     task_wrapper('mesos-sec', master_branches) {
-        stage('Cleanup workspace') {
+        stage('gen_extra: Cleanup workspace') {
             deleteDir()
         }
 
-        stage('Checkout') {
+        stage('gen_extra: Checkout') {
             dir("dcos-ee-gen_extra") {
                 checkout scm
             }
         }
 
         dir("dcos-ee-gen_extra/gen_extra") {
-            stage('Prepare gen_extra devkit container') {
+            stage('gen_extra: Prepare devkit container') {
                 sh 'make update-devkit'
             }
 
             try {
-                stage('make test') {
+                stage('gen_extra: make test') {
                     sh 'make test'
                 }
             } finally {
-                stage('Cleanup docker container'){
+                stage('gen_extra: Cleanup docker container'){
                     sh 'make clean-containers'
                     sh "docker rmi -f dcos-ee-gen_extra-devkit || true"
                 }
