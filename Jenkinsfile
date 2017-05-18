@@ -53,8 +53,8 @@ task_wrapper('mesos-sec', master_branches) {
         }
 
         try {
-            stage('make api-docs') {
-                sh 'make api-docs'
+            stage('make check-api-docs') {
+                sh 'make check-api-docs'
             }
 
             stage('make flake8') {
