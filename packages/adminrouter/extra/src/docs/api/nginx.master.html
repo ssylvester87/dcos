@@ -1691,7 +1691,7 @@
                   Path:
                 </td>
                 <td>
-                  <code>conf/master/metadata.lua</code>
+                  <code>conf/lib/metadata.lua</code>
                 </td>
               </tr>
             </table>
@@ -1974,7 +1974,7 @@
           <div class="heading">
             <h3>
               <span class="route-type">Proxy</span>
-              <span class="route-path"><code>/service/(?&lt;serviceid&gt;[0-9a-zA-Z-.]+)/(?&lt;url&gt;.*)</code></span>
+              <span class="route-path"><code>/service/(?&lt;service_path&gt;.+)</code></span>
             </h3>
             <span class="route-desc">Proxy to services running on DC/OS</span>
           </div>
@@ -1982,52 +1982,10 @@
             <table>
               <tr>
                 <td>
-                  Rewrite:
+                  Path:
                 </td>
                 <td>
-                  <table>
-                    <tr>
-                      <td>
-                        Regex:
-                      </td>
-                      <td>
-                        <code>^/service/[0-9a-zA-Z-.]+/?.*$</code>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        Replacement:
-                      </td>
-                      <td>
-                        <code>/$url</code>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        Type:
-                      </td>
-                      <td>
-                        <code>break</code>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  Proxy:
-                </td>
-                <td>
-                  <table>
-                    <tr>
-                      <td>
-                        Path:
-                      </td>
-                      <td>
-                        <code>$serviceurl</code>
-                      </td>
-                    </tr>
-                  </table>
+                  <code>$upstream_url</code>
                 </td>
               </tr>
             </table>
