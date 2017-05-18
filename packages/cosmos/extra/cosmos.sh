@@ -11,6 +11,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
         -Djavax.net.ssl.trustStore=${TLS_TRUSTSTORE} \
+        -Djdk.http.auth.tunneling.disabledSchemes="" \
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
@@ -25,6 +26,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
 else
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
+        -Djdk.http.auth.tunneling.disabledSchemes="" \
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \

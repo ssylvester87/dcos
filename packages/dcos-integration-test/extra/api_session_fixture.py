@@ -5,7 +5,7 @@ import iam_helper
 
 from ee_helpers import bootstrap_config
 
-from test_util.dcos_api_session import DcosApiSession, DcosUser, get_args_from_env
+from test_util.dcos_api_session import DcosApiSession, DcosUser
 from test_util.helpers import session_tempfile
 
 
@@ -52,7 +52,7 @@ class EnterpriseApiSession(MesosNodeClientMixin, DcosApiSession):
 
 
 def make_session_fixture():
-    cluster_args = get_args_from_env()
+    cluster_args = DcosApiSession.get_args_from_env()
     # make superuser for this cluster
     uid = os.environ['DCOS_LOGIN_UNAME']
     password = os.environ['DCOS_LOGIN_PW']

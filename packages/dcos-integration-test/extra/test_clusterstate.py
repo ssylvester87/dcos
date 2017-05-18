@@ -55,7 +55,7 @@ def test_if_all_exhibitors_are_in_sync(superuser_api_session):
 
     correct_data = sorted(r.json(), key=lambda k: k['hostname'])
 
-    for zk_ip in superuser_api_session.public_masters:
+    for zk_ip in superuser_api_session.masters:
         resp = requests.get(
             'http://{}:8181/exhibitor/v1/cluster/status'.format(zk_ip))
         assert resp.status_code == 200
