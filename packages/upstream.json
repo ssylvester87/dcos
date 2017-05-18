@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/mellenburg/dcos",
+  "git": "https://github.com/branden/dcos",
   "kind": "git",
-  "ref": "bbc0e1a1e3a6952e9d56137913d894af6098d67f",
-  "ref_origin": "allow_test_wo_args"
+  "ref": "503f88a68ea3d6eda9897972f9db3b50a84c8988",
+  "ref_origin": "exhibitor-http-auth"
 }
