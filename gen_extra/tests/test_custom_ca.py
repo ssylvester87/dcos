@@ -1,3 +1,7 @@
+"""
+Tests generating configuration with custom CA certificate
+"""
+
 import json
 import logging
 import os
@@ -121,7 +125,7 @@ def rsa_root_only_certificate():
     """
     Loads RSA root only certificate from fixtures directory
     """
-    return certificate_from_fixture_directory('test_02')
+    return certificate_from_fixture_directory('rsa_root')
 
 
 @pytest.fixture(scope='session')
@@ -129,7 +133,7 @@ def rsa_intermediate_certificate():
     """
     Loads RSA root only certificate from fixtures directory
     """
-    return certificate_from_fixture_directory('test_03')
+    return certificate_from_fixture_directory('rsa_intermediate')
 
 
 class TestCustomCACertificate:

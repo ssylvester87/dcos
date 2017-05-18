@@ -884,7 +884,7 @@ class TestCertValidation:
         """
 
         fixtures_dir = os.path.join(
-            os.path.dirname(__file__), 'fixtures', 'test_03')
+            os.path.dirname(__file__), 'fixtures', 'rsa_intermediate')
 
         with open(os.path.join(fixtures_dir, 'dcos-ca-certificate.crt'), 'rb') as f:
             intermediate_ca = f.read().decode('utf-8')
