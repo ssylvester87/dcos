@@ -454,6 +454,19 @@ class TestECKeyValidation:
         assert str(exc.value) == (
             'private key was generated with unsupported curve `secp256k1`')
 
+    def test_ec_key_disabled(self):
+        """
+        Test validating EC key with disabled EC support
+        """
+        key = generate_ec_private_key()
+        key_pem = serialize_key_to_pem(key)
+        cert_pem = generate_valid_root_ca_cert_pem(key)
+        with pytest.raises(CustomCACertValidationError) as exc:
+            CustomCACertValidator(
+                cert_pem, key_pem, allow_ec_key=False).validate()
+        assert str(exc.value) == (
+            'Unexpected private key type (not RSA)')
+
     # TODO(mh) Is there a way to test that public key is smaller than private?
 
 

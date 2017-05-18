@@ -301,7 +301,7 @@ def validate_ca_certificate(
     from ca_validate import CustomCACertValidationError, CustomCACertValidator  # noqa=I100
     # Run data validation.
     try:
-        CustomCACertValidator(cert, key, chain).validate()
+        CustomCACertValidator(cert, key, chain, allow_ec_key=False).validate()
     except CustomCACertValidationError as err:
         raise AssertionError(str(err))
 

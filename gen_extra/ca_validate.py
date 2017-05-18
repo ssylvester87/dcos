@@ -153,7 +153,7 @@ class CustomCACertValidator:
     # valid from now on.
     MIN_VALID_DAYS = 365
 
-    def __init__(self, cert, key, chain=None):
+    def __init__(self, cert, key, chain=None, allow_ec_key=True):
         """
         Args:
             cert (str): X.509 CA certificate, encoded as text in the OpenSSL
@@ -165,8 +165,10 @@ class CustomCACertValidator:
             chain (str): Ordered chain of CA certificates in the OpenSSL
                 PEM format. Required if the certificate `cert` is an
                 intermediate CA certificate.
+
+            allow_ec_keys (bool): Enable or disable support for EC private key.
         """
-        self.private_key = load_pem_private_key(key)
+        self.private_key = load_pem_private_key(key, allow_ec_key=allow_ec_key)
         self.cert = load_pem_x509_cert(cert)
         self.chain = chain
 
@@ -404,8 +406,11 @@ class CustomCACertValidator:
 
     def _validate_ec_keys(self):
         """
-        Validates that EC key used for signing has min required size and
-        that private key is matching certificate signing key.
+        Validates that:
+
+        - The key has min required size
+        - EC key curve is supported
+        - The private key is matching certificate signing key
         """
         self._validate_keys_size(self.EC_KEY_MIN_SIZE)
 
@@ -531,7 +536,7 @@ def key_get_size(key):
     raise ValueError('Key size could not be detected')
 
 
-def load_pem_private_key(key_pem):
+def load_pem_private_key(key_pem, allow_ec_key=True):
     """
     Load key from provided PEM/text representation.
 
@@ -541,6 +546,8 @@ def load_pem_private_key(key_pem):
 
     Args:
         key_pem (str): the PEM text representation of the data to verify.
+
+        allow_ec_key (bool): True if EC key is supported
 
     Returns:
         An object of type
@@ -559,10 +566,19 @@ def load_pem_private_key(key_pem):
     except (ValueError, UnsupportedAlgorithm) as e:
         raise CustomCACertValidationError('Invalid private key: %s' % e)
 
-    if not isinstance(
-            private_key, (rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey)):
+    supported_keys = {rsa.RSAPrivateKey: 'RSA'}
+    if allow_ec_key:
+        supported_keys[ec.EllipticCurvePrivateKey] = 'EC'
+
+    if not isinstance(private_key, tuple(supported_keys)):
+        names = list(supported_keys.values())
+        if len(names) > 1:
+            names_str = ', '.join(names[:-1]) + ' or ' + names[-1]
+        else:
+            names_str = names[0]
+
         raise CustomCACertValidationError(
-            'Unexpected private key type (not RSA or EC)')
+            'Unexpected private key type (not {})'.format(names_str))
 
     return private_key
 
