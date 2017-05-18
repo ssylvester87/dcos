@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import List
 from urllib.parse import urljoin
 
-import requests
 import pytest
+import requests
 
 from dcos_e2e.cluster import Cluster
 
