@@ -417,7 +417,6 @@ class TestRSAKeyValidation:
 
 class TestECKeyValidation:
 
-    @pytest.mark.skip(reason="How to ensure that openssl backend has weak EC?")
     def test_invalid_key_size(self):
         """
         Certificate signed with weak EC private key fails validation.
@@ -440,6 +439,20 @@ class TestECKeyValidation:
         with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
         assert str(exc.value) == 'private key does not match public key'
+
+    def test_unsupported_key_curve(self):
+        """
+        Certifificate private key with unsupported curve.
+        """
+        # SECP256K1 is unsupported curve
+        key = generate_ec_private_key(curve=ec.SECP256K1())
+        key_pem = serialize_key_to_pem(key)
+        cert_pem = generate_valid_root_ca_cert_pem(key)
+        ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
+        with pytest.raises(CustomCACertValidationError) as exc:
+            ca_cert_validator.validate()
+        assert str(exc.value) == (
+            'private key was generated with unsupported curve `secp256k1`')
 
     # TODO(mh) Is there a way to test that public key is smaller than private?
 

@@ -141,6 +141,14 @@ class CustomCACertValidator:
         SignatureAlgorithmOID.DSA_WITH_SHA256,
     )
 
+    # We support only NIST P-256 and P-384 curves that are widely accepted
+    # by various software.
+    # See: DCOS-15766
+    SUPPORTED_EC_CURVES = (
+        ec.SECP256R1,
+        ec.SECP384R1,
+    )
+
     # Minimal number of days days that the custom CA certificate needs to be
     # valid from now on.
     MIN_VALID_DAYS = 365
@@ -401,6 +409,12 @@ class CustomCACertValidator:
         """
         self._validate_keys_size(self.EC_KEY_MIN_SIZE)
 
+        if self.private_key.curve.__class__ not in self.SUPPORTED_EC_CURVES:
+            raise CustomCACertValidationError(
+                "private key was generated with unsupported curve `{}`".format(
+                    self.private_key.curve.name)
+                )
+
         if not self.ec_keys_matching:
             raise CustomCACertValidationError(
                 "private key does not match public key")
@@ -479,7 +493,6 @@ class CustomCACertValidator:
         pubkey_pubnumbers = self.cert.public_key().public_numbers()
         privkey_pubnumbers = self.private_key.private_numbers().public_numbers
 
-        # TODO(mh) Is this true?
         x_match = pubkey_pubnumbers.x == privkey_pubnumbers.x
         y_match = pubkey_pubnumbers.y == privkey_pubnumbers.y
         return x_match and y_match
