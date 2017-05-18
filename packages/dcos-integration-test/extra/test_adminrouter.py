@@ -152,9 +152,18 @@ class TestResourceAvailability:
         assert r.headers['Content-Type'] == 'application/x-java-keystore'
 
 
-def test_agents_endpoint_unknown_agent(noauth_api_session):
-    assert noauth_api_session.get('/slave/foo/bar').status_code == 404
-    assert noauth_api_session.get('/agent/foo/bar').status_code == 404
+@pytest.mark.parametrize("endpoint", ['/slave/foo/bar', '/agent/foo/bar'])
+def test_access_to_unknown_agent(
+        superuser_api_session,
+        peter_api_session,
+        noauth_api_session,
+        endpoint):
+    r = peter_api_session.get(endpoint)
+    assert r.status_code == 403
+    r = superuser_api_session.get(endpoint)
+    assert r.status_code == 404
+    r = noauth_api_session.get(endpoint)
+    assert r.status_code == 401
 
 
 # Retry if returncode is False, do not retry on exceptions.

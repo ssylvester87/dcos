@@ -120,11 +120,26 @@ class TestAdminRouterServiceEndpoint:
 
     def test_access_to_unknown_service(self, superuser_api_session, peter_api_session, noauth_api_session):
         endpoint = '/service/unknown/'
+        # As long as user is authNed, it's permitted to see 404s. The problem
+        # here is that he/she may be requesting for one of:
+        # * /service/unknown/
+        # * /service/unknonw/foo
+        # * /service/unknonw/foo/bar
+        # * /service/unknonw/foo/bar/baz.js
+        #
+        # With nested services, its imposible to know which RID exactly needs
+        # to be verified, without knowing which part of the URL is the service
+        # name first. Possible RID candidates in this case are:
+        # * dcos:adminrouter:service:unknown
+        # * dcos:adminrouter:service:unknown/foo
+        # * dcos:adminrouter:service:unknown/foo/bar
+        # * dcos:adminrouter:service:unknown/foo/bar/baz.js
+        #
+        # Hence we only check if user was authNed.
         r = peter_api_session.get(endpoint)
-        assert r.status_code == 403
+        assert r.status_code == 404
         r = superuser_api_session.get(endpoint)
-        # An unknown service irritates the service endpoint.
-        assert r.status_code == 500
+        assert r.status_code == 404
         r = noauth_api_session.get(endpoint)
         assert r.status_code == 401
 
