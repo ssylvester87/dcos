@@ -1,4 +1,5 @@
 endpoint_tests:
+######### /system/health/
   - tests:
       is_upstream_correct:
         enabled: true
@@ -8,6 +9,7 @@ endpoint_tests:
     type:
       - master
       - agent
+######### /ca/
   - tests:
       are_upstream_req_headers_ok:
         enabled: true
@@ -43,6 +45,7 @@ endpoint_tests:
             sent: /ca/api/v2/sign
     type:
       - master
+######### /acs/api/v1/
   - tests:
       are_upstream_req_headers_ok:
         enabled: true
@@ -70,6 +73,7 @@ endpoint_tests:
             sent: /acs/api/v1/users/reflecting-user/permissions
     type:
       - master
+######### /secrets
   - tests:
       are_upstream_req_headers_ok:
         enabled: true
@@ -89,6 +93,7 @@ endpoint_tests:
             sent: /secrets/v1/foo/bar
     type:
       - master
+######### /vault
   - tests:
       are_upstream_req_headers_ok:
         enabled: true
@@ -108,6 +113,7 @@ endpoint_tests:
             sent: /vault/default/foo/bar
     type:
       - master
+######### /networking
   - tests:
       are_upstream_req_headers_ok:
         enabled: true
@@ -127,7 +133,3 @@ endpoint_tests:
             sent: /networking/api/v1/foo/bar
     type:
       - master
-
-
-location_header_rewrite_tests: []
-redirect_tests: []
