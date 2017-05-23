@@ -77,7 +77,7 @@ def service_accounts(superuser_api_session, iam_verify_and_reset):
 
         if len(services[param]['rid']) and len(services[param]['action']):
             superuser_api_session.iam.create_acl(services[param]['rid'], 'Integration Test Framework Role')
-            superuser_api_session.iam.create_user_permission(
+            superuser_api_session.iam.grant_user_permission(
                 services[param]['uid'],
                 services[param]['action'],
                 services[param]['rid'])
