@@ -42,7 +42,8 @@ class Iam(test_util.helpers.ApiClientSession):
     def create_user_permission(self, uid, action, rid):
         rid = rid.replace('/', '%252F')
         r = self.put('/acls/{}/users/{}/{}'.format(rid, uid, action))
-        assert r.status_code == 204
+        assert r.status_code == 204, ('Permission was not granted. Code: {}. '
+                                      'Content {}'.format(r.status_code, r.content.decode()))
 
     def delete_user_permission(self, uid, action, rid):
         rid = rid.replace('/', '%252F')
