@@ -39,10 +39,17 @@ class Iam(test_util.helpers.ApiClientSession):
         uids = [account['uid'] for account in resp.json()['array']]
         assert uid not in uids
 
-    def create_user_permission(self, uid, action, rid):
+    def grant_user_permission(self, uid, action, rid):
         rid = rid.replace('/', '%252F')
         r = self.put('/acls/{}/users/{}/{}'.format(rid, uid, action))
-        assert r.status_code == 204
+        assert r.status_code == 204, ('Permission was not granted. Code: {}. '
+                                      'Content {}'.format(r.status_code, r.content.decode()))
+
+    def create_user_permission(self, uid, action, rid, description):
+        rid = rid.replace('/', '%252F')
+        r = self.put('/acls/{}'.format(rid), json={'description': description})
+        assert r.status_code == 201, ('Permission was not created. Code {}. '
+                                      'Content {}'.format(r.status_code, r.content.decode()))
 
     def delete_user_permission(self, uid, action, rid):
         rid = rid.replace('/', '%252F')
