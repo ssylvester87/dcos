@@ -2,10 +2,7 @@ import logging
 
 from mocker.common import MockerBase
 from mocker.endpoints.ee.iam import IamEndpoint
-from mocker.endpoints.reflectors import (
-    ReflectingTcpIpEndpoint,
-    ReflectingUnixSocketEndpoint,
-)
+from mocker.endpoints.reflectors import ReflectingTcpIpEndpoint
 
 log = logging.getLogger(__name__)
 
@@ -23,9 +20,6 @@ class Mocker(MockerBase):
         # Secrets
         ee_endpoints.append(
             ReflectingTcpIpEndpoint(ip='127.0.0.1', port=1337))
-        # DDDT:
-        ee_endpoints.append(
-            ReflectingUnixSocketEndpoint('/run/dcos/3dt.sock'))
         # IAM
         ee_endpoints.append(IamEndpoint(ip='127.0.0.1', port=8101))
         # Networking API

@@ -222,7 +222,7 @@ routes:
     deprecated: Use `/service/marathon/`
     rewrites:
       - regex: ^/marathon$
-        replacement: '$scheme://$http_host/marathon/'
+        replacement: /service/marathon/
         type: last
     path: /marathon
   /marathon/:
@@ -304,7 +304,7 @@ routes:
     matcher: path
     description: Public IP and Cluster ID
     lua:
-      file: conf/master/metadata.lua
+      file: conf/lib/metadata.lua
     path: /metadata
   /navstar/lashup/key:
     group: Navstar
@@ -352,6 +352,13 @@ routes:
     proxy:
       path: $upstream_secrets
     path: /secrets/v1/
+  /service/(?<service_path>.+):
+    group: Service
+    matcher: regex
+    description: Proxy to services running on DC/OS
+    proxy:
+      path: $upstream_url
+    path: /service/(?<service_path>.+)
   '/service/(?<serviceid>[0-9a-zA-Z-.]+)':
     group: Service
     matcher: regex
@@ -362,17 +369,6 @@ routes:
         replacement: /service/$1/
         type: permanent
     path: '/service/(?<serviceid>[0-9a-zA-Z-.]+)'
-  '/service/(?<serviceid>[0-9a-zA-Z-.]+)/(?<url>.*)':
-    group: Service
-    matcher: regex
-    description: Proxy to services running on DC/OS
-    proxy:
-      path: $serviceurl
-    rewrites:
-      - regex: '^/service/[0-9a-zA-Z-.]+/?.*$'
-        replacement: /$url
-        type: break
-    path: '/service/(?<serviceid>[0-9a-zA-Z-.]+)/(?<url>.*)'
   /system/health/v1:
     group: System
     matcher: path

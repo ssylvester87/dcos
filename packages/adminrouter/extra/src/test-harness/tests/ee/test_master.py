@@ -3,17 +3,13 @@
 import pytest
 import requests
 
-from generic_test_code.common import (
-    assert_endpoint_response,
-    generic_correct_upstream_dest_test,
-    verify_header,
-)
+from generic_test_code.common import assert_endpoint_response, verify_header
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
 from util import SearchCriteria, iam_denies_all_requests
 
 acl_endpoints = [
     ('/acs/acl-schema.json', 'dcos:adminrouter:acs'),
-    ('/acs/api/v1/foo/bar', 'dcos:adminrouter:acs'),
+    ('/acs/api/v1/reflect/me', 'dcos:adminrouter:acs'),
     ('/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/ca/api/v2/certificates', 'dcos:adminrouter:ops:ca:ro'),
     ('/ca/api/v2/newcert', 'dcos:adminrouter:ops:ca:rw'),
@@ -33,6 +29,10 @@ acl_endpoints = [
     ('/pkgpanda/active.buildinfo.full.json', "dcos:adminrouter:ops:metadata"),
     ('/service/scheduler-alwaysthere/foo/bar',
         'dcos:adminrouter:service:scheduler-alwaysthere'),
+    ('/service/nest1/scheduler-alwaysthere/foo/bar',
+        'dcos:adminrouter:service:nest1/scheduler-alwaysthere'),
+    ('/service/nest2/nest1/scheduler-alwaysthere/foo/bar',
+        'dcos:adminrouter:service:nest2/nest1/scheduler-alwaysthere'),
     ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
     ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
@@ -301,16 +301,3 @@ class TestAuthEnforcementEE:
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names
         assert "Authorization" not in header_names
-
-
-class TestHealthEndpointEE:
-    def test_if_request_is_sent_to_correct_upstream(self,
-                                                    master_ar_process,
-                                                    valid_user_header
-                                                    ):
-
-        generic_correct_upstream_dest_test(master_ar_process,
-                                           valid_user_header,
-                                           '/system/health/v1/foo/bar',
-                                           'http:///run/dcos/3dt.sock',
-                                           )
