@@ -203,3 +203,38 @@ class TestAuthEnforcementEE:
 
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names
+
+    @pytest.mark.parametrize("path,rid", acl_endpoints)
+    def test_if_policyquery_request_is_correct(
+            self,
+            agent_ar_process,
+            valid_user_header,
+            mocker,
+            path,
+            rid,
+            ):
+        mocker.send_command(
+            endpoint_id='http://127.0.0.1:8101',
+            func_name='record_requests',
+            )
+
+        assert_endpoint_response(
+            agent_ar_process,
+            path,
+            200,
+            headers=valid_user_header,
+            )
+
+        requests = mocker.send_command(
+            endpoint_id='http://127.0.0.1:8101',
+            func_name='get_recorded_requests',
+            )
+
+        assert len(requests) == 1
+        r_data = requests[0]
+
+        correct_path = '/acs/api/v1/internal/policyquery?rid={}&uid=bozydar&action=full'
+        assert r_data['path'] == correct_path.format(rid)
+        verify_header(r_data['headers'], 'X-Forwarded-For', '127.0.0.1')
+        verify_header(r_data['headers'], 'X-Forwarded-Proto', 'http')
+        verify_header(r_data['headers'], 'X-Real-IP', '127.0.0.1')
