@@ -254,7 +254,14 @@ def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
     return isolation
 
 
-def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers, ui_bootstrap_config, ui_service_upgrades):
+def get_ui_auth_json(
+    ui_organization,
+    ui_networking,
+    ui_secrets,
+    ui_auth_providers,
+    ui_bootstrap_config,
+    ui_service_upgrades
+):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
         '"organization":{"enabled":%s}, ' \
