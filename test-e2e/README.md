@@ -6,12 +6,9 @@ Then, download DC/OS Docker and the relevant build artifact as per the [DC/OS E2
 For example, at the time of writing:
 
 ```sh
-ARTIFACT_URL=https://downloads.mesosphere.com/dcos-enterprise/testing/pull/884/dcos_generate_config.ee.sh
-# This uses a branch of DC/OS Docker which is not `master` because we rely on
-# an option added in that branch.
-# That option allows these tests to be run without `systemd`.
-DCOS_DOCKER_REPOSITORY=https://github.com/adamtheturtle/dcos-docker.git
-DCOS_DOCKER_BRANCH=macos-DCOS-15645
+ARTIFACT_URL=https://downloads.mesosphere.com/dcos-enterprise/testing/pull/930/dcos_generate_config.ee.sh
+DCOS_DOCKER_REPOSITORY=https://github.com/dcos/dcos-docker.git
+DCOS_DOCKER_BRANCH=master
 
 ARTIFACT_PATH=/tmp/dcos_generate_config.sh
 DCOS_DOCKER_PATH=/tmp/dcos-docker
