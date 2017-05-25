@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/colin-msphere/dcos",
   "kind": "git",
-  "ref": "9fec5e2fa4b65ebae7294fa022a63a0261875dbb",
-  "ref_origin": "master"
+  "ref": "8a633e8169d3cbd896ac43012089ffd3b5d81c4b",
+  "ref_origin": "train-167"
 }
