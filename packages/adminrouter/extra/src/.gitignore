@@ -9,6 +9,7 @@ test-harness/logs/*.log
 .dcos-open.path
 
 #Overlay things, must not be included in the EE repository:
+.isort.cfg
 .flake8
 Makefile.common
 master/agent.lua
