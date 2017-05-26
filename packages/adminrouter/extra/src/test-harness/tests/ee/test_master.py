@@ -3,7 +3,11 @@
 import pytest
 import requests
 
-from generic_test_code.common import assert_endpoint_response, verify_header
+from generic_test_code.common import (
+    assert_endpoint_response,
+    overriden_file_content,
+    verify_header,
+)
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
 from util import SearchCriteria, iam_denies_all_requests
 
@@ -339,3 +343,21 @@ class TestAuthEnforcementEE:
         verify_header(r_data['headers'], 'X-Forwarded-For', '127.0.0.1')
         verify_header(r_data['headers'], 'X-Forwarded-Proto', 'http')
         verify_header(r_data['headers'], 'X-Real-IP', '127.0.0.1')
+
+class TestMisc:
+    @pytest.mark.parametrize("content", ["{'data': '1234'}", "{'data': 'abcd'}"])
+    def test_if_acl_schema_is_served(
+            self, master_ar_process, valid_user_header, content):
+        url = master_ar_process.make_url_from_path('/acs/acl-schema.json')
+
+        with overriden_file_content(
+                '/opt/mesosphere/active/acl-schema/etc/acl-schema.json',
+                content):
+            resp = requests.get(
+                url,
+                allow_redirects=False,
+                headers=valid_user_header
+                )
+
+        assert resp.status_code == 200
+        assert resp.text == content
