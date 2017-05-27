@@ -2,11 +2,9 @@ import logging
 import os
 
 import iam_helper
-
+from dcos_test_utils.dcos_api_session import DcosApiSession, DcosUser
+from dcos_test_utils.helpers import session_tempfile
 from ee_helpers import bootstrap_config
-
-from test_util.dcos_api_session import DcosApiSession, DcosUser
-from test_util.helpers import session_tempfile
 
 
 class MesosNodeClientMixin:

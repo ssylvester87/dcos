@@ -1,7 +1,7 @@
-import test_util.helpers
+import dcos_test_utils.helpers
 
 
-class Iam(test_util.helpers.ApiClientSession):
+class Iam(dcos_test_utils.helpers.ApiClientSession):
     """
     Helpers for interacting with service user accounts.
 

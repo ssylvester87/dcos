@@ -8,7 +8,7 @@ from collections import OrderedDict
 import pytest
 import requests
 
-from test_util.helpers import session_tempfile
+from dcos_test_utils.helpers import session_tempfile
 
 log = logging.getLogger(__name__)
 

@@ -6,8 +6,6 @@ import requests
 
 from ee_helpers import bootstrap_config
 
-import test_util.helpers
-
 
 log = logging.getLogger(__name__)
 
@@ -16,8 +14,19 @@ strict_only = pytest.mark.skipif(bootstrap_config['security'] != 'strict',
 pytestmark = [strict_only, pytest.mark.usefixtures("iam_verify_and_reset")]
 
 
+def skip_test_if_dcos_journald_log_disabled(superuser_api_session):
+    response = superuser_api_session.get('/dcos-metadata/ui-config.json').json()
+    try:
+        strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']
+    except Exception:
+        log.exception('Unable to find logging strategy')
+        raise
+    if not strategy.startswith('journald'):
+        pytest.skip('Skipping a test since journald logging is disabled')
+
+
 def test_fine_grained_acls(superuser_api_session, peter_api_session):
-    test_util.helpers.skip_test_if_dcos_journald_log_disabled(superuser_api_session)
+    skip_test_if_dcos_journald_log_disabled(superuser_api_session)
     test_uuid = uuid.uuid4().hex
 
     task_id = "integration-test-task-logs-{}".format(test_uuid)
