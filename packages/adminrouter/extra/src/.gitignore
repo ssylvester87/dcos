@@ -10,16 +10,10 @@ test-harness/logs/*.log
 
 #Overlay things, must not be included in the EE repository:
 .flake8
+.isort.cfg
 Makefile.common
-master/agent.lua
-master/cache.lua
-master/history-service.lua
-master/marathon-leader.lua
-common/auth/common.lua
-common/auth/open.lua
 mime.types
 pytest.ini
-resty/*
 errorpages/*
 test-harness/conftest.py
 test-harness/logs/*
@@ -33,4 +27,25 @@ test-harness/modules/runner/__init__.py
 test-harness/modules/runner/common.py
 test-harness/modules/runner/open.py
 test-harness/tests/*.py
+test-harness/tests/*.yml
 test-harness/tests/open/*
+lib/agent.lua
+lib/auth/common.lua
+lib/auth/open.lua
+lib/cache.lua
+lib/history-service.lua
+lib/marathon-leader.lua
+lib/metadata.lua
+lib/resty/README.md
+lib/resty/cookie.lua
+lib/resty/evp.lua
+lib/resty/hmac.lua
+lib/resty/http.lua
+lib/resty/http_headers.lua
+lib/resty/jwt-validators.lua
+lib/resty/jwt.lua
+lib/resty/lock.lua
+lib/resty/resolver.lua
+lib/service.lua
+lib/url.lua
+lib/util.lua

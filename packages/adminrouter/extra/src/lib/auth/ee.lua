@@ -2,8 +2,8 @@ local cjson = require "cjson"
 local cjson_safe = require "cjson.safe"
 local jwt = require "resty.jwt"
 
-local authcommon = require "common.auth.common"
-local util = require "common.util"
+local authcommon = require "auth.common"
+local util = require "util"
 
 local SECRET_KEY = nil
 
@@ -314,10 +314,17 @@ function _M.init(use_auth)
         return res.do_authn_or_exit("dcos:adminrouter:navstar-lashup-key");
     end
 
-    -- /service/(?<serviceid>[0-9a-zA-Z-.]+)/(?<url>.*)
-    res.access_service_endpoint = function()
-        local resourceid = "dcos:adminrouter:service:" .. ngx.var.serviceid
-        return res.do_authn_and_authz_or_exit(resourceid);
+    -- /service/.+
+    res.access_service_endpoint = function(service_path)
+        if service_path ~= nil then
+            -- Check access for particular resource:
+            local resourceid = "dcos:adminrouter:service:" .. service_path
+            return res.do_authn_and_authz_or_exit(resourceid)
+        end
+
+        -- Just perform authn, RID "dcos:adminrouter:service" will be used just
+        -- for logging/auditing purposes.
+        return res.do_authn_or_exit("dcos:adminrouter:service")
     end
 
     -- /metadata

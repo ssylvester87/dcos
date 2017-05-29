@@ -26,15 +26,20 @@ class IamHTTPRequestHandler(RecordingHTTPRequestHandler):
         if base_path == '/acs/api/v1/internal/policyquery':
             return self.__internal_policy_query_request_handler()
 
-        match = self.USERS_PERMISSIONS_REGEXP.search(base_path)
-        if match:
-            return self.__users_permissions_request_handler(match.group(1))
-
-        if base_path == '/acs/api/v1/foo/bar':
+        if base_path in [
+                '/acs/api/v1/reflect/me',
+                '/acs/api/v1/auth/saml/providers/reflect-me/acs-callback',
+                '/acs/api/v1/auth/oidc/providers/reflect/me',
+                '/acs/api/v1/users/reflecting-user/permissions'
+                ]:
             # A test URI that is used by tests. In some cases it is impossible
             # to reuse /acs/api/v1/users/.../permissions, and
             # /acs/api/v1/internal/policyquery is internal/not exposed.
-            return 200, 'application/json', self._convert_data_to_blob({})
+            return self._reflect_request(base_path, url_args, body_args)
+
+        match = self.USERS_PERMISSIONS_REGEXP.search(base_path)
+        if match:
+            return self.__users_permissions_request_handler(match.group(1))
 
         raise EndpointException(
             code=500,
