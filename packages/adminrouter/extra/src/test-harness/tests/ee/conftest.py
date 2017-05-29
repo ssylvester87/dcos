@@ -35,6 +35,10 @@ EEStaticFiles = [
         "/opt/mesosphere/etc/bootstrap-config.json",
         content=BOOTSTRAP_CONFIG,
         ),
+    NginxStaticServedFile(
+        "/run/dcos/pki/CA/certs/cacerts.jks",
+        content='some test text that should in fact be "bytes" array ;)',
+        ),
 ]
 
 

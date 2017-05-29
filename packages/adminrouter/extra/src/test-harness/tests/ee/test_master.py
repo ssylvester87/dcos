@@ -361,3 +361,24 @@ class TestMisc:
 
         assert resp.status_code == 200
         assert resp.text == content
+
+    def test_if_ca_cert_is_served(self, master_ar_process):
+        url = master_ar_process.make_url_from_path('/ca/dcos-ca.crt')
+
+        with open("/run/dcos/pki/CA/certs/ca.crt", 'r') as fh:
+            cert_data = fh.read()
+
+        resp = requests.get(url, allow_redirects=False)
+        assert resp.status_code == 200
+        assert resp.text == cert_data
+
+    def test_if_jks_is_served(self, master_ar_process):
+        url = master_ar_process.make_url_from_path('/ca/cacerts.jks')
+
+        with open("/run/dcos/pki/CA/certs/cacerts.jks", 'r') as fh:
+            data = fh.read()
+
+        resp = requests.get(url, allow_redirects=False)
+        assert resp.status_code == 200
+        assert resp.text == data
+        verify_header(resp.headers.items(), 'Content-Type', 'application/x-java-keystore')

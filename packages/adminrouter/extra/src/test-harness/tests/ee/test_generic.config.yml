@@ -13,6 +13,11 @@ endpoint_tests:
       - agent
 ######### /ca/
   - tests:
+      is_unauthed_access_permitted:
+        enabled: true
+        locations:
+          - /ca/dcos-ca.crt
+          - /ca/cacerts.jks
       are_upstream_req_headers_ok:
         enabled: true
         jwt_should_be_forwarded: false
