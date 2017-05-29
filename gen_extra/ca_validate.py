@@ -37,6 +37,7 @@ import datetime
 import itertools
 import os
 import subprocess
+from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 
 import cryptography.hazmat.backends
@@ -566,11 +567,11 @@ def load_pem_private_key(key_pem, allow_ec_key=True):
     except (ValueError, UnsupportedAlgorithm) as e:
         raise CustomCACertValidationError('Invalid private key: %s' % e)
 
-    supported_keys = {rsa.RSAPrivateKey: 'RSA'}
+    supported_keys = OrderedDict([(rsa.RSAPrivateKey, 'RSA')])
     if allow_ec_key:
         supported_keys[ec.EllipticCurvePrivateKey] = 'EC'
 
-    if not isinstance(private_key, tuple(supported_keys)):
+    if not isinstance(private_key, tuple(supported_keys.keys())):
         names = list(supported_keys.values())
         if len(names) > 1:
             names_str = ', '.join(names[:-1]) + ' or ' + names[-1]
