@@ -42,7 +42,7 @@ EEStaticFiles = [
 ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def ee_static_files():
     """Creates static files with stub content that are required for NGINX"""
     for static_file in EEStaticFiles:

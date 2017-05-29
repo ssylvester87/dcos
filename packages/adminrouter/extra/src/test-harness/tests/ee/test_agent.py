@@ -93,8 +93,7 @@ class TestAuthEnforcementEE:
             valid_user_header,
             path,
             rid,
-            mocker,
-            ee_static_files):
+            mocker):
 
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
@@ -115,13 +114,13 @@ class TestAuthEnforcementEE:
                 )
 
     @pytest.mark.parametrize("path,rid", acl_endpoints)
-    def test_if_unauthorized_user_is_forbidden_access(self,
-                                                      agent_ar_process,
-                                                      valid_user_header,
-                                                      path,
-                                                      rid,
-                                                      mocker,
-                                                      ee_static_files):
+    def test_if_unauthorized_user_is_forbidden_access(
+            self,
+            agent_ar_process,
+            valid_user_header,
+            path,
+            rid,
+            mocker):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
