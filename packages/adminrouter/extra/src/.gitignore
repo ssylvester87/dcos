@@ -20,6 +20,7 @@ test-harness/conftest.py
 test-harness/logs/*
 test-harness/modules/*.py
 test-harness/modules/generic_test_code/common.py
+test-harness/modules/generic_test_code/generalised_tests.py
 test-harness/modules/generic_test_code/open.py
 test-harness/modules/mocker/*.py
 test-harness/modules/mocker/endpoints/*.py
