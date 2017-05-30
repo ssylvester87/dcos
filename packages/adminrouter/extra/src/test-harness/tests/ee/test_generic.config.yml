@@ -190,5 +190,10 @@ endpoint_tests:
         test_paths:
           - expected: /foo/bar
             sent: /networking/api/v1/foo/bar
+      are_response_headers_ok:
+        enabled: true
+        nocaching_headers_are_sent: true
+        test_paths:
+          - /networking/api/v1/foo/bar
     type:
       - master
