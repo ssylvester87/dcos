@@ -1,3 +1,8 @@
+# Dockerfile for building environment with all dependencies required for
+# running `gen_extra` unit tests. On top of python `3.5.2` we're building
+# custom `openssl` version from `1.0.2` line to match version provided
+# by DC/OS build.
+# The dcos-enterprise should be bind-mounted to `/dcos-enterprise` directory.
 FROM python:3.5.2
 
 ENV OPENSSL_VERSION 1.0.2l

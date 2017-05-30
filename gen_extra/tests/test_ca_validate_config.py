@@ -489,7 +489,10 @@ class TestCertValidation:
         ca_cert_validator = CustomCACertValidator(cert_pem, key_pem)
         with pytest.raises(CustomCACertValidationError) as exc:
             ca_cert_validator.validate()
-        assert 'unsupported hash algorithm' in str(exc.value)
+        assert str(exc.value) == (
+            'The custom CA certificate was signed with the '
+            '`sha1WithRSAEncryption` hash algorithm which is unsupported.'
+            )
 
     def test_basic_constraints_extension_missing(self):
         """

@@ -17,8 +17,7 @@ class TestCustomCACert:
     def test_filenames(self) -> List[str]:
         """
         We run various integration test files.
-        We only run the fastest files, and those specifically related to
-        CA certificates.
+        We run only tests that are related to custom CA certificates.
 
         Return a list of these filenames.
         """
@@ -45,15 +44,14 @@ class TestCustomCACert:
     def test_custom_ca_cert(self, fixture_dir: str,
                             test_filenames: List[str]) -> None:
         """
-        It is possible to add a custom CA certificate to a cluster in strict
-        mode.
+        It is possible to install cluster with custom CA certificate.
 
         This test performs various checks with various CA certificate / key /
         chain combinations to confirm that the custom CA certificate files are
         being used.
 
-        To add a parameter to this test, create a directory in the `fixtures`
-        directory. This must contain the following two files:
+        To add new custom CA certificate test, create a directory in
+        the `fixtures` directory. This must contain the following two files:
             * `dcos-ca-certificate.crt`
             * `dcos-ca-certificate-key.key`
         It can optionally include `dcos-ca-certificate-chain.crt`.
@@ -70,9 +68,9 @@ class TestCustomCACert:
         key_filename = 'dcos-ca-certificate-key.key'
         chain_filename = 'dcos-ca-certificate-chain.crt'
 
-        cert = cert_dir_on_host / cert_filename
-        ca_key = cert_dir_on_host / key_filename
-        chain = cert_dir_on_host / chain_filename
+        cert_path = cert_dir_on_host / cert_filename
+        ca_key_path = cert_dir_on_host / key_filename
+        chain_path = cert_dir_on_host / chain_filename
 
         genconf = Path('/genconf')
         installer_cert_path = genconf / cert_filename
@@ -89,36 +87,38 @@ class TestCustomCACert:
         }
 
         files_to_copy_to_installer = {
-            cert: installer_cert_path,
-            ca_key: installer_key_path,
+            cert_path: installer_cert_path,
+            ca_key_path: installer_key_path,
         }
-        if chain.exists():
+        if chain_path.exists():
             config['ca_certificate_chain_path'] = str(installer_chain_path)
-            files_to_copy_to_installer[chain] = installer_chain_path
+            files_to_copy_to_installer[chain_path] = installer_chain_path
 
         with Cluster(
                 destroy_on_error=False,
                 log_output_live=True,
                 extra_config=config,
-                custom_ca_key=ca_key.absolute(),
+                custom_ca_key=ca_key_path.absolute(),
                 files_to_copy_to_installer=files_to_copy_to_installer,
         ) as cluster:
             cluster.run_integration_tests(pytest_command=[
                 'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
             ])
-
-            # We then check that we can get a file over HTTPS, using the
-            # custom certificate.
-            # This verifies that our custom certificate is being used
-            # correctly in DC/OS.
-            ca_bundle_path = chain if chain.exists() else cert
+            # Select single master as an endpoint for HTTP requests.
             (master, ) = cluster.masters
+
+            # We then check that we can get HTTPS response, while using
+            # root CA certificate for TLS verification.
+            # This verifies that our custom certificate is being used
+            # correctly in DC/OS Admin Router.
+            ca_bundle_path = chain_path if chain_path.exists() else cert_path
             master_url = 'https://{ip_address}/'.format(
                 ip_address=master.ip_address)
             requests.get(master_url, verify=str(ca_bundle_path))
 
-            # This tests that Admin Router is serving the correct certificate.
-            # It shows that the certificate is in the expected location.
+            # This tests that Admin Router is serving custom CA root certificate
+            # provided during the cluster installation.
+            # It shows that the certificate is installed in the expected location.
             cert_url = urljoin(master_url, '/ca/dcos-ca.crt')
             certificate = requests.get(cert_url, verify=str(ca_bundle_path))
             certificate.raise_for_status()

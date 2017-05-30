@@ -232,6 +232,19 @@ def calculate_ca_certificate(
     dependencies and calculates which validation functions can be invoked.
     Removing the parameter from calculate function will cause that
     `validate_ca_certificate` wouldn't be invoked.
+
+    Args:
+        ca_certificate_path (str): Path pointing to a to the file containing a
+            PEM encoded certificate.
+
+        ca_certificate_key_path (str): Path pointing to the file containing a
+            PEM encoded private key for the certificate.
+
+        ca_certificate_chain_path (str): Path pointing to the file containing a
+            PEM encoded chain of certificates.
+
+    Raises:
+        AssertionError: If provided custom CA certificate validation failed.
     """
 
     # Handle case where no custom CA certificate was provided.

@@ -168,16 +168,22 @@ class TestCustomCACertificate:
     def _find_ca_cert_config(self, generated_config):
         """
         Finds config item for custom CA cert in `dcos-config.yaml` file
+
+        Returns:
+            `None` if generated configuration doesn't contain entry for
+            custom CA certificate.
+
+            `Dict` containing rendered custom CA certificate.
         """
         package = generated_config.templates['dcos-config.yaml']['package']
         result = [
             item for item in package if item['path'] == self.CA_CONFIG_PATH]
-        return result[0] if len(result) else None
+        return result[0] if len(result) > 0 else None
 
     def test_not_providing_any_ca_cert_arguments_validates(self):
         """
-        Not providing ca_certificate related paths doesn't trigger related
-        validation functions
+        Not providing any ca_certificate related paths should validate the
+        configuration.
         """
         result = gen.validate(make_arguments(new_arguments={}))
         assert result['status'] == 'ok'

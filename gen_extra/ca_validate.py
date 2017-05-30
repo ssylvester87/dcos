@@ -93,7 +93,8 @@ class CertName:
         beging text representations (type `str`) of the subject and issuer
         data in the provided certificate.
         """
-        assert isinstance(cert, x509.Certificate)
+        if not isinstance(cert, x509.Certificate):
+            raise ValueError('cert must be x509.Certificate instance')
 
         subject_parts = []
         for nameattr in cert.subject:
@@ -138,8 +139,6 @@ class CustomCACertValidator:
         SignatureAlgorithmOID.ECDSA_WITH_SHA256,
         SignatureAlgorithmOID.ECDSA_WITH_SHA384,
         SignatureAlgorithmOID.ECDSA_WITH_SHA512,
-        # DSA
-        SignatureAlgorithmOID.DSA_WITH_SHA256,
     )
 
     # We support only NIST P-256 and P-384 curves that are widely accepted
@@ -274,10 +273,6 @@ class CustomCACertValidator:
         chaincerts_pem = [t + endmarker for t in tokens if t.strip()]
         chaincerts = [load_pem_x509_cert(c) for c in chaincerts_pem]
 
-        # TODO(JP): improve error messages to contain specifics that make it
-        # easy to identify the bad certificate, or the bad pair of certificates
-        # (emit subject or issuer or fingerprint or something like that).
-
         for chaincert in chaincerts:
             try:
                 constraints = self.get_basic_constraints(chaincert)
@@ -390,9 +385,11 @@ class CustomCACertValidator:
         """
         algo_oid = self.cert.signature_algorithm_oid
         if algo_oid not in self.SUPPORTED_SIGNATURE_ALGORITHM_OIDS:
-            # TODO(jp): improve error message, emit detail on mismatch.
             raise CustomCACertValidationError(
-                'The custom CA certificate was signed with a unsupported hash algorithm')
+                'The custom CA certificate was signed with the `{hash_algo}` '
+                'hash algorithm which is unsupported.'.format(
+                    hash_algo=algo_oid._name,
+                    ))
 
     def _validate_rsa_keys(self):
         """
