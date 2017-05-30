@@ -234,13 +234,13 @@ def calculate_ca_certificate(
     `validate_ca_certificate` wouldn't be invoked.
 
     Args:
-        ca_certificate_path (str): Path pointing to a to the file containing a
+        ca_certificate_path (str): Path pointing to a file containing a
             PEM encoded certificate.
 
-        ca_certificate_key_path (str): Path pointing to the file containing a
+        ca_certificate_key_path (str): Path pointing to a file containing a
             PEM encoded private key for the certificate.
 
-        ca_certificate_chain_path (str): Path pointing to the file containing a
+        ca_certificate_chain_path (str): Path pointing to a file containing a
             PEM encoded chain of certificates.
 
     Raises:

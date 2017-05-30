@@ -412,8 +412,6 @@ class TestRSAKeyValidation:
             ca_cert_validator.validate()
         assert str(exc.value) == 'private key does not match public key'
 
-    # TODO(mh) Is there a way to test that public key is smaller than private?
-
 
 class TestECKeyValidation:
 
@@ -466,8 +464,6 @@ class TestECKeyValidation:
                 cert_pem, key_pem, allow_ec_key=False).validate()
         assert str(exc.value) == (
             'Unexpected private key type (not RSA)')
-
-    # TODO(mh) Is there a way to test that public key is smaller than private?
 
 
 class TestCertValidation:
