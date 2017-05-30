@@ -272,7 +272,7 @@ class TestIAMUserGroupCRUD:
         A service user which has been granted superuser privileges by being
         assigned to the `dcos:superuser` ACL can be deleted.
         """
-        superuser_api_session.iam.create_user_permission(
+        superuser_api_session.iam.grant_user_permission(
             uid=service_account_uid,
             action='full',
             rid='dcos:superuser',
