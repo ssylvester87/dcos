@@ -197,3 +197,10 @@ endpoint_tests:
           - /networking/api/v1/foo/bar
     type:
       - master
+  - tests:
+      is_unauthed_access_permitted:
+        enabled: true
+        locations:
+          - /dcos-metadata/ui-config.json
+    type:
+      - master

@@ -39,6 +39,10 @@ EEStaticFiles = [
         "/run/dcos/pki/CA/certs/cacerts.jks",
         content='some test text that should in fact be "bytes" array ;)',
         ),
+    NginxStaticServedFile(
+        "/opt/mesosphere/etc/ui-config.json",
+        content='{"test": 1234}',
+        ),
 ]
 
 
