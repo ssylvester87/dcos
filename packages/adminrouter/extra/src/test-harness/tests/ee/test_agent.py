@@ -1,12 +1,11 @@
 # Copyright (C) Mesosphere, Inc. See LICENSE file for details.
 
-import copy
-
 import pytest
 import requests
 
 from generic_test_code.common import (
     assert_endpoint_response,
+    generic_response_headers_verify_test,
     generic_upstream_headers_verify_test,
     verify_header,
 )
@@ -21,23 +20,16 @@ acl_endpoints = [
 
 
 class TestLogsEndpointEE:
+    url = (
+        '/system/v1/logs/v1'
+        '/stream/framework/test/executor/test/container/test'
+        )
 
     def test_logs_authn_endpoint(
             self, agent_ar_process, valid_user_header):
         """Tests endpoint that skips ACL validation and grants access to any
            authenticated user to a specific `stream` or `range` requests
         """
-
-        # Configuration should pass "X-Accel-Buffering" header to logs upstream
-        accel_buff_header = {"X-Accel-Buffering": "TEST"}
-
-        req_headers = copy.deepcopy(valid_user_header)
-        req_headers.update(accel_buff_header)
-
-        url = (
-            '/system/v1/logs/v1'
-            '/stream/framework/test/executor/test/container/test'
-            )
 
         # We're asserting for a valid HTTP and also for specific auditlog
         # message that is produced if request hits a authn only NGINX location
@@ -47,7 +39,7 @@ class TestLogsEndpointEE:
             'object=dcos:adminrouter:ops:system-logs .*' +
             'result=allow .*' +
             'reason="authenticated \(all users are allowed to access\)" .*' +
-            'request_uri=' + url: SearchCriteria(1, True),
+            'request_uri=' + self.url: SearchCriteria(1, True),
             }
         lbf = LineBufferFilter(
             filter_regexp,
@@ -57,12 +49,32 @@ class TestLogsEndpointEE:
         with lbf:
             generic_upstream_headers_verify_test(
                 agent_ar_process,
-                req_headers,
-                url,
-                assert_headers=accel_buff_header,
+                valid_user_header,
+                self.url,
                 )
 
         assert lbf.extra_matches == {}
+
+    def test_if_xaccel_header_is_passed_to_client(
+            self,
+            agent_ar_process,
+            valid_user_header,
+            mocker):
+
+        accel_buff_header = {"X-Accel-Buffering": "TEST"}
+
+        mocker.send_command(
+            endpoint_id='http:///run/dcos/dcos-log.sock',
+            func_name='set_response_headers',
+            aux_data=accel_buff_header,
+        )
+
+        generic_response_headers_verify_test(
+            agent_ar_process,
+            valid_user_header,
+            self.url,
+            assert_headers=accel_buff_header,
+            )
 
 
 class TestAuthEnforcementEE:
