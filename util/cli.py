@@ -26,7 +26,7 @@ def dcoscli_fixture():
     st = os.stat(dcos_cli_path)
     os.chmod(dcos_cli_path, st.st_mode | stat.S_IEXEC)
 
-    return DCOSCLI(tmpdir)
+    yield DCOSCLI(tmpdir)
 
     shutil.rmtree(os.path.expanduser("~/.dcos"))
     shutil.rmtree(tmpdir, ignore_errors=True)

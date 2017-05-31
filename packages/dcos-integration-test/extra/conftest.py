@@ -5,11 +5,16 @@ This is the place to define globally visible fixtures.
 """
 import json
 import logging
+import os
+import shutil
+import stat
+import tempfile
 from urllib.parse import urlparse
 
 import pytest
+import requests
 from api_session_fixture import make_session_fixture
-from dcoscli_fixture import dcoscli_fixture
+from dcoscli import DCOS_CLI_URL, DCOSCLI
 from jwt.utils import base64url_decode, base64url_encode
 
 from test_util.dcos_api_session import DcosAuth, DcosUser
@@ -258,7 +263,22 @@ def forged_superuser_session(peter, superuser, noauth_api_session):
     return forged_session
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def dcoscli(superuser_api_session):
-    pytest.skip('dcos-cli was updated with version 0.5 to be incompatible with this fixture')
-    return dcoscli_fixture(superuser_api_session)
+    tmpdir = tempfile.mkdtemp()
+    dcos_cli_path = os.path.join(tmpdir, "dcos")
+
+    requests.packages.urllib3.disable_warnings()
+    with open(dcos_cli_path, 'wb') as f:
+        r = requests.get(DCOS_CLI_URL, stream=True, verify=True)
+        for chunk in r.iter_content(1024):
+            f.write(chunk)
+
+    # make binary executable
+    st = os.stat(dcos_cli_path)
+    os.chmod(dcos_cli_path, st.st_mode | stat.S_IEXEC)
+
+    yield DCOSCLI(tmpdir, superuser_api_session)
+
+    shutil.rmtree(os.path.expanduser("~/.dcos"))
+    shutil.rmtree(tmpdir, ignore_errors=True)

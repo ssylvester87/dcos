@@ -88,7 +88,7 @@ s00xrv14zLifcc8oj5DYzOhYRifRXgHX
 </EntityDescriptor>"""
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def dcoscli_enterprise(dcoscli):
     dcoscli.setup_enterprise()
     yield dcoscli
@@ -390,70 +390,69 @@ class TestShibbolethSAML:
             shibboleth_idp,
             browser,
             ):
-        with dcoscli_enterprise.dcos_url(SP_BASE_URL):
-            process = dcoscli_enterprise.start_command(
-                ["dcos", "auth", "login",
-                 "--provider={}".format(shibboleth_idp)],
-                stderr=subprocess.STDOUT,
-                )
 
-            auth_url = None
-            # Read stdout lines until the line contains an Auth URL
-            stdout = io.TextIOWrapper(process.stdout, encoding='utf-8')
-            while auth_url is None:
-                line = stdout.readline().strip("\n ")
-                if line.startswith('http'):
-                    auth_url = line
+        process = dcoscli_enterprise.start_command(
+            ["dcos", "auth", "login", "--provider={}".format(shibboleth_idp)],
+            stderr=subprocess.STDOUT,
+        )
 
-            expected_auth_url = (
-                SP_BASE_URL +
-                '/acs/api/v1/auth/login?saml-provider={}'.format(
-                    shibboleth_idp) +
-                '&target=dcos:authenticationresponse:html')
-            assert auth_url == expected_auth_url
+        auth_url = None
+        # Read stdout lines until the line contains an Auth URL
+        stdout = io.TextIOWrapper(process.stdout, encoding='utf-8')
+        while auth_url is None:
+            line = stdout.readline().strip("\n ")
+            if line.startswith('http'):
+                auth_url = line
 
-            browser.get(auth_url)
+        expected_auth_url = (
+            SP_BASE_URL +
+            '/acs/api/v1/auth/login?saml-provider={}'.format(
+                shibboleth_idp) +
+            '&target=dcos:authenticationresponse:html')
+        assert auth_url == expected_auth_url
 
-            # Make sure that user got redirected to correct Shibboleth URL
-            assert browser.current_url.startswith(
-                'https://shibboleth.marathon.l4lb.thisdcos.directory:4443/' +
-                'idp/profile/SAML2/Redirect/SSO'
-                )
+        browser.get(auth_url)
 
-            # Fill user details and click login button
-            browser.find_element_by_id('username').send_keys(
-                self.SAML_USER.username)
-            browser.find_element_by_id('password').send_keys(
-                self.SAML_USER.password)
-            browser.find_element_by_name('_eventId_proceed').click()
+        # Make sure that user got redirected to correct Shibboleth URL
+        assert browser.current_url.startswith(
+            'https://shibboleth.marathon.l4lb.thisdcos.directory:4443/' +
+            'idp/profile/SAML2/Redirect/SSO'
+            )
 
-            # Browser should be redirected at Shibboleth page that offers user
-            # to accept releasing user details to third party (bouncer)
+        # Fill user details and click login button
+        browser.find_element_by_id('username').send_keys(
+            self.SAML_USER.username)
+        browser.find_element_by_id('password').send_keys(
+            self.SAML_USER.password)
+        browser.find_element_by_name('_eventId_proceed').click()
 
-            # Click Accept button which should complete SAML flow and create
-            # new bouncer user
-            browser.find_element_by_name('_eventId_proceed').click()
+        # Browser should be redirected at Shibboleth page that offers user
+        # to accept releasing user details to third party (bouncer)
 
-            # Make sure that user ended back at DC/OS URL
-            assert SP_BASE_URL in browser.current_url
+        # Click Accept button which should complete SAML flow and create
+        # new bouncer user
+        browser.find_element_by_name('_eventId_proceed').click()
 
-            # We should now be redirected to HTML page with auth token
-            dcos_auth_token = WebDriverWait(browser, 30).until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, "//div[@class='tokenbox wrap']"))).text
+        # Make sure that user ended back at DC/OS URL
+        assert SP_BASE_URL in browser.current_url
 
-            # test `dcos_auth_token` with CLI
-            stdout, _ = process.communicate(
-                input=dcos_auth_token.encode(), timeout=None)
-            assert 'Login successful!' in stdout.decode('utf-8')
+        # We should now be redirected to HTML page with auth token
+        dcos_auth_token = WebDriverWait(browser, 30).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//div[@class='tokenbox wrap']"))).text
 
-            # Authenticate back as an admin
-            dcoscli_enterprise.login()
+        # test `dcos_auth_token` with CLI
+        stdout, _ = process.communicate(
+            input=dcos_auth_token.encode(), timeout=None)
+        assert stdout.decode('utf-8') == 'Login successful!\n'
 
-            # Validate that newly authenticated user exists in the bouncer
-            stdout, _ = dcoscli_enterprise.exec_command(
-                ["dcos", "security", "org", "users", "show", self.SAML_USER.email])
+        # Authenticate back as an admin
+        dcoscli_enterprise.login()
 
-            assert "SAML-authenticated (Provider ID: {})".format(shibboleth_idp) in stdout
-            assert "is_remote: true" in stdout
-            assert "is_service: false" in stdout
+        # Validate that newly authenticated user exists in the bouncer
+        stdout, _ = dcoscli_enterprise.exec_command(
+            ["dcos", "security", "org", "users", "show", self.SAML_USER.email])
+
+        assert "SAML-authenticated (Provider ID: {})".format(shibboleth_idp) in stdout
+        assert "is_remote: true" in stdout
+        assert "is_service: false" in stdout

@@ -1,37 +1,10 @@
 import logging
 import os
-import shutil
-import stat
 import subprocess
-import tempfile
-
-from contextlib import contextmanager
-
-import requests
 
 log = logging.getLogger(__name__)
 
 DCOS_CLI_URL = "https://downloads.dcos.io/binaries/cli/linux/x86-64/latest/dcos"
-
-
-def dcoscli_fixture(superuser_api_session):
-    tmpdir = tempfile.mkdtemp()
-    dcos_cli_path = os.path.join(tmpdir, "dcos")
-
-    requests.packages.urllib3.disable_warnings()
-    with open(dcos_cli_path, 'wb') as f:
-        r = requests.get(DCOS_CLI_URL, stream=True, verify=True)
-        for chunk in r.iter_content(1024):
-            f.write(chunk)
-
-    # make binary executable
-    st = os.stat(dcos_cli_path)
-    os.chmod(dcos_cli_path, st.st_mode | stat.S_IEXEC)
-
-    return DCOSCLI(tmpdir, superuser_api_session)
-
-    shutil.rmtree(os.path.expanduser("~/.dcos"))
-    shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 class DCOSCLI():
@@ -47,10 +20,8 @@ class DCOSCLI():
         self.env = updated_env
         self.url = superuser_api_session.default_url
 
-        # Setup initial configuration
-        self.config = Configuration(self)
-        self.config["core.dcos_url"] = str(self.url)
-        self.config["core.ssl_verify"] = "false"
+    def get_url(self):
+        return str(self.url)
 
     def exec_command(self, cmd, stdin=None):
         """Execute CLI command and processes result.
@@ -104,6 +75,15 @@ class DCOSCLI():
         process = subprocess.Popen(cmd, **dict(defaults, **kwargs))
         return process
 
+    def setup(self):
+        username = self.env.get("DCOS_LOGIN_UNAME")
+        password = self.env.get("DCOS_LOGIN_PW")
+        stdout, stderr = self.exec_command(
+            ["dcos", "cluster", "setup", str(self.url), "--no-check",
+             "--username={}".format(username), "--password={}".format(password)])
+        assert stdout == ''
+        assert stderr == ''
+
     def login(self):
         username = self.env.get("DCOS_LOGIN_UNAME")
         password = self.env.get("DCOS_LOGIN_PW")
@@ -113,33 +93,11 @@ class DCOSCLI():
         assert stderr == ''
 
     def setup_enterprise(self):
-        self.login()
+        self.setup()
 
         # install enterprise CLI
         self.exec_command(
-            ["dcos", "package", "install", "dcos-enterprise-cli", "--cli"])
-
-    @contextmanager
-    def dcos_url(self, url):
-        """Allows to override cli DC/OS URL"""
-
-        existing_url = self.config.get("core.dcos_url")
-        existing_auth_token = self.config.get("core.dcos_acs_token")
-
-        # Only change DC/OS cli setting when provided URL doesn't match default
-        # URL.
-        if url != existing_url:
-            self.config["core.dcos_url"] = url
-            self.login()
-
-            yield
-
-            if existing_url:
-                self.config["core.dcos_url"] = existing_url
-            if existing_auth_token:
-                self.config["core.dcos_acs_token"] = existing_auth_token
-        else:
-            yield
+            ["dcos", "package", "install", "dcos-enterprise-cli", "--cli", "--global"])
 
 
 class Configuration:
@@ -175,3 +133,8 @@ class Configuration:
 
     def __setitem__(self, key, value):
         self.set(key, value)
+
+
+class TestDCOSCLI:
+    def test_cli(self, dcoscli):
+        dcoscli.setup()
