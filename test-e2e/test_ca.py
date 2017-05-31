@@ -105,15 +105,14 @@ class TestCustomCACert:
                 'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
             ])
             # Select single master as an endpoint for HTTP requests.
-            master = cluster.masters.pop()
+            master = next(iter(cluster.masters))
 
             # We then check that we can get HTTPS response, while using
             # root CA certificate for TLS verification.
             # This verifies that our custom CA certificate was used for signing
             # the server certificate presented by Admin Router.
             ca_bundle_path = chain_path if chain_path.exists() else cert_path
-            master_url = 'https://{ip_address}/'.format(
-                ip_address=master.ip_address)
+            master_url = 'https://' + master.ip_address
             requests.get(master_url, verify=str(ca_bundle_path))
 
             # This tests that Admin Router is serving custom CA root certificate

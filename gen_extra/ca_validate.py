@@ -90,7 +90,7 @@ class CertName:
             cert: an object of type `cryptography.x509.Certificate`
 
         The resulting object has the attributes `subject` and `issuer`, both
-        beging text representations (type `str`) of the subject and issuer
+        being text representations (type `str`) of the subject and issuer
         data in the provided certificate.
         """
         if not isinstance(cert, x509.Certificate):
@@ -159,17 +159,18 @@ class CustomCACertValidator:
             cert (str): X.509 CA certificate, encoded as text in the OpenSSL
                 PEM format.
 
-            key (str): Private key corresponding to the certificates provided
+            key (str): Private key corresponding to the certificate provided
                 via `cert`, encoded as text in the PKCS#8 PEM format.
 
             chain (str): Ordered chain of CA certificates in the OpenSSL
-                PEM format. Required if the certificate `cert` is an
-                intermediate CA certificate.
+                PEM format. The `chain` is required if the certificate
+                provided in `cert` is an intermediate CA certificate
+                and must form a chain from `cert` to a root CA certificate.
 
             allow_ec_keys (bool): Enable or disable support for EC private key.
         """
         self.private_key = load_pem_private_key(key, allow_ec_key=allow_ec_key)
-        self.cert = load_pem_x509_cert(cert)
+        self.cert = load_pem_x509_cert(cert, allow_ec_cert=allow_ec_key)
         self.chain = chain
 
     def validate(self):
@@ -203,7 +204,7 @@ class CustomCACertValidator:
         #         'Certificate basic constraints path_length is > 0')
 
         try:
-            if not self.key_usage.key_cert_sign:
+            if not self.key_usage().key_cert_sign:
                 raise CustomCACertValidationError(
                     'The custom CA certificate must have a key usage extension '
                     'defining `keyCertSign` as `true`'
@@ -228,7 +229,7 @@ class CustomCACertValidator:
                 'The custom CA certificate must be valid for at least {} days'.format(
                     self.MIN_VALID_DAYS))
 
-        if self.is_root:
+        if self.is_root():
             if self.chain is not None:
                 raise CustomCACertValidationError(
                     'The custom CA certificate is a root CA certificate. '
@@ -398,7 +399,7 @@ class CustomCACertValidator:
         """
         self._validate_keys_size(self.RSA_KEY_MIN_SIZE)
 
-        if not self.rsa_keys_matching:
+        if not self.rsa_keys_matching():
             raise CustomCACertValidationError(
                 "private key does not match public key")
 
@@ -418,7 +419,7 @@ class CustomCACertValidator:
                     self.private_key.curve.name)
                 )
 
-        if not self.ec_keys_matching:
+        if not self.ec_keys_matching():
             raise CustomCACertValidationError(
                 "private key does not match public key")
 
@@ -432,12 +433,12 @@ class CustomCACertValidator:
         Raises:
             CustomCACertValidationError
         """
-        if key_get_size(self.private_key) < size:
+        if get_key_size(self.private_key) < size:
             raise CustomCACertValidationError(
                 'Private key size smaller than {} bits'.format(
                     size))
 
-        if key_get_size(self.cert.public_key()) < size:
+        if get_key_size(self.cert.public_key()) < size:
             raise CustomCACertValidationError(
                 'Public key size smaller than {} bits'.format(
                     size))
@@ -458,7 +459,6 @@ class CustomCACertValidator:
 
         return basic_constraints_ext.value
 
-    @property
     def key_usage(self):
         """
         KeyUsage extension value from the certificate.
@@ -475,7 +475,6 @@ class CustomCACertValidator:
 
         return key_usage_ext.value
 
-    @property
     def is_root(self):
         """
         Checks if certificate is a root ceritficate.
@@ -485,12 +484,11 @@ class CustomCACertValidator:
         """
         return self.cert.issuer == self.cert.subject
 
-    @property
     def ec_keys_matching(self):
         """
         Verify that the private and the public key share the same modulus.
 
-        Retrun:
+        Retruns:
             Boolean if private and public key are matching
         """
         pubkey_pubnumbers = self.cert.public_key().public_numbers()
@@ -500,7 +498,6 @@ class CustomCACertValidator:
         y_match = pubkey_pubnumbers.y == privkey_pubnumbers.y
         return x_match and y_match
 
-    @property
     def rsa_keys_matching(self):
         """
         Verify that the private and the public key share the same modulus.
@@ -514,7 +511,7 @@ class CustomCACertValidator:
         return pubkey_pubnumbers.n == privkey_pubnumbers.n
 
 
-def key_get_size(key):
+def get_key_size(key):
     """
     Returns key size in bits for provided key.
 
@@ -544,8 +541,7 @@ def load_pem_private_key(key_pem, allow_ec_key=True):
 
     Args:
         key_pem (str): the PEM text representation of the data to verify.
-
-        allow_ec_key (bool): True if EC key is supported
+        allow_ec_key (bool): True if EC key is supported.
 
     Returns:
         An object of type
@@ -581,7 +577,7 @@ def load_pem_private_key(key_pem, allow_ec_key=True):
     return private_key
 
 
-def load_pem_x509_cert(cert_pem):
+def load_pem_x509_cert(cert_pem, allow_ec_cert=True):
     """
     Load X.590 certificate from the provided PEM/text representation.
 
@@ -598,6 +594,7 @@ def load_pem_x509_cert(cert_pem):
 
     Args:
         cert_pem (str): the PEM text representation of the data to verify.
+        allow_ec_cert (bool): True if EC public key is supported.
 
     Returns:
         `cert`, an object of type `cryptography.x509.Certificate`.
@@ -620,10 +617,19 @@ def load_pem_x509_cert(cert_pem):
 
     public_key = cert.public_key()
 
-    if not isinstance(
-            public_key, (rsa.RSAPublicKey, ec.EllipticCurvePublicKey)):
+    supported_keys = OrderedDict([(rsa.RSAPublicKey, 'RSA')])
+    if allow_ec_cert:
+        supported_keys[ec.EllipticCurvePublicKey] = 'EC'
+
+    if not isinstance(public_key, tuple(supported_keys.keys())):
+        names = list(supported_keys.values())
+        if len(names) > 1:
+            names_str = ', '.join(names[:-1]) + ' or ' + names[-1]
+        else:
+            names_str = names[0]
+
         raise CustomCACertValidationError(
-            'Unexpected public key type (not RSA or EC)')
+            'Unexpected public key type (not {})'.format(names_str))
 
     return cert
 

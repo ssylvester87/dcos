@@ -25,7 +25,7 @@ from open DC/OS version. To setup environment where tests could be executed
 run `env.sh` script from root folder of `dcos-enterprise` directory, i.e.:
 
 ```
-./gen_extra/tests/env.sh
+./gen_extra/tests/env.sh && source cache/build_venv/bin/activate
 ```
 
 This script will fetch open DC/OS defined in `packages/upstream.json`, it will
