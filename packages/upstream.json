@@ -1,6 +1,6 @@
 {
   "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "b4dbc9befda4b70ab84d7513fa87579f346c0315",
+  "ref": "405f59df45444c04d15f17fc82b5a5245ed72a25",
   "ref_origin": "tharper/use-marathon-1.5-snapshot"
 }
