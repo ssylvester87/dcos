@@ -17,13 +17,8 @@ from test_util.helpers import session_tempfile
 
 def token(host):
     cli = dcoscli_fixture()
-    cli.exec_command(
-        ["dcos", "config", "set", "core.dcos_url", host.public_ip])
-
-    cli.exec_command(["dcos", "config", "set", "core.ssl_verify", "False"])
-
-    stdout, stderr = cli.exec_command(["dcos", "auth", "login", "--username=testadmin",
-                                       "--password=testpassword"])
+    stdout, stderr = cli.exec_command(
+        ["dcos", "cluster", "setup", host.public_ip, "--no-check", "--username=testadmin", "--password=testpassword"])
 
     auth_stdout, stderr = cli.exec_command(
         ["dcos", "config", "show", "core.dcos_acs_token"])
