@@ -95,7 +95,6 @@ class TestCustomCACert:
             files_to_copy_to_installer[chain_path] = installer_chain_path
 
         with Cluster(
-                destroy_on_error=False,
                 log_output_live=True,
                 extra_config=config,
                 custom_ca_key=ca_key_path.absolute(),
