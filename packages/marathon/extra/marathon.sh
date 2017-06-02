@@ -15,7 +15,7 @@ fi
 
 EXTRA_ARGS="${MARATHON_EXTRA_ARGS-} --mesos_user ${MESOS_USER} --mesos_authentication_principal dcos_marathon"
 if [ "${MESOS_FRAMEWORK_AUTHN-}" = "true" ]; then
-    EXTRA_ARGS="${EXTRA_ARGS-} --mesos_authentication"
+    EXTRA_ARGS="${EXTRA_ARGS} --mesos_authentication"
 fi
 
 export -n MARATHON_EXTRA_ARGS

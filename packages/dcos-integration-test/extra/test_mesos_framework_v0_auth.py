@@ -140,16 +140,28 @@ def run_framework(service_accounts, request):
 
     cmd = ['sudo']
 
+    extra_args_str=env.pop("MARATHON_EXTRA_ARGS")
+    if extra_args_str is None:
+        extra_args = []
+    else:
+        extra_args = extra_args_str.split(" ")
+
+
     # Explicitly copy variables into `sudo` environment.
     for key, value in env.items():
         cmd.append(key + "=" + value)
 
     cmd.extend([
-        "/opt/mesosphere/bin/java", "-Xmx2G", "-jar", "/opt/mesosphere/active/marathon/usr/marathon.jar",
+        "JAVA_HOME=/opt/mesosphere",
+        "/opt/mesosphere/active/marathon/marathon/bin/marathon",
         "--zk", "zk://localhost:2181/" + test_framework_name,
         "--master", "leader.mesos:5050",
         "--framework_name", test_framework_name,
         "--http_port", "8081"])
+
+    if "--disable_http" in extra_args:
+        extra_args.pop(extra_args.index("--disable_http"))
+    cmd.extend(extra_args)
 
     if len(role):
         cmd.append("--mesos_role")
