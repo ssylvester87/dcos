@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import List
 from urllib.parse import urljoin
@@ -5,6 +6,7 @@ from urllib.parse import urljoin
 import pytest
 import requests
 
+from dcos_e2e.backends._base_classes import ClusterBackend
 from dcos_e2e.cluster import Cluster
 
 
@@ -29,7 +31,8 @@ class TestCustomCACert:
             # 'test_dcoscli_enterprise.py',
             'test_clusterstate.py',
             'test_ca.py',
-            'test_authentication.py',
+            # TODO: Enable MARATHON_EE-1489
+            # 'test_authentication.py',
             'test_adminrouter.py',
         ]
 
@@ -41,8 +44,12 @@ class TestCustomCACert:
             'rsa_intermediate',
             'rsa_root',
         ])
-    def test_custom_ca_cert(self, fixture_dir: str,
-                            test_filenames: List[str]) -> None:
+    def test_custom_ca_cert(
+            self,
+            fixture_dir: str,
+            test_filenames: List[str],
+            dcos_docker_backend: ClusterBackend,
+    ) -> None:
         """
         It is possible to install cluster with custom CA certificate.
 
@@ -95,11 +102,18 @@ class TestCustomCACert:
             files_to_copy_to_installer[chain_path] = installer_chain_path
 
         with Cluster(
+                destroy_on_error=False,
                 log_output_live=True,
                 extra_config=config,
                 custom_ca_key=ca_key_path.absolute(),
                 files_to_copy_to_installer=files_to_copy_to_installer,
+                cluster_backend=dcos_docker_backend,
         ) as cluster:
+            # Make this arbitrary sleep and let agents boot properly
+            # Wait 5 mins
+            # TODO(mh): Be smarther here
+            time.sleep(5 * 60)
+
             cluster.run_integration_tests(pytest_command=[
                 'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
             ])
@@ -111,7 +125,7 @@ class TestCustomCACert:
             # This verifies that our custom CA certificate was used for signing
             # the server certificate presented by Admin Router.
             ca_bundle_path = chain_path if chain_path.exists() else cert_path
-            master_url = 'https://' + master.ip_address
+            master_url = 'https://' + str(master._ip_address)
             requests.get(master_url, verify=str(ca_bundle_path))
 
             # This tests that Admin Router is serving custom CA root certificate

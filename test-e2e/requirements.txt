@@ -1,2 +1,2 @@
-git+https://github.com/adamtheturtle/dcos-e2e.git@07169bbeb9054b03f7f8afb58fcc38051e6d9ee8
+git+https://github.com/adamtheturtle/dcos-e2e.git@43f5da470ea3eac7251322eff1132dd0f15285fc
 pytest==3.1.0
