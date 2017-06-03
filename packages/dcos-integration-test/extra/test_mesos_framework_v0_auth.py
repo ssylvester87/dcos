@@ -140,12 +140,11 @@ def run_framework(service_accounts, request):
 
     cmd = ['sudo']
 
-    extra_args_str=env.pop("MARATHON_EXTRA_ARGS")
+    extra_args_str = env.pop("MARATHON_EXTRA_ARGS")
     if extra_args_str is None:
         extra_args = []
     else:
         extra_args = extra_args_str.split(" ")
-
 
     # Explicitly copy variables into `sudo` environment.
     for key, value in env.items():
@@ -159,8 +158,10 @@ def run_framework(service_accounts, request):
         "--framework_name", test_framework_name,
         "--http_port", "8081"])
 
-    if "--disable_http" in extra_args:
-        extra_args.pop(extra_args.index("--disable_http"))
+    for arg in ["--disable_http", ""]:
+      if arg in extra_args:
+          extra_args.pop(extra_args.index(arg))
+
     cmd.extend(extra_args)
 
     if len(role):
