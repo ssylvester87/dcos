@@ -159,8 +159,8 @@ def run_framework(service_accounts, request):
         "--http_port", "8081"])
 
     for arg in ["--disable_http", ""]:
-      if arg in extra_args:
-          extra_args.pop(extra_args.index(arg))
+        if arg in extra_args:
+            extra_args.pop(extra_args.index(arg))
 
     cmd.extend(extra_args)
 
