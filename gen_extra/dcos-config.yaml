@@ -62,7 +62,7 @@ package:
       proxy_ssl_certificate /run/dcos/pki/tls/certs/adminrouter.crt;
       proxy_ssl_certificate_key /run/dcos/pki/tls/private/adminrouter.key;
 {% endswitch %}
-  - path: /etc_master/adminrouter-upstreams.conf
+  - path: /etc_master/adminrouter-upstreams-ee.conf
     content: |
       set $adminrouter_agent_port {{ adminrouter_agent_port }};
       set $upstream_networking_api http://127.0.0.1:61430;
@@ -80,7 +80,7 @@ package:
       set $upstream_mesos https://leader.mesos:5050;
       set $upstream_marathon https://127.0.0.1:8443;
 {% endswitch %}
-  - path: /etc_slave/adminrouter-upstreams.conf
+  - path: /etc_slave/adminrouter-upstreams-ee.conf
     content: |
 {% switch ssl_enabled %}
 {% case "false" %}
@@ -109,7 +109,7 @@ package:
       proxy_ssl_certificate /run/dcos/pki/tls/certs/adminrouter-agent.crt;
       proxy_ssl_certificate_key /run/dcos/pki/tls/private/adminrouter-agent.key;
 {% endswitch %}
-  - path: /etc_slave_public/adminrouter-upstreams.conf
+  - path: /etc_slave_public/adminrouter-upstreams-ee.conf
     content: |
 {% switch ssl_enabled %}
 {% case "false" %}
