@@ -10,8 +10,7 @@ apply-open:
 			.flake8 \
 			.isort.cfg \
 			Makefile.common \
-			common/disable-response_caching.conf \
-			common/websockets.conf \
+			includes/ \
 			errorpages/ \
 			lib/ \
 			mime.types \
