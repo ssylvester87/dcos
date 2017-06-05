@@ -1,6 +1,6 @@
 {
   "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "abd687f51628256638cff5796e4df50af840256c",
+  "ref": "e42216a7a43ca107272b26c027bb095c72452562",
   "ref_origin": "kapil/dcos-mesos-master-4faca73"
 }
