@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 from typing import List
 from urllib.parse import urljoin
@@ -97,6 +96,7 @@ class TestCustomCACert:
             cert_path: installer_cert_path,
             ca_key_path: installer_key_path,
         }
+
         if chain_path.exists():
             config['ca_certificate_chain_path'] = str(installer_chain_path)
             files_to_copy_to_installer[chain_path] = installer_chain_path
@@ -109,11 +109,6 @@ class TestCustomCACert:
                 files_to_copy_to_installer=files_to_copy_to_installer,
                 cluster_backend=dcos_docker_backend,
         ) as cluster:
-            # Make this arbitrary sleep and let agents boot properly
-            # Wait 5 mins
-            # TODO(mh): Be smarther here
-            time.sleep(5 * 60)
-
             cluster.run_integration_tests(pytest_command=[
                 'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
             ])
