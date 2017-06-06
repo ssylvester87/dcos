@@ -83,6 +83,8 @@ class TestCustomCACert:
         installer_key_path = genconf / key_filename
         installer_chain_path = genconf / chain_filename
 
+        master_key_path = Path('/var/lib/dcos/pki/tls/CA/private/custom_ca.key')
+
         # When the cluster configuration is generated / validated from the
         # configuration file, these paths will be checked for in the
         # installer container.
@@ -102,12 +104,12 @@ class TestCustomCACert:
             files_to_copy_to_installer[chain_path] = installer_chain_path
 
         with Cluster(
-                destroy_on_error=False,
-                log_output_live=True,
-                extra_config=config,
-                custom_ca_key=ca_key_path.absolute(),
-                files_to_copy_to_installer=files_to_copy_to_installer,
-                cluster_backend=dcos_docker_backend,
+            destroy_on_error=False,
+            log_output_live=True,
+            extra_config=config,
+            files_to_copy_to_installer=files_to_copy_to_installer,
+            files_to_copy_to_masters={ca_key_path: master_key_path},
+            cluster_backend=dcos_docker_backend,
         ) as cluster:
             cluster.run_integration_tests(pytest_command=[
                 'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
