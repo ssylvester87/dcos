@@ -68,7 +68,7 @@ class TestCustomCACert:
         https://github.com/mesosphere/dcos-custom-ca-cert-configs.
         See that repository for details about the fixtures.
         """
-        fixture_root = Path('fixtures')
+        fixture_root = Path('fixtures').absolute()
         cert_dir_on_host = fixture_root / fixture_dir
 
         cert_filename = 'dcos-ca-certificate.crt'
