@@ -16,7 +16,7 @@ from test_util.helpers import session_tempfile
 
 
 def token(host):
-    cli = dcoscli_fixture()
+    cli = next(dcoscli_fixture())
     stdout, stderr = cli.exec_command(
         ["dcos", "cluster", "setup", host.public_ip, "--no-check", "--username=testadmin", "--password=testpassword"])
 

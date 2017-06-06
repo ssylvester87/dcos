@@ -277,14 +277,23 @@ def calculate_mesos_enterprise_isolation(mesos_isolation, ssl_enabled):
     return isolation
 
 
-def get_ui_auth_json(ui_organization, ui_networking, ui_secrets, ui_auth_providers):
+def get_ui_auth_json(
+    ui_organization,
+    ui_networking,
+    ui_secrets,
+    ui_auth_providers,
+    ui_bootstrap_config,
+    ui_service_upgrades
+):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
         '"organization":{"enabled":%s}, ' \
         '"networking":{"enabled":%s},' \
         '"secrets":{"enabled":%s},' \
         '"auth-providers":{"enabled":%s},' \
-        % (ui_organization, ui_networking, ui_secrets, ui_auth_providers)
+        '"bootstrap-config":{"enabled":%s},' \
+        '"service-upgrades":{"enabled":%s},' \
+        % (ui_organization, ui_networking, ui_secrets, ui_auth_providers, ui_bootstrap_config, ui_service_upgrades)
 
 
 def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable, ssl_enabled):
@@ -359,11 +368,13 @@ entry = {
         'adminrouter_master_default_scheme': calculate_adminrouter_master_default_scheme,
         'bootstrap_secrets': 'true',
         'ui_auth_providers': 'true',
+        'ui_bootstrap_config': 'true',
         'ui_secrets': 'true',
         'ui_networking': 'true',
         'ui_organization': 'true',
         'ui_external_links': 'true',
         'ui_branding': 'true',
+        'ui_service_upgrades': 'true',
         'ui_telemetry_metadata': '{"openBuild": false}',
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
@@ -385,6 +396,7 @@ entry = {
         'mesos_elevate_unknown_users': calculate_mesos_elevate_unknown_users,
         'mesos_hooks': calculate_mesos_enterprise_hooks,
         'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
+        'mesos_secret_resolver': 'com_mesosphere_dcos_SecretResolver',
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,

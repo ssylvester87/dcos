@@ -743,6 +743,7 @@ package:
     content: |
       MESOS_ISOLATION={{ mesos_enterprise_isolation }}
       MESOS_HOOKS={{ mesos_hooks }}
+      MESOS_SECRET_RESOLVER={{ mesos_secret_resolver }}
       LIBPROCESS_SSL_ENABLED={{ ssl_enabled }}
       LIBPROCESS_SSL_SUPPORT_DOWNGRADE={{ ssl_support_downgrade }}
       LIBPROCESS_SSL_VERIFY_CERT=false
@@ -1023,6 +1024,24 @@ package:
                 ]
               },
               {
+                "name": "com_mesosphere_dcos_SecretResolver",
+                "parameters": [
+                  {
+                    "key": "store_url",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://master.mesos/secrets/v1"
+{% case "true" %}
+                    "value": "https://master.mesos/secrets/v1"
+{% endswitch %}
+                  },
+                  {
+                    "key": "service_account_credential",
+                    "value": "file:///run/dcos/etc/mesos/agent_service_account.json"
+                  }
+                ]
+              },
+              {
                 "name": "com_mesosphere_dcos_SecretsIsolator",
                 "parameters": [
 
@@ -1046,14 +1065,6 @@ package:
                   {
                     "key": "special_secret_space_label",
                     "value": "DCOS_SPACE"
-                  },
-                  {
-                    "key": "initial_network_timeout",
-                    "value": "5secs"
-                  },
-                  {
-                    "key": "attempts",
-                    "value": "2"
                   }
                 ]
               },
@@ -1081,14 +1092,6 @@ package:
                   {
                     "key": "special_secret_space_label",
                     "value": "DCOS_SPACE"
-                  },
-                  {
-                    "key": "initial_network_timeout",
-                    "value": "5secs"
-                  },
-                  {
-                    "key": "attempts",
-                    "value": "2"
                   }
                 ]
               },
