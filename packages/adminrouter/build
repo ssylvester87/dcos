@@ -23,7 +23,7 @@ chmod a+x $ar_wrapper
 
 # Incorporate the adminrouter configuration:
 rm -vfR $PKG_PATH/nginx/conf/*
-cp -vR $PKG_PATH/merged_repos/{common,errorpages,mime.types,nginx.agent.conf,nginx.master.conf,lib} $PKG_PATH/nginx/conf/
+cp -vR $PKG_PATH/merged_repos/{includes,errorpages,mime.types,nginx.agent.conf,nginx.master.conf,lib} $PKG_PATH/nginx/conf/
 rm -vR $PKG_PATH/merged_repos/
 
 # TODO: We need more comprehensive approach to libraries. This is tracked in
