@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import pytest
 import requests
 
-from dcos_e2e.backends._base_classes import ClusterBackend
+from dcos_e2e.backends import ClusterBackend
 from dcos_e2e.cluster import Cluster
 
 
