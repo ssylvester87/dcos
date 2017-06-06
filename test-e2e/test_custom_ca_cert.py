@@ -120,7 +120,7 @@ class TestCustomCACert:
             # This verifies that our custom CA certificate was used for signing
             # the server certificate presented by Admin Router.
             ca_bundle_path = chain_path if chain_path.exists() else cert_path
-            master_url = 'https://' + str(master._ip_address)
+            master_url = 'https://' + str(master.ip_address)
             requests.get(master_url, verify=str(ca_bundle_path))
 
             # This tests that Admin Router is serving custom CA root certificate
