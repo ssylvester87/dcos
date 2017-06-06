@@ -3,8 +3,6 @@ AR_OPEN_PATH := ${DCOS_OPEN_PATH}/packages/adminrouter/extra/src/
 
 .PHONY: apply-open
 apply-open:
-	# No point in continuing
-	test -f $(CURDIR)/.dcos-open.path
 	# We use rsync due to the fact that directory copying in the loop is
 	# confusing plain `cp`
 	mkdir -v errorpages/ || true
