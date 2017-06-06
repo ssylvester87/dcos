@@ -396,6 +396,7 @@ entry = {
         'mesos_elevate_unknown_users': calculate_mesos_elevate_unknown_users,
         'mesos_hooks': calculate_mesos_enterprise_hooks,
         'mesos_enterprise_isolation': calculate_mesos_enterprise_isolation,
+        'mesos_secret_resolver': 'com_mesosphere_dcos_SecretResolver',
         'firewall_enabled': calculate_firewall_enabled,
         'ssl_enabled': calculate_ssl_enabled,
         'ssl_support_downgrade': calculate_ssl_support_downgrade,
