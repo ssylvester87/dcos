@@ -27,7 +27,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
 else
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
-	"${DISABLED_PROXY_SCHEMES}" \
+        "${DISABLED_PROXY_SCHEMES}" \
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
