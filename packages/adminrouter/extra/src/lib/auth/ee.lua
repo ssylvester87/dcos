@@ -90,16 +90,16 @@ end
 local function validate_jwt_or_exit(object, action)
     uid, err = authcommon.validate_jwt(SECRET_KEY)
     if err ~= nil then
-		if err == 401 then
-			return audited_exit_401(object, action)
-		end
+        if err == 401 then
+            return audited_exit_401(object, action)
+        end
 
-		-- Other error statuses go here...
+        -- Other error statuses go here...
 
-		-- Catch-all, normally not reached:
-		ngx.log(ngx.ERR, "Unexpected result from validate_jwt()")
-		ngx.status = ngx.HTTP_INTERNAL_SERVER_ERROR
-		return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+        -- Catch-all, normally not reached:
+        ngx.log(ngx.ERR, "Unexpected result from validate_jwt()")
+        ngx.status = ngx.HTTP_INTERNAL_SERVER_ERROR
+        return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
     end
     return uid
 end
@@ -232,11 +232,11 @@ function _M.init(use_auth)
 
     res.auditlog = auditlog
 
-    if use_auth ~= "true" then
+    if use_auth == "false" then
         ngx.log(
             ngx.NOTICE,
-            "ADMINROUTER_ACTIVATE_AUTH_MODULE not `true`. " ..
-            "Use dummy module."
+            "ADMINROUTER_ACTIVATE_AUTH_MODULE set to `false`. " ..
+            "Deactivate authentication module."
             )
         res.auditlog = function() return end
         res.check_access_control_entry_or_exit = function(x) return end
@@ -245,7 +245,7 @@ function _M.init(use_auth)
         res.exit_403 = function(x) return end
         res.validate_jwt_or_exit = function() return end
     else
-        ngx.log(ngx.NOTICE, "Use auth module.")
+        ngx.log(ngx.NOTICE, "Activate authentication module.");
         res.auditlog = auditlog
         res.check_access_control_entry_or_exit = check_access_control_entry_or_exit
         res.do_authn_and_authz_or_exit = do_authn_and_authz_or_exit

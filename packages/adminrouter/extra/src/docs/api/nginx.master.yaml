@@ -20,23 +20,22 @@ backends:
   log:
     server: 'unix:/run/dcos/dcos-log.sock'
     name: DC/OS Log
-    reference: 'https://docs.mesosphere.com/1.9/monitoring/logging/logging-api/'
+    reference: 'https://dcos.io/docs/1.9/administration/logging/logging-api/'
   mesos_dns:
     server: '127.0.0.1:8123'
     name: Mesos DNS
-    reference: 'https://docs.mesosphere.com/1.9/networking/mesos-dns/http-interface/'
+    reference: 'https://dcos.io/docs/1.9/usage/service-discovery/mesos-dns/http-interface/'
   metrics:
     server: 'unix:/run/dcos/dcos-metrics-master.sock'
     name: DC/OS Metrics
-    reference: 'https://docs.mesosphere.com/1.9/metrics/metrics-api/'
+    reference: 'https://dcos.io/docs/1.9/administration/monitoring/metrics/metrics-api/'
   navstar:
     server: '127.0.0.1:62080'
     name: Navstar
   pkgpanda:
     server: 'unix:/run/dcos/pkgpanda-api.sock'
     name: DC/OS Component Package Manager (Pkgpanda)
-    reference: >-
-      https://docs.mesosphere.com/1.9/administering-clusters/component-management/
+    reference: 'https://dcos.io/docs/1.9/administration/component-management/'
   vault_default:
     server: '127.0.0.1:8200'
     name: Vault
@@ -255,14 +254,6 @@ routes:
         replacement: /$1
         type: break
     path: /mesos/
-  /internal/mesos_dns/:
-    group: Mesos DNS
-    matcher: path
-    description: 'Domain-based service discovery (unauthenticated, internal-only)'
-    proxy:
-      path: 'http://$backend/'
-      backend: mesos_dns
-    path: /internal/mesos_dns/
   /mesos_dns:
     group: Mesos DNS
     matcher: exact
@@ -324,6 +315,13 @@ routes:
         replacement: /$1
         type: break
     path: /networking/api/v1/
+  /internal/mesos_dns/:
+    group: Other
+    matcher: path
+    proxy:
+      path: 'http://$backend/'
+      backend: mesos_dns
+    path: /internal/mesos_dns/
   /package/:
     group: Package
     matcher: path

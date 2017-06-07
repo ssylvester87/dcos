@@ -26,12 +26,11 @@ class IamHTTPRequestHandler(RecordingHTTPRequestHandler):
         if base_path == '/acs/api/v1/internal/policyquery':
             return self.__internal_policy_query_request_handler()
 
-        if base_path in [
-                '/acs/api/v1/reflect/me',
-                '/acs/api/v1/auth/saml/providers/reflect-me/acs-callback',
-                '/acs/api/v1/auth/oidc/providers/reflect/me',
-                '/acs/api/v1/users/reflecting-user/permissions'
-                ]:
+        reflecting_paths = [
+            '/acs/api/v1/reflect/me',
+            '/dcos-metadata/ui-config.json',
+            '/acs/api/v1/users/reflecting-user/permissions']
+        if base_path in reflecting_paths or base_path.startswith('/acs/api/v1/auth/'):
             # A test URI that is used by tests. In some cases it is impossible
             # to reuse /acs/api/v1/users/.../permissions, and
             # /acs/api/v1/internal/policyquery is internal/not exposed.
