@@ -35,10 +35,18 @@ EEStaticFiles = [
         "/opt/mesosphere/etc/bootstrap-config.json",
         content=BOOTSTRAP_CONFIG,
         ),
+    NginxStaticServedFile(
+        "/run/dcos/pki/CA/certs/cacerts.jks",
+        content='some test text that should in fact be "bytes" array ;)',
+        ),
+    NginxStaticServedFile(
+        "/opt/mesosphere/etc/ui-config.json",
+        content='{"test": 1234}',
+        ),
 ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def ee_static_files():
     """Creates static files with stub content that are required for NGINX"""
     for static_file in EEStaticFiles:

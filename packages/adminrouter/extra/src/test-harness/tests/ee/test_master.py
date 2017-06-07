@@ -3,7 +3,11 @@
 import pytest
 import requests
 
-from generic_test_code.common import assert_endpoint_response, verify_header
+from generic_test_code.common import (
+    assert_endpoint_response,
+    overriden_file_content,
+    verify_header,
+)
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
 from util import SearchCriteria, iam_denies_all_requests
 
@@ -79,8 +83,7 @@ class TestAuthEnforcementEE:
                                            valid_user_header,
                                            path,
                                            rid,
-                                           mocker,
-                                           ee_static_files):
+                                           mocker):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -105,13 +108,13 @@ class TestAuthEnforcementEE:
                 )
 
     @pytest.mark.parametrize("path,rid", acl_endpoints)
-    def test_if_unauthorized_user_is_forbidden_access(self,
-                                                      master_ar_process,
-                                                      valid_user_header,
-                                                      path,
-                                                      rid,
-                                                      mocker,
-                                                      ee_static_files):
+    def test_if_unauthorized_user_is_forbidden_access(
+            self,
+            master_ar_process,
+            valid_user_header,
+            path,
+            rid,
+            mocker):
         log_messages = {
             'UID from valid JWT: `bozydar`': SearchCriteria(1, True),
             'type=audit .*' +
@@ -301,3 +304,115 @@ class TestAuthEnforcementEE:
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names
         assert "Authorization" not in header_names
+
+    @pytest.mark.parametrize("path,rid", acl_endpoints)
+    def test_if_policyquery_request_is_correct(
+            self,
+            master_ar_process,
+            valid_user_header,
+            mocker,
+            path,
+            rid,
+            ):
+        mocker.send_command(
+            endpoint_id='http://127.0.0.1:8101',
+            func_name='record_requests',
+            )
+
+        assert_endpoint_response(
+            master_ar_process,
+            path,
+            200,
+            headers=valid_user_header,
+            )
+
+        requests = mocker.send_command(
+            endpoint_id='http://127.0.0.1:8101',
+            func_name='get_recorded_requests',
+            )
+
+        if path.startswith("/acs/api/v1/"):
+            assert len(requests) == 2
+        else:
+            assert len(requests) == 1
+        r_data = requests[0]
+
+        correct_path = '/acs/api/v1/internal/policyquery?rid={}&uid=bozydar&action=full'
+        assert r_data['path'] == correct_path.format(rid)
+        verify_header(r_data['headers'], 'X-Forwarded-For', '127.0.0.1')
+        verify_header(r_data['headers'], 'X-Forwarded-Proto', 'http')
+        verify_header(r_data['headers'], 'X-Real-IP', '127.0.0.1')
+
+
+class TestMisc:
+    @pytest.mark.parametrize("content", ["{'data': '1234'}", "{'data': 'abcd'}"])
+    def test_if_acl_schema_is_served(
+            self, master_ar_process, valid_user_header, content):
+        url = master_ar_process.make_url_from_path('/acs/acl-schema.json')
+
+        with overriden_file_content(
+                '/opt/mesosphere/active/acl-schema/etc/acl-schema.json',
+                content):
+            resp = requests.get(
+                url,
+                allow_redirects=False,
+                headers=valid_user_header
+                )
+
+        assert resp.status_code == 200
+        assert resp.text == content
+
+    @pytest.mark.parametrize("content", ["{'data': '1234'}", "{'data': 'abcd'}"])
+    def test_if_ui_config_is_served(
+            self, master_ar_process, valid_user_header, content):
+        url = master_ar_process.make_url_from_path('/dcos-metadata/ui-config.json')
+
+        with overriden_file_content(
+                '/opt/mesosphere/etc/ui-config.json',
+                content):
+            resp = requests.get(
+                url,
+                allow_redirects=False,
+                headers=valid_user_header
+                )
+
+        assert resp.status_code == 200
+        assert resp.text == content
+
+    @pytest.mark.parametrize("content", ["{'data': '1234'}", "{'data': 'abcd'}"])
+    def test_if_bootstrap_config_is_served(
+            self, master_ar_process, valid_user_header, content):
+        url = master_ar_process.make_url_from_path('/dcos-metadata/bootstrap-config.json')
+
+        with overriden_file_content(
+                '/opt/mesosphere/etc/bootstrap-config.json',
+                content):
+            resp = requests.get(
+                url,
+                allow_redirects=False,
+                headers=valid_user_header
+                )
+
+        assert resp.status_code == 200
+        assert resp.text == content
+
+    def test_if_ca_cert_is_served(self, master_ar_process):
+        url = master_ar_process.make_url_from_path('/ca/dcos-ca.crt')
+
+        with open("/run/dcos/pki/CA/certs/ca.crt", 'r') as fh:
+            cert_data = fh.read()
+
+        resp = requests.get(url, allow_redirects=False)
+        assert resp.status_code == 200
+        assert resp.text == cert_data
+
+    def test_if_jks_is_served(self, master_ar_process):
+        url = master_ar_process.make_url_from_path('/ca/cacerts.jks')
+
+        with open("/run/dcos/pki/CA/certs/cacerts.jks", 'r') as fh:
+            data = fh.read()
+
+        resp = requests.get(url, allow_redirects=False)
+        assert resp.status_code == 200
+        assert resp.text == data
+        verify_header(resp.headers.items(), 'Content-Type', 'application/x-java-keystore')
