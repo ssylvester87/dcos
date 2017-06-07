@@ -455,6 +455,153 @@ def calculate_adminrouter_agent_port(security):
     return "61001"
 
 
+def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master_port, adminrouter_agent_port):
+    scheme = 'https'
+    if security == 'disabled':
+        scheme = 'http'
+
+    force_tls = ""
+    ca_cert = ""
+    if ssl_enabled == "true":
+        force_tls = "--force-tls"
+        ca_cert = "--ca-cert=/run/dcos/pki/CA/ca-bundle.crt"
+
+    check_config = {
+        'cluster_checks': {},
+        'node_checks': {
+            'checks': {
+                'components_master': {
+                    'description': 'All DC/OS components are healthy.',
+                    'cmd': [
+                        '/opt/mesosphere/bin/dcos-checks',
+                        '--role',
+                        'master',
+                        '--iam-config',
+                        '/run/dcos/etc/3dt/master_service_account.json',
+                        force_tls,
+                        ca_cert,
+                        'components',
+                        '--scheme', scheme,
+                        '--port', adminrouter_master_port
+                    ],
+                    'timeout': '3s',
+                    'roles': ['master']
+                },
+                'components_agent': {
+                    'description': 'All DC/OS components are healthy',
+                    'cmd': [
+                        '/opt/mesosphere/bin/dcos-checks',
+                        '--role',
+                        'agent',
+                        '--iam-config',
+                        '/run/dcos/etc/3dt/agent_service_account.json',
+                        force_tls,
+                        ca_cert,
+                        'components',
+                        '--scheme', scheme,
+                        '--port', adminrouter_agent_port
+                    ],
+                    'timeout': '3s',
+                    'roles': ['agent']
+                },
+                'xz': {
+                    'description': 'The xz utility is available',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'executable', 'xz'],
+                    'timeout': '1s'
+                },
+                'tar': {
+                    'description': 'The tar utility is available',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'executable', 'tar'],
+                    'timeout': '1s'
+                },
+                'curl': {
+                    'description': 'The curl utility is available',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'executable', 'curl'],
+                    'timeout': '1s'
+                },
+                'unzip': {
+                    'description': 'The unzip utility is available',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'executable', 'unzip'],
+                    'timeout': '1s'
+                },
+                'ip_detect_script': {
+                    'description': 'The IP detect script produces valid output',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'ip'],
+                    'timeout': '1s'
+                },
+                'mesos_master_replog_synchronized': {
+                    'description': 'The Mesos master has synchronized its replicated log',
+                    'cmd': [
+                        '/opt/mesosphere/bin/dcos-checks',
+                        '--role',
+                        'master',
+                        '--iam-config',
+                        '/run/dcos/etc/3dt/master_service_account.json',
+                        force_tls,
+                        ca_cert,
+                        'mesos-metrics'
+                    ],
+                    'timeout': '1s',
+                    'roles': ['master']
+                },
+                'mesos_agent_registered_with_masters': {
+                    'description': 'The Mesos agent has registered with the masters',
+                    'cmd': [
+                        '/opt/mesosphere/bin/dcos-checks',
+                        '--role',
+                        'agent',
+                        '--iam-config',
+                        '/run/dcos/etc/3dt/agent_service_account.json',
+                        force_tls,
+                        ca_cert,
+                        'mesos-metrics'
+                    ],
+                    'timeout': '1s',
+                    'roles': ['agent']
+                },
+                'zookeeper_serving': {
+                    'description': 'The ZooKeeper instance is serving',
+                    'cmd': [
+                        '/opt/mesosphere/bin/dcos-checks',
+                        '--role',
+                        'master',
+                        '--iam-config',
+                        '/run/dcos/etc/3dt/master_service_account.json',
+                        'zk-quorum'
+                    ],
+                    'timeout': '3s',
+                    'roles': ['master']
+                },
+            },
+            'prestart': [],
+            'poststart': [
+                'components_master',
+                'components_agent',
+                'xz',
+                'tar',
+                'curl',
+                'unzip',
+                'ip_detect_script',
+                'mesos_master_replog_synchronized',
+                'mesos_agent_registered_with_masters',
+                'zookeeper_serving',
+            ],
+        },
+    }
+
+    if check_time == 'true':
+        # Add the clock sync check.
+        clock_sync_check_name = 'clock_sync'
+        check_config['node_checks']['checks'][clock_sync_check_name] = {
+            'description': 'System clock is in sync.',
+            'cmd': ['/opt/mesosphere/bin/dcos-checks', 'time'],
+            'timeout': '1s'
+        }
+        check_config['node_checks']['poststart'].append(clock_sync_check_name)
+
+    return json.dumps(check_config)
+
+
 entry = {
     'validate': [
         validate_bouncer_expiration_auth_token_days,
@@ -544,6 +691,7 @@ entry = {
         'adminrouter_agent_port': calculate_adminrouter_agent_port,
         'ca_certificate': calculate_ca_certificate,
         'ca_certificate_enabled': calculate_ca_certificate_enabled,
+        'check_config': calculate_check_config
     }
 }
 

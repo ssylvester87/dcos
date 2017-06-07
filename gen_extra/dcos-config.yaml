@@ -295,36 +295,6 @@ package:
   - path: /etc/dcos-3dt-extra.env
     content: |
       DCOS_3DT_CONFIG_PATH=/opt/mesosphere/etc/dcos-3dt-config-ee.json
-  - path: /etc_master/dcos-checks-config-ee.yaml
-    content: |
-        role:        "master"
-        iam-config:  "/run/dcos/etc/3dt/master_service_account.json"
-        force-tls:   {{ ssl_enabled }}
-{% switch ssl_enabled %}
-{% case "false" %}
-{% case "true" %}
-        ca-cert:     "/run/dcos/pki/CA/ca-bundle.crt"
-{% endswitch %}
-  - path: /etc_slave/dcos-checks-config-ee.yaml
-    content: |
-        role:        "agent"
-        iam-config:  "/run/dcos/etc/3dt/agent_service_account.json"
-        force-tls:   {{ ssl_enabled }}
-{% switch ssl_enabled %}
-{% case "false" %}
-{% case "true" %}
-        ca-cert:     "/run/dcos/pki/CA/ca-bundle.crt"
-{% endswitch %}
-  - path: /etc_slave_public/dcos-checks-config-ee.yaml
-    content: |
-        role:        "agent"
-        iam-config:  "/run/dcos/etc/3dt/agent_service_account.json"
-        force-tls:   {{ ssl_enabled }}
-{% switch ssl_enabled %}
-{% case "false" %}
-{% case "true" %}
-        ca-cert:     "/run/dcos/pki/CA/ca-bundle.crt"
-{% endswitch %}
   - path: /etc_master/dcos-3dt-config-ee.json
     content: |
         {
