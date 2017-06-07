@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/darkonie/dcos",
   "kind": "git",
-  "ref": "ffa71d8fb1453ede6294f97d2b914f3a764bef2d",
-  "ref_origin": "master"
+  "ref": "2c16f13fd5f9d5f7681c9dfeb7298e5f0f8d67d9",
+  "ref_origin": "mnaboka/3dt-checks-runner"
 }
