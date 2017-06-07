@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "b6f33ccc2e66287576ca601038862afffe44720a",
-  "ref_origin": "master"
+  "ref": "ee01ce67eeb3a9435676991f2c5d27080172efcd",
+  "ref_origin": "train-172"
 }
