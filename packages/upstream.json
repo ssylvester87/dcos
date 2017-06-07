@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "b6f33ccc2e66287576ca601038862afffe44720a",
-  "ref_origin": "master"
+  "ref": "67bca2eac1c15b918d8acda9c1b9bc4dd4580851",
+  "ref_origin": "prozlach/DCOS_OSS-1163_marathon_redirect_fix"
 }
