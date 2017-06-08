@@ -16,7 +16,7 @@ import cryptography.hazmat.backends
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from jwt.utils import base64url_decode, bytes_to_number
 
@@ -93,6 +93,33 @@ def public_key_pem(private_key):
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo)
     return pubkey_pem.decode('ascii')
+
+
+def get_private_key_type_from_name(name):
+    """
+    Returns private key class from provided name
+
+    Return:
+        Either ec.EllipticCurvePrivateKey or rsa.RSAPrivateKey
+    """
+    supported_modules = [ec, rsa]
+    for module in supported_modules:
+        if hasattr(module, name):
+            return getattr(module, name)
+
+    raise ValueError('`{}` is unsupported private key type'.format(name))
+
+
+def get_private_key_type_name_from_object(private_key):
+    """
+    Returns a string representing private key type
+    """
+    supported_types = [ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey]
+    for key_type in supported_types:
+        if isinstance(private_key, key_type):
+            return key_type.__name__
+
+    raise ValueError('`{}` is unsupported private key'.format(private_key))
 
 
 def dict_merge(dct, merge_dct):
@@ -197,8 +224,21 @@ def detect_ip():
     return machine_ip
 
 
-def generate_key_CSR(base_cn, master=False, marathon=False, extra_san=None):
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=crypto_backend)
+def generate_key_CSR(
+        base_cn,
+        master=False,
+        marathon=False,
+        extra_san=None,
+        private_key_type=rsa.RSAPrivateKey
+        ):
+    if private_key_type is rsa.RSAPrivateKey:
+        key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=crypto_backend)
+    elif private_key_type is ec.EllipticCurvePrivateKey:
+        # TODO(mh): Add support for ec.SECP384R1?
+        key = ec.generate_private_key(ec.SECP256R1(), crypto_backend)
+    else:
+        raise ValueError('Unsupported private_key_type')
 
     machine_ip = detect_ip()
 

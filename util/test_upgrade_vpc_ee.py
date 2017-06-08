@@ -71,7 +71,7 @@ class EEVpcClusterUpgradeTest(test_upgrade_vpc.VpcClusterUpgradeTest):
 
             return json.loads(
                 tunnel.remote_cmd(
-                    test_upgrade_vpc.curl_cmd + ['--cacert /run/dcos/pki/CA/certs/ca.crt',
+                    test_upgrade_vpc.curl_cmd + ['--cacert /run/dcos/pki/CA/ca-bundle.crt',
                                                  '-H "Authorization: token={}"'.format(self.acs_token),
                                                  '{}://{}:{}/metrics/snapshot'.format(protocol, host.private_ip, port)]
                 ).decode('utf-8')

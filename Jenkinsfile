@@ -19,62 +19,99 @@ def jsonParse(def json) {
     new groovy.json.JsonSlurperClassic().parseText(json)
 }
 
-task_wrapper('mesos-sec', master_branches) {
-    stage('Cleanup workspace') {
-        deleteDir()
-    }
 
-    stage('Checkout') {
-        def repo_url
-        def repo_sha
+def builders = [:]
 
-        dir("dcos-ee") {
-            checkout scm
-
-            // Gather some info about upstream repository
-            def upstream_config =  jsonParse(readFile("packages/upstream.json"))
-            repo_url = upstream_config['git']
-            repo_branch = upstream_config['ref_origin']
+builders['adminrouter'] = {
+    task_wrapper('mesos-sec', master_branches) {
+        stage('Admin Router: Cleanup workspace') {
+            deleteDir()
         }
 
-        dir("dcos-open") {
-            git branch: repo_branch, credentialsId: 'a7ac7f84-64ea-4483-8e66-bb204484e58f', poll: false, url: repo_url
-            sh 'echo `pwd` > ../dcos-ee/packages/adminrouter/extra/src/.dcos-open.path'
+        stage('Admin Router: Checkout') {
+            def repo_url
+            def repo_sha
+
+            dir("dcos-ee") {
+                checkout scm
+
+                // Gather some info about upstream repository
+                def upstream_config =  jsonParse(readFile("packages/upstream.json"))
+                repo_url = upstream_config['git']
+                repo_branch = upstream_config['ref_origin']
+            }
+
+            dir("dcos-open") {
+                git branch: repo_branch, credentialsId: 'a7ac7f84-64ea-4483-8e66-bb204484e58f', poll: false, url: repo_url
+                sh 'echo `pwd` > ../dcos-ee/packages/adminrouter/extra/src/.dcos-open.path'
+            }
         }
-    }
 
-    dir("dcos-ee/packages/adminrouter/extra/src/") {
-        stage('Apply EE overlay on top of Open') {
-            sh 'make apply-open'
-        }
-
-        stage('Prepare devkit container') {
-            sh 'make update-devkit'
-        }
-
-        try {
-            stage('make check-api-docs') {
-                sh 'make check-api-docs'
+        dir("dcos-ee/packages/adminrouter/extra/src/") {
+            stage('Admin Router: Apply EE overlay on top of Open') {
+                sh 'make apply-open'
             }
 
-            stage('make flake8') {
-                sh 'make flake8'
+            stage('Admin Router: Prepare devkit container') {
+                sh 'make update-devkit'
             }
 
-            stage('make test') {
-                sh 'make test'
-            }
+            try {
+                stage('make check-api-docs') {
+                    sh 'make check-api-docs'
+                }
 
-        } finally {
+                stage('Admin Router: make flake8') {
+                    sh 'make flake8'
+                }
 
-            stage('archive build artifacts') {
-                archiveArtifacts artifacts: 'test-harness/logs/*.log', allowEmptyArchive: true, excludes: 'test_harness/', fingerprint: true
-            }
+                stage('Admin Router: make test') {
+                    sh 'make test'
+                }
 
-            stage('Cleanup docker container'){
-                sh 'make clean-containers'
-                sh "docker rmi -f adminrouter-devkit || true"
+            } finally {
+                stage('Admin Router: archive build artifacts') {
+                    archiveArtifacts artifacts: 'test-harness/logs/*.log', allowEmptyArchive: true, excludes: 'test_harness/', fingerprint: true
+                }
+
+                stage('Admin Router: Cleanup docker container'){
+                    sh 'make clean-containers'
+                    sh "docker rmi -f adminrouter-devkit || true"
+                }
             }
         }
     }
 }
+
+builders['gen_extra'] = {
+    task_wrapper('mesos-sec', master_branches) {
+        stage('gen_extra: Cleanup workspace') {
+            deleteDir()
+        }
+
+        stage('gen_extra: Checkout') {
+            dir("dcos-ee-gen_extra") {
+                checkout scm
+            }
+        }
+
+        dir("dcos-ee-gen_extra/gen_extra") {
+            stage('gen_extra: Prepare devkit container') {
+                sh 'make update-devkit'
+            }
+
+            try {
+                stage('gen_extra: make test') {
+                    sh 'make test'
+                }
+            } finally {
+                stage('gen_extra: Cleanup docker container'){
+                    sh 'make clean-containers'
+                    sh "docker rmi -f dcos-ee-gen_extra-devkit || true"
+                }
+            }
+        }
+    }
+}
+
+parallel builders
