@@ -1646,7 +1646,7 @@ def dcos_backup_master(b, opts):
 
     b.create_service_account('dcos_backup_master', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-backup/service_account.json'
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-backup/master_service_account.json'
     b.write_service_account_credentials('dcos_backup_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_backup')
 

@@ -294,18 +294,16 @@ package:
       }
   - path: /etc/dcos-backup-master.env
     content: |
-      DCOS_BACKUP_CONFIG_PATH=/opt/mesosphere/etc/dcos-backup-master.json
-  - path: /etc_master/dcos-backup-master.json
+      DCOS_BACKUP_CONFIG_PATH=/opt/mesosphere/etc/dcos-backup-master.yaml
+  - path: /etc_master/dcos-backup-master.yaml
     content: |
-      {
-            "role": "master",
-            "iam-config": "/run/dcos/etc/dcos-backup/service_account.json",
+      role: master
+      iam-config: /run/dcos/etc/dcos-backup/master_service_account.json
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
-            "ca-cert": "/run/dcos/pki/CA/certs/ca.crt"
+      ca-cert: /run/dcos/pki/CA/certs/ca.crt
 {% endswitch %}
-      }
   - path: /etc/dcos-3dt-extra.env
     content: |
       DCOS_3DT_CONFIG_PATH=/opt/mesosphere/etc/dcos-3dt-config-ee.json
