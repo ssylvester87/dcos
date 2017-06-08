@@ -1,6 +1,6 @@
 {
   "git": "https://github.com/mhrabovcin/dcos",
   "kind": "git",
-  "ref": "f50a3ba4104d51623c1a23e924f34b689fc5abfe",
+  "ref": "6acc327db5141cfbdcc1d6078e105d454bfdcd5a",
   "ref_origin": "mh/custom-ca-cert"
 }
