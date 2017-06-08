@@ -1,0 +1,9 @@
+{
+  "single_source" : {
+    "kind": "git",
+    "git": "git@github.com:mesosphere/dcos-backup.git",
+    "ref": "486f6f984b04d34961b96f78e645b52f58e2a6c4",
+    "ref_origin": "master"
+  },
+  "username": "dcos_backup"
+}
