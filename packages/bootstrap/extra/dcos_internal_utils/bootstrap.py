@@ -1854,6 +1854,8 @@ bootstrappers = {
     'dcos-mesos-slave-public': dcos_mesos_slave_public,
     'dcos-mesos-dns': dcos_mesos_dns,
     'dcos-mesos-master': dcos_mesos_master,
+    'dcos-metrics-agent': dcos_metrics_agent,
+    'dcos-metrics-master': dcos_metrics_master,
     'dcos-metronome': dcos_metronome,
     'dcos-minuteman': (lambda b, opts: dcos_erlang_service('minuteman', b, opts)),
     'dcos-navstar': (lambda b, opts: dcos_erlang_service('navstar', b, opts)),
@@ -1861,7 +1863,5 @@ bootstrappers = {
     'dcos-secrets': dcos_secrets,
     'dcos-signal': dcos_signal,
     'dcos-spartan': dcos_spartan,
-    'dcos-vault_default': dcos_vault_default,
-    'dcos-metrics-agent': dcos_metrics_agent,
-    'dcos-metrics-master': dcos_metrics_master
+    'dcos-vault_default': dcos_vault_default
 }
