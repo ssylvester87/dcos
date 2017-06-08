@@ -1,8 +1,15 @@
 import hashlib
+import json
+import os.path
+import sys
 from base64 import b64encode
+from collections import OrderedDict
 
 from gen.calc import validate_true_false
 from gen.internals import validate_one_of
+
+# Precisely control import.
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 
 def validate_customer_key(customer_key):
@@ -194,6 +201,128 @@ def calculate_zk_acls_enabled(security):
         }[security]
 
 
+def load_file_utf8(path):
+    """Read byte content from file located at `path`, decode using UTF-8, and
+    return text.
+
+    Return an empty string if no file exists at the given path. Assume that the
+    file contents are decodable using UTF-8.
+    """
+    if not os.path.isfile(path):
+        return ''
+
+    with open(path, 'rb') as f:
+        return f.read().decode('utf-8')
+
+
+def calculate_ca_certificate(
+        ca_certificate_path,
+        ca_certificate_key_path,
+        ca_certificate_chain_path
+        ):
+    """
+    Translate the non-sensitive part of the user-given CA certificate data into
+    a JSON document.
+
+    Assume that the given file paths exist and that the data has previously been
+    validated.
+
+    Note: This function accepts `ca_certificate_key_path` parameter that isn't
+    being processed anywhere. This is because how `gen` package processes
+    dependencies and calculates which validation functions can be invoked.
+    Removing the parameter from calculate function will cause that
+    `validate_ca_certificate` wouldn't be invoked.
+
+    Args:
+        ca_certificate_path (str): Path pointing to a file containing a
+            PEM encoded certificate.
+
+        ca_certificate_key_path (str): Path pointing to a file containing a
+            PEM encoded private key for the certificate.
+
+        ca_certificate_chain_path (str): Path pointing to a file containing a
+            PEM encoded chain of certificates.
+
+    Raises:
+        AssertionError: If provided custom CA certificate validation failed.
+    """
+
+    # Handle case where no custom CA certificate was provided.
+    if not ca_certificate_path:
+        return ''
+
+    cert = load_file_utf8(ca_certificate_path)
+
+    # Treat the CA certificate chain as optional.
+    chain = ''
+    if ca_certificate_chain_path:
+        chain = load_file_utf8(ca_certificate_chain_path)
+
+    # Build a single-line JSON representation from data (i.e. a string that does
+    # not contain newline characters; for complication-free transmission of the
+    # data through a YAML document.
+    serialized_config = json.dumps(OrderedDict((
+        ('ca_certificate', cert),
+        ('ca_certificate_chain', chain)
+        )))
+
+    return serialized_config
+
+
+def validate_ca_certificate(
+        ca_certificate_path,
+        ca_certificate_key_path,
+        ca_certificate_chain_path
+        ):
+    config = {
+        'ca_certificate_path': ca_certificate_path,
+        'ca_certificate_key_path': ca_certificate_key_path,
+        'ca_certificate_chain_path': ca_certificate_chain_path,
+        }
+
+    # Filter for non-empty config values.
+    filepaths = {key: path for key, path in config.items() if path}
+
+    # If none of the three file paths were given (if they are an empty string)
+    # it means that there was no attempt to provide a custom CA certificate.
+    if not filepaths:
+        return
+
+    # Cert and key are required when installing a custom CA certificate.
+    for required_key in ('ca_certificate_path', 'ca_certificate_key_path'):
+        if required_key not in filepaths:
+            raise AssertionError(
+                'Definition of `{}` is required when setting up a custom '
+                'CA certificate'.format(required_key)
+                )
+
+    # All provided paths must point to files.
+    for key, path in filepaths.items():
+        if not os.path.isfile(path):
+            raise AssertionError(
+                'Config key `{}` does not point to a file: {}'.format(key, path)
+                )
+
+    cert = load_file_utf8(ca_certificate_path)
+    key = load_file_utf8(ca_certificate_key_path)
+    chain = load_file_utf8(ca_certificate_chain_path)
+    if chain == '':
+        chain = None
+
+    # Import here becuase `cryptography` module loaded in `ca_validate` isn't
+    # available in the build time
+    from ca_validate import CustomCACertValidationError, CustomCACertValidator  # noqa=I100
+    # Run data validation.
+    try:
+        CustomCACertValidator(cert, key, chain, allow_ec_key=False).validate()
+    except CustomCACertValidationError as err:
+        raise AssertionError(str(err))
+
+
+def calculate_ca_certificate_enabled(ca_certificate):
+    return "true" if not empty(ca_certificate) else "false"
+
+
 def empty(s):
     return s == ''
 
@@ -336,6 +465,8 @@ entry = {
         lambda auth_cookie_secure_flag: validate_true_false(auth_cookie_secure_flag),
         lambda security: validate_one_of(security, ['strict', 'permissive', 'disabled']),
         lambda dcos_audit_logging: validate_true_false(dcos_audit_logging),
+        validate_ca_certificate,
+        lambda ca_certificate_enabled: validate_true_false(ca_certificate_enabled),
     ],
     'default': {
         'bouncer_expiration_auth_token_days': '5',
@@ -356,7 +487,10 @@ entry = {
         'ui_banner_header_content': 'null',
         'ui_banner_footer_content': 'null',
         'ui_banner_image_path': 'null',
-        'ui_banner_dismissible': 'null'
+        'ui_banner_dismissible': 'null',
+        'ca_certificate_path': '',
+        'ca_certificate_key_path': '',
+        'ca_certificate_chain_path': '',
     },
     'must': {
         'oauth_available': 'false',
@@ -407,7 +541,9 @@ entry = {
         'zk_acls_enabled': calculate_zk_acls_enabled,
         'marathon_port': calculate_marathon_port,
         'adminrouter_master_port': calculate_adminrouter_master_port,
-        'adminrouter_agent_port': calculate_adminrouter_agent_port
+        'adminrouter_agent_port': calculate_adminrouter_agent_port,
+        'ca_certificate': calculate_ca_certificate,
+        'ca_certificate_enabled': calculate_ca_certificate_enabled,
     }
 }
 

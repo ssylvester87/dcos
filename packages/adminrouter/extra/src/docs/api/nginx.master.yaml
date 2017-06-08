@@ -164,7 +164,7 @@ routes:
     group: Certificate Authority
     matcher: exact
     description: Get CA public key Privacy Enhanced Mail file (unauthenticated)
-    file: /run/dcos/pki/CA/certs/ca.crt
+    file: /run/dcos/pki/CA/ca-bundle.crt
     path: /ca/dcos-ca.crt
   /cosmos/service/:
     group: Cosmos
@@ -219,10 +219,6 @@ routes:
     description: Redirect to add trailing slash
     visibility: hidden
     deprecated: Use `/service/marathon/`
-    rewrites:
-      - regex: ^/marathon$
-        replacement: /service/marathon/
-        type: last
     path: /marathon
   /marathon/:
     group: Marathon

@@ -477,6 +477,7 @@ def xtest_bootstrap_parts(self):
 
     b.write_service_auth_token('dcos_adminrouter', self.tmpdir + '/adminrouter.env', exp=0)
 
+    # TODO(mh): Add bundle and new tests?
     ca_fn = self.tmpdir + '/ca.crt'
     b.write_CA_certificate(filename=ca_fn)
     b.write_CA_key(self.tmpdir + '/ca.key')
