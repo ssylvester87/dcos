@@ -1,0 +1,18 @@
+{
+  "requires": [
+    "python",
+    "python-cython",
+    "libxml2",
+    "xmlsec1",
+    "libffi",
+    "libtool-ltdl",
+    "openssl"
+  ],
+  "sources": {
+    "xmlsec": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/e1/ec/0330f39bc5eb270b6b62a9dbb11194c6d4215b48ef8d04c78a30dc1d2d1d/xmlsec-0.6.1.tar.gz",
+      "sha1": "e14bc5673b93d8155e23596978536a741fc5947d"
+    }
+  }
+}

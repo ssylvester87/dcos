@@ -15,25 +15,9 @@ export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
 
 find /opt/mesosphere/bin
 
-#echo "ldd /opt/mesosphere/bin/xmlsec1-config"
-#ldd /opt/mesosphere/bin/xmlsec1-config
-
-#echo "xmlsec1-config"
-#/opt/mesosphere/bin/xmlsec1-config
-
-echo "xml2-config --cflags --libs"
-/opt/mesosphere/bin/xml2-config --cflags --libs
-XML2FLAGS="$(/opt/mesosphere/bin/xml2-config --cflags --libs)"
-
-
 echo "xslt-config --cflags --libs"
 /opt/mesosphere/bin/xslt-config --cflags --libs
 XMLSEC1FLAGS="$(/opt/mesosphere/bin/xslt-config --cflags --libs)"
-
-pip install --no-deps \
-        --install-option="--prefix=$PKG_PATH" \
-        --global-option=build_ext --global-option="$XML2FLAGS" \
-        --root=/ /pkg/src/lxml
 
 pip install --no-deps \
         --install-option="--prefix=$PKG_PATH" \
@@ -41,16 +25,10 @@ pip install --no-deps \
         --root=/ /pkg/src/xmlsec
 
 find /opt/mesosphere/lib/python3.5/site-packages/
-#ldd /opt/mesosphere/lib/python3.5/site-packages/lxml*/etree.so
 
 
 find "$PKG_PATH/lib/python3.5/site-packages"
 find /pkg/src/xmlsec
-find /pkg/src/lxml
-
-
-echo "ldd etree.so"
-ldd "$PKG_PATH/lib/python3.5/site-packages/lxml/etree.cpython-35m-x86_64-linux-gnu.so"
 
 
 echo "ldd xmlsec/ds.so"
