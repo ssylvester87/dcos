@@ -4,12 +4,12 @@ export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.5/site-packages"
 mkdir -p "$LIB_INSTALL_DIR"
 
 # This is expected to succeed.
+echo "attempt: python -c 'import xmlsec'"
 python -c 'import xmlsec'
 
 echo "pip version: $(pip --version)"
 echo "Install packages from wheel files."
 pip install --no-deps --no-index --target="$LIB_INSTALL_DIR" /pkg/src/jsonschema/*.whl
-
 
 # Resolve 'Package libffi was not found in the pkg-config search path'.
 export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
