@@ -56,8 +56,8 @@
     },
     "pycryptodome": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/45/ef/4514a01be3d8f5383cd12fc5612ffd8a2508ac7e7ff6bde2da708e71c9a3/pycryptodome-3.4.3.tar.gz",
-      "sha1": "1be4c06e91f22fc0b566e019e0a5278b6a0208bb"
+      "url": "https://pypi.python.org/packages/b7/fb/5ea74c6dfe6c4937f2ca2e609155c0d97bdf00f8aa306deb25c8f547fdb8/pycryptodome-3.4.6.tar.gz",
+      "sha1": "9e6d984562df9c3781dfefe2eec46c4e36c65902"
     },
     "ldap3": {
       "kind": "git",
