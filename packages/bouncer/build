@@ -3,6 +3,8 @@ source /opt/mesosphere/environment.export
 export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.5/site-packages"
 mkdir -p "$LIB_INSTALL_DIR"
 
+# This is expected to succeed.
+python -c 'import xmlsec'
 
 echo "pip version: $(pip --version)"
 echo "Install packages from wheel files."
