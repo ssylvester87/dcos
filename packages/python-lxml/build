@@ -1,0 +1,29 @@
+#!/bin/bash
+# Python's lxml package
+# http://lxml.de/installation.html
+# Depends (mainly) on
+#   libxml2
+#   libxslt
+# Requires these packages on Debian:
+#   libxml2-dev libxslt-dev python-dev
+
+source /opt/mesosphere/environment.export
+export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.5/site-packages"
+mkdir -p "$LIB_INSTALL_DIR"
+
+# Resolve 'Package libffi was not found in the pkg-config search path'.
+export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
+
+echo "xml2-config --cflags --libs"
+/opt/mesosphere/bin/xml2-config --cflags --libs
+XML2FLAGS="$(/opt/mesosphere/bin/xml2-config --cflags --libs)"
+
+echo "xslt-config --cflags --libs"
+/opt/mesosphere/bin/xslt-config --cflags --libs
+XSLTFLAGS="$(/opt/mesosphere/bin/xslt-config --cflags --libs)"
+
+pip install --no-deps \
+        --install-option="--prefix=$PKG_PATH" \
+        --global-option=build_ext --global-option="$XML2FLAGS $XSLTFLAGS" \
+        --root=/ /pkg/src/lxml
+
