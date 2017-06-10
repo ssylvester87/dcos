@@ -16,7 +16,7 @@ def make_session_fixture():
 
     # If SSL enabled and no CA cert is given, then grab it
     if bootstrap_config['ssl_enabled']:
-        cluster_api.sert_ca_cert()
+        cluster_api.set_ca_cert()
 
     cluster_api.wait_for_dcos()
     cluster_api.set_initial_resource_ids()
