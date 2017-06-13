@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/gpaul/dcos",
   "kind": "git",
-  "ref": "e1980bfcef0cd0d56807870fc94b87c3b4ae781d",
-  "ref_origin": "1.9.1"
+  "ref": "543d3bec526b36bafe4afa32200cba93209d7364",
+  "ref_origin": "gpaul/DCOS-14644-pkgpanda-socket-1-9-1"
 }
