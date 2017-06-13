@@ -1,0 +1,33 @@
+#!/bin/bash
+# Python's xmlsec package
+# https://github.com/mehcode/python-xmlsec
+# Depends (mainly) on
+# libxml2
+# libxmlsec1
+# On Debian the build requires:
+#   libxml2-dev libxmlsec1-dev libxmlsec1-openssl
+source /opt/mesosphere/environment.export
+export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.5/site-packages"
+mkdir -p "$LIB_INSTALL_DIR"
+
+echo "pip version: $(pip --version)"
+
+# Resolve 'Package libffi was not found in the pkg-config search path'.
+export PKG_CONFIG_PATH=/opt/mesosphere/lib/pkgconfig
+
+echo "xmlsec1-config --cflags --libs"
+/opt/mesosphere/bin/xmlsec1-config --cflags --libs
+XMLSEC1FLAGS="$(/opt/mesosphere/bin/xmlsec1-config --cflags --libs)"
+
+echo "xml2-config --cflags --libs"
+/opt/mesosphere/bin/xml2-config --cflags --libs
+XML2FLAGS="$(/opt/mesosphere/bin/xml2-config --cflags --libs)"
+
+pip install --no-deps \
+        --install-option="--prefix=$PKG_PATH" \
+        --global-option=build_ext --global-option="$XMLSEC1FLAGS $XML2FLAGS" \
+        --root=/ /pkg/src/xmlsec
+
+echo "ldd xmlsec/ds.so"
+ldd "$PKG_PATH/lib/python3.5/site-packages/xmlsec/ds.cpython-35m-x86_64-linux-gnu.so"
+
