@@ -25,7 +25,11 @@ for package in \
     oic \
     pycryptodome \
     python3-saml \
-    ldap3
+    ldap3 \
+    sqlalchemy \
+    sqlalchemy-utils \
+    cockroachdb-python \
+    psycopg2
 do
   pip install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/$package
 done
