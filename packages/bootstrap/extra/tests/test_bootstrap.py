@@ -8,6 +8,9 @@ import subprocess
 from base64 import b64encode
 
 import pytest
+
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from kazoo.client import KazooClient
 from kazoo.client import KazooRetry
 # from kazoo.security import Permissions, ANYONE_ID_UNSAFE
@@ -563,3 +566,26 @@ def xtest_if_certificates_are_not_overwritten(self, tmpdir):
     new_key_digest = hashlib.sha256(keyfile.read()).hexdigest()
     assert new_crt_digest == crt_digest
     assert new_key_digest == key_digest
+
+
+def common_name_from_cert(filename):
+    with open(filename, 'r') as file:
+        pem_data = file.read().decode('ascii')
+    cert = x509.load_pem_x509_certificate(pem_data, default_backend())
+    return cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME).value
+
+
+def test_use_exact_dn_false(tmpdir, testctx):
+    b = bootstrap.Bootstrapper()
+    crtfile = tmpdir.join("tmp.crt")
+    keyfile = tmpdir.join("tmp.key")
+    b.ensure_key_certificate('tmp', str(crtfile), str(keyfile))
+    assert common_name_from_cert(crtfile) == b'tmp on 127.0.0.1'
+
+
+def test_use_exact_dn_true(tmpdir, testctx):
+    b = bootstrap.Bootstrapper()
+    crtfile = tmpdir.join("tmp.crt")
+    keyfile = tmpdir.join("tmp.key")
+    b.ensure_key_certificate('tmp', str(crtfile), str(keyfile))
+    assert common_name_from_cert(crtfile) == b'tmp'

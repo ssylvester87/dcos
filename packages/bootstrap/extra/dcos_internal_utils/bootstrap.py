@@ -325,6 +325,7 @@ class Bootstrapper(object):
             service_account_zk_creds = [
                 'dcos_bouncer',
                 'dcos_ca',
+                'dcos_cockroach',
                 'dcos_cosmos',
                 'dcos_marathon',
                 'dcos_mesos_master',
@@ -707,6 +708,15 @@ class Bootstrapper(object):
             acl = LOCALHOST_ALL + [self.make_service_acl('dcos_bouncer', all=True)]
         self.ensure_zk_path('/bouncer', acl=acl)
 
+    def cockroach_acls(self):
+        """Create ZNode's and Zookeeper ACLs for the CockroachDB component."""
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_cockroach', all=True)]
+        self.ensure_zk_path('/cockroach', acl=acl)
+        self.ensure_zk_path('/cockroach/nodes', acl=acl)
+        self.ensure_zk_path('/cockroach/locking', acl=acl)
+
     def dcos_ca_acls(self):
         acl = None
         if self.opts.config['zk_acls_enabled']:
@@ -753,6 +763,19 @@ class Bootstrapper(object):
         env = bytes(env.format_map(zk_creds), 'ascii')
 
         log.info('Writing Bouncer ZK credentials to {}'.format(filename))
+        _write_file(filename, env, 0o600)
+
+    def write_cockroach_env(self, filename):
+        """Write CockroachDB's Zookeeper credentials to a dedicated environment file."""
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
+        zk_creds = self.secrets['zk']['dcos_cockroach']
+
+        env = 'DATASTORE_ZK_USER={username}\nDATASTORE_ZK_SECRET={password}\n'
+        env = bytes(env.format_map(zk_creds), 'ascii')
+
+        log.info('Writing CockroachDB ZK credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
 
     def write_vault_config(self, filename):
@@ -1052,14 +1075,54 @@ class Bootstrapper(object):
     def create_key_certificate(self, cn, key_filename, crt_filename,
                                service_account=None, master=False,
                                marathon=False, extra_san=None,
-                               key_mode=0o600, private_key_type=None):
+                               key_mode=0o600, private_key_type=None,
+                               use_exact_cn=False):
+        """Creates a private key and certificate.
+
+        Args:
+            cn (str):
+                Defines the value of the "common name" attribute of the subject of
+                the X.509 certificate: the certificate subject field contains an
+                X.500 distinguished name (DN). The subject DN itself is comprised
+                of multiple attributes. This parameter defines the value of the
+                attribute with OID 2.5.4.3 (usually abbreviated "CN"). By default,
+                the current machine's internal IP address as returned by
+                `detect_ip()` is appended to the name. Set the `use_exact_cn`
+                parameter to True to prevent that modification from happening.
+            key_filename (str):
+                The path to the key.
+            crt_filename (str):
+                The path to the certificate.
+            service_account (string, optional):
+                The name of the service account to
+                authenticate as when requesting that the CSR be signed.
+            master (bool):
+                If True the master DNS entries will be added to the
+                list of SANs. Defaults to False.
+            marathon (bool):
+                If True the Marathon DNS entries will be added to
+                the list of SANs. Defaults to False.
+            extra_san (list of cryptography.GeneralName, optional):
+                A list of additional SANs to be added to the certificate.
+            key_mode (int):
+                The permission bits for the key being generated.
+                Defaults to 0o600.
+            private_key_type (rsa.RSAPrivateKey or ec.EllipticCurvePrivateKey):
+                The type of private key to generate.
+            use_exact_cn (bool):
+                If `use_exact_cn` is False the value of `cn` is modified
+                for use as the CommonName in the certificate. If True,
+                the value of `cn` is used exactly as the CommonName in the
+                certificate.
+        """
         log.info('Generating CSR for key {}'.format(key_filename))
         privkey_pem, csr_pem = utils.generate_key_CSR(
             cn,
             master=master,
             marathon=marathon,
             extra_san=extra_san,
-            private_key_type=private_key_type)
+            private_key_type=private_key_type,
+            use_exact_cn=use_exact_cn)
 
         headers = {}
         if service_account:
@@ -1115,13 +1178,55 @@ class Bootstrapper(object):
 
     def ensure_key_certificate(
             self, cn, key_filename, crt_filename, service_account=None,
-            master=False, marathon=False, extra_san=None, key_mode=0o600):
+            master=False, marathon=False, extra_san=None, key_mode=0o600,
+            use_exact_cn=False):
+        """Creates a private key and certificate.
+
+        If the key and ceritificate already exist and are valid the function
+        exits without performing any modification.
+
+        Args:
+            cn (str):
+                Defines the value of the "common name" attribute of the subject of
+                the X.509 certificate: the certificate subject field contains an
+                X.500 distinguished name (DN). The subject DN itself is comprised
+                of multiple attributes. This parameter defines the value of the
+                attribute with OID 2.5.4.3 (usually abbreviated "CN"). By default,
+                the current machine's internal IP address as returned by
+                `detect_ip()` is appended to the name. Set the `use_exact_cn`
+                parameter to True to prevent that modification from happening.
+            key_filename (str):
+                The path to the key.
+            crt_filename (str):
+                The path to the certificate.
+            service_account (string, optional):
+                The name of the service account to
+                authenticate as when requesting that the CSR be signed.
+            master (bool):
+                If True the master DNS entries will be added to the
+                list of SANs. Defaults to False.
+            marathon (bool):
+                If True the Marathon DNS entries will be added to
+                the list of SANs. Defaults to False.
+            extra_san ([cryptography.GeneralName], optional):
+                A list of additional SANs to be added to the certificate.
+            key_mode (int):
+                The permission bits for the key being generated.
+                Defaults to 0o600.
+            use_exact_cn (bool):
+                If `use_exact_cn` is False the value of `cn` is modified
+                for use as the CommonName in the certificate. If True,
+                the value of `cn` is used exactly as the CommonName in the
+                certificate.
+        """
+        # TODO(gpaul): this method should be idempotent. See DCOS-16332
         if not self._key_cert_is_valid(key_filename, crt_filename):
             log.info('Generating certificate {}'.format(crt_filename))
             self.create_key_certificate(cn, key_filename, crt_filename,
                                         service_account, master, marathon,
                                         extra_san, key_mode,
-                                        self.get_CA_private_key_type())
+                                        self.get_CA_private_key_type(),
+                                        use_exact_cn)
         else:
             log.debug('Certificate {} already exists'.format(crt_filename))
 
@@ -1337,7 +1442,10 @@ def make_run_dirs(opts):
         opts.rundir + '/pki/CA/certs',
         opts.rundir + '/pki/CA/private',
         opts.rundir + '/pki/tls/certs',
-        opts.rundir + '/pki/tls/private'
+        opts.rundir + '/pki/tls/private',
+        # cockroachdb 1.0 expects the CA and end entity certs and keys in the same directory.
+        # See https://github.com/cockroachdb/cockroach/issues/15760
+        opts.rundir + '/pki/cockroach'
     ]
 
     for d in dirs:
@@ -1356,6 +1464,46 @@ def dcos_bouncer(b, opts):
 
     path = opts.rundir + '/etc/bouncer'
     b.write_bouncer_env(path)
+
+
+def dcos_cockroach(b, opts):
+    """Prepare the Zookeeper ACLs, environment, run directory and ceritificates for the dcos-cockroach service."""
+    b.init_zk_acls()
+    b.create_master_secrets()
+    b.cockroach_acls()
+
+    path = opts.rundir + '/etc/cockroach'
+    b.write_cockroach_env(path)
+
+    cockroachdir = opts.rundir + '/pki/cockroach'
+    # Copy CA cert to cockroach cert dir. They don't support specifying separate
+    # cert paths in v1.0. CockroachDB requires the CA certificate chain to be
+    # named `ca.crt`.
+    capath = cockroachdir + '/ca.crt'
+    shutil.copy2(opts.rundir + '/pki/CA/ca-bundle.crt', capath)
+
+    # Create the TLS key pair for this CockroachDB instance.
+    keypath = cockroachdir + '/node.key'
+    crtpath = cockroachdir + '/node.crt'
+    # The ceritificate CN must be "node" as cockroachdb explicitly checks
+    # it to make sure the correct certificate is being used
+    # for inter-node communications.
+    b.ensure_key_certificate('node', keypath, crtpath, master=True, use_exact_cn=True)
+    shutil.chown(keypath, user='dcos_cockroach')
+    shutil.chown(crtpath, user='dcos_cockroach')
+
+    # Generate the key pair used by the IAM to connect as the root user to the
+    # database. Password login as root is not possible, which is great.
+    keypath = cockroachdir + '/client.root.key'
+    crtpath = cockroachdir + '/client.root.crt'
+    # The ceritificate CN must be "root" as cockroachdb explicitly checks for
+    # that string as a poor man's authentication mechanism.
+    # See `security.RootUser` defined here:
+    # https://github.com/cockroachdb/cockroach/blob/4f89174c1c36a6d94794d44f6a14af7e8eec3282/pkg/security/auth.go#L30
+    b.ensure_key_certificate('root', keypath, crtpath, master=True, use_exact_cn=True)
+    # As these will be used by the IAM they must be owned by the IAM user.
+    shutil.chown(keypath, user='dcos_bouncer')
+    shutil.chown(crtpath, user='dcos_bouncer')
 
 
 def dcos_secrets(b, opts):
@@ -1920,6 +2068,7 @@ bootstrappers = {
     'dcos-backup-master': dcos_backup_master,
     'dcos-bouncer': dcos_bouncer,
     'dcos-ca': dcos_ca,
+    'dcos-cockroach': dcos_cockroach,
     'dcos-cosmos': dcos_cosmos,
     'dcos-3dt-agent': dcos_3dt_agent,
     'dcos-3dt-master': dcos_3dt_master,

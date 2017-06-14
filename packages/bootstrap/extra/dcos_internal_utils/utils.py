@@ -229,8 +229,42 @@ def generate_key_CSR(
         master=False,
         marathon=False,
         extra_san=None,
-        private_key_type=rsa.RSAPrivateKey
+        private_key_type=rsa.RSAPrivateKey,
+        use_exact_cn=False
         ):
+    """Creates a private key and certificate.
+
+    Args:
+        base_cn (str):
+            Defines the value of the "common name" attribute of the subject of
+            the X.509 certificate: the certificate subject field contains an
+            X.500 distinguished name (DN). The subject DN itself is comprised
+            of multiple attributes. This parameter defines the value of the
+            attribute with OID 2.5.4.3 (usually abbreviated "CN"). By default,
+            the current machine's internal IP address as returned by
+            `detect_ip()` is appended to the name. Set the `use_exact_cn`
+            parameter to True to prevent that modification from happening.
+        master (bool):
+            If True the master DNS entries will be added to the
+            list of SANs. Defaults to False.
+        marathon (bool):
+            If True the Marathon DNS entries will be added to
+            the list of SANs. Defaults to False.
+        extra_san ([cryptography.GeneralName], optional):
+            A list of additional SANs to be added to the certificate.
+        private_key_type (rsa.RSAPrivateKey or ec.EllipticCurvePrivateKey):
+            The type of private key to generate.
+            Defaults to rsa.RSAPrivateKey
+        use_exact_cn (bool):
+            If `use_exact_cn` is False the value of `base_cn` is modified
+            for use as the CommonName in the certificate. If True,
+            the value of `base_cn` is used exactly as the CommonName in the
+            certificate.
+
+    Returns:
+        A tuple containing two PEM-encoded strings. The first is a 2048-bit
+        RSA private key and the second is a Certificate Signing Request.
+    """
     if private_key_type is rsa.RSAPrivateKey:
         key = rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=crypto_backend)
@@ -293,7 +327,10 @@ def generate_key_CSR(
     log.info('Subject Alternative Names: %s', san)
 
     # common name has a maximum length of 64 characters
-    common_name = base_cn + ' on ' + machine_ip
+    if use_exact_cn:
+        common_name = base_cn
+    else:
+        common_name = base_cn + ' on ' + machine_ip
 
     # cfssl ignores KeyUsage and ExtendedKeyUsage
     # so we currently take care of these in the
