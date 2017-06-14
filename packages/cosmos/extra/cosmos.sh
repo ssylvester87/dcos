@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 TLS_ENABLED=${TLS_ENABLED:-false}
+DISABLED_PROXY_SCHEMES='-Djdk.http.auth.tunneling.disabledSchemes="NTLM"'
 
 if [ "${TLS_ENABLED-}" = "true" ]; then
     TLS_TRUSTSTORE=${TLS_TRUSTSTORE:-/run/dcos/pki/CA/certs/cacerts_cosmos.jks}
@@ -11,7 +12,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
         -Djavax.net.ssl.trustStore=${TLS_TRUSTSTORE} \
-        -Djdk.http.auth.tunneling.disabledSchemes="" \
+        "${DISABLED_PROXY_SCHEMES}" \
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
@@ -26,7 +27,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
 else
     exec /opt/mesosphere/bin/java \
         -Xmx2G \
-        -Djdk.http.auth.tunneling.disabledSchemes="" \
+        "${DISABLED_PROXY_SCHEMES}" \
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
