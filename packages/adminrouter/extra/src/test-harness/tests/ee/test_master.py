@@ -41,6 +41,7 @@ acl_endpoints = [
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
     ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
     ('/system/v1/metrics/foo/bar', 'dcos:adminrouter:ops:system-metrics'),
+    ('/system/v1/backup/foo/bar', 'dcos:adminrouter:ops:system-backup'),
 ]
 
 authed_endpoints = [
