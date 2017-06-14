@@ -11,7 +11,7 @@ def create_and_grant_user_permission(superuser_api_session, uid, action, rid, de
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
-def test_dcos_checks_ee(superuser_api_session):
+def test_ee_3dt_runner_poststart(superuser_api_session):
     if bootstrap_config['security'] == 'strict':
         create_and_grant_user_permission(
             superuser_api_session,
@@ -29,23 +29,24 @@ def test_dcos_checks_ee(superuser_api_session):
             'Grants marathon access to start task as dcos_3dt user'
         )
 
-    # target contains a dcos-checks subcommand as a key and tuple of optional parameters as a value.
-    target = {
-        "components": ()
-    }
-
-    cmd_tpl = "/opt/mesosphere/bin/dcos-checks --config /opt/mesosphere/etc/dcos-checks-config-ee.yaml {} {}"
-    cmds = [cmd_tpl.format(subcommand, " ".join(arg for arg in args)) for subcommand, args in target.items()]
+    cmd = [
+        "/opt/mesosphere/bin/3dt",
+        "check",
+        "node-poststart",
+        "&&",
+        "sleep",
+        "3600"
+    ]
     test_uuid = uuid.uuid4().hex
-    cmd = " && ".join(cmds)
-    check_job = {
-        'id': 'test-dcos-checks-' + test_uuid,
+    poststart_job = {
+        'id': 'test-dcos-3dt-runner-poststart-ee-' + test_uuid,
         'user': 'dcos_3dt',
         'instances': 1,
         'cpus': .1,
         'mem': 128,
         'disk': 0,
-        'cmd': cmd + ' && sleep 3600'}
+        'cmd': ' '.join(cmd)
+    }
 
-    with superuser_api_session.marathon.deploy_and_cleanup(check_job, check_health=False):
+    with superuser_api_session.marathon.deploy_and_cleanup(poststart_job, check_health=False):
         pass
