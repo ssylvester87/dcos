@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/darkonie/dcos",
   "kind": "git",
-  "ref": "551273c8d3329bb82e2f987ea5ecf45392e12734",
-  "ref_origin": "master"
+  "ref": "541cfbe3671ac8f4cfe4dcc83c6f04fb98677b62",
+  "ref_origin": "mnaboka/rename-3dt"
 }
