@@ -97,8 +97,8 @@ def test_ee_signal_service(superuser_api_session):
         'signal-service',
         'vault-service']
     all_node_units = [
-        '3dt-service',
-        '3dt-socket',
+        'diagnostics-service',
+        'diagnostics-socket',
         'epmd-service',
         'gen-resolvconf-service',
         'gen-resolvconf-timer',

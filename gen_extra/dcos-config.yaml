@@ -304,55 +304,55 @@ package:
 {% case "true" %}
       ca-cert: /run/dcos/pki/CA/ca-bundle.crt
 {% endswitch %}
-  - path: /etc/dcos-3dt-extra.env
+  - path: /etc/dcos-diagnostics-extra.env
     content: |
-      DCOS_3DT_CONFIG_PATH=/opt/mesosphere/etc/dcos-3dt-config-ee.json
-  - path: /etc_master/dcos-3dt-config-ee.json
+      DCOS_DIAGNOSTICS_CONFIG_PATH=/opt/mesosphere/etc/dcos-diagnostics-config-ee.json
+  - path: /etc_master/dcos-diagnostics-config-ee.json
     content: |
         {
             "role": "master",
-            "iam-config": "/run/dcos/etc/3dt/master_service_account.json",
+            "iam-config": "/run/dcos/etc/dcos-diagnostics/master_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
             "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
             "pull": true,
-            "diagnostics-bundle-dir": "/var/lib/dcos/3dt/diag-bundles",
-            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
+            "diagnostics-bundle-dir": "/var/lib/dcos/dcos-diagnostics/diag-bundles",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-diagnostics-endpoint-config-ee.json",
             "master-port": {{ adminrouter_master_port }},
             "agent-port": {{ adminrouter_agent_port }},
             "force-tls": {{ ssl_enabled }}
         }
-  - path: /etc_slave/dcos-3dt-config-ee.json
+  - path: /etc_slave/dcos-diagnostics-config-ee.json
     content: |
         {
             "role": "agent",
-            "iam-config": "/run/dcos/etc/3dt/agent_service_account.json",
+            "iam-config": "/run/dcos/etc/dcos-diagnostics/agent_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
             "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
-            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-diagnostics-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
             "agent-port": {{ adminrouter_agent_port }}
         }
-  - path: /etc_slave_public/dcos-3dt-config-ee.json
+  - path: /etc_slave_public/dcos-diagnostics-config-ee.json
     content: |
         {
             "role": "agent_public",
-            "iam-config": "/run/dcos/etc/3dt/agent_service_account.json",
+            "iam-config": "/run/dcos/etc/dcos-diagnostics/agent_service_account.json",
 {% switch ssl_enabled %}
 {% case "false" %}
 {% case "true" %}
             "ca-cert": "/run/dcos/pki/CA/ca-bundle.crt",
 {% endswitch %}
-            "endpoint-config": "/opt/mesosphere/etc/dcos-3dt-endpoint-config-ee.json",
+            "endpoint-config": "/opt/mesosphere/etc/dcos-diagnostics-endpoint-config-ee.json",
             "force-tls": {{ ssl_enabled }},
             "agent-port": {{ adminrouter_agent_port }}
         }
-  - path: /etc/dcos-3dt-endpoint-config-ee.json
+  - path: /etc/dcos-diagnostics-endpoint-config-ee.json
     content: |
         {
           "HTTPEndpoints": [

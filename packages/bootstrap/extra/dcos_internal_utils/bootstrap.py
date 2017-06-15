@@ -78,7 +78,7 @@ class Bootstrapper(object):
         self.CA_certificate_path = None
 
         self.agent_services = [
-            'dcos_3dt_agent',
+            'dcos_diagnostics_agent',
             'dcos_adminrouter_agent',
             'dcos_agent',
             'dcos_mesos_agent',
@@ -340,7 +340,7 @@ class Bootstrapper(object):
                 }
 
         master_service_accounts = [
-            'dcos_3dt_master',
+            'dcos_diagnostics_master',
             'dcos_adminrouter',
             'dcos_backup_master',
             'dcos_history_service',
@@ -534,11 +534,11 @@ class Bootstrapper(object):
 
         return self.secrets
 
-    def read_3dt_agent_secrets(self):
-        path = '/dcos/agent/secrets/services/dcos_3dt_agent'
+    def read_dcos_diagnostics_agent_secrets(self):
+        path = '/dcos/agent/secrets/services/dcos_diagnostics_agent'
         js = self._consensus(path, None)
         self.secrets['services'] = {
-            'dcos_3dt_agent': json.loads(js.decode('ascii'))
+            'dcos_diagnostics_agent': json.loads(js.decode('ascii'))
         }
         return self.secrets
 
@@ -1270,7 +1270,7 @@ def make_run_dirs(opts):
     dirs = [
         opts.rundir,
         opts.rundir + '/etc',
-        opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/dcos-diagnostics',
         opts.rundir + '/etc/dcos-backup',
         opts.rundir + '/etc/dcos-ca',
         opts.rundir + '/etc/dcos-metrics',
@@ -1823,25 +1823,26 @@ def dcos_metrics_agent(b, opts):
     shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
 
 
-def dcos_3dt_master(b, opts):
+def dcos_diagnostics_master(b, opts):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    b.create_service_account('dcos_3dt_master', superuser=True)
-    svc_acc_creds_fn = opts.rundir + '/etc/3dt/master_service_account.json'
-    b.write_service_account_credentials('dcos_3dt_master', svc_acc_creds_fn)
-    shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
+    b.create_service_account('dcos_diagnostics_master', superuser=True)
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-diagnostics/master_service_account.json'
+    b.write_service_account_credentials('dcos_diagnostics_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
-    # 3dt agent secrets are needed for it to contact the 3dt master
+    # dcos-diagnostics agent secrets are needed for it to contact the
+    # dcos-diagnostics  master
     b.create_agent_secrets(opts.zk_agent_digest)
-    b.create_service_account('dcos_3dt_agent', superuser=True)
+    b.create_service_account('dcos_diagnostics_agent', superuser=True)
 
 
-def dcos_3dt_agent(b, opts):
-    b.read_3dt_agent_secrets()
-    svc_acc_creds_fn = opts.rundir + '/etc/3dt/agent_service_account.json'
-    b.write_service_account_credentials('dcos_3dt_agent', svc_acc_creds_fn)
-    shutil.chown(svc_acc_creds_fn, user='dcos_3dt')
+def dcos_diagnostics_agent(b, opts):
+    b.read_dcos_diagnostics_agent_secrets()
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-diagnostics/agent_service_account.json'
+    b.write_service_account_credentials('dcos_diagnostics_agent', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
 
 def dcos_history(b, opts):
@@ -1867,8 +1868,8 @@ bootstrappers = {
     'dcos-bouncer': dcos_bouncer,
     'dcos-ca': dcos_ca,
     'dcos-cosmos': dcos_cosmos,
-    'dcos-3dt-agent': dcos_3dt_agent,
-    'dcos-3dt-master': dcos_3dt_master,
+    'dcos-diagnostics-agent': dcos_diagnostics_agent,
+    'dcos-diagnostics-master': dcos_diagnostics_master,
     'dcos-history': dcos_history,
     'dcos-marathon': dcos_marathon,
     'dcos-mesos-slave': dcos_mesos_slave,
