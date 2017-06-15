@@ -349,6 +349,11 @@ function _M.init(use_auth)
         return res.do_authn_or_exit("dcos:adminrouter:secrets");
     end
 
+    -- /system/backup/v1
+    res.access_system_backup_endpoint = function()
+        return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:system-backup");
+    end
+
     -- /system/health/v1
     res.access_system_health_endpoint = function()
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:system-health");

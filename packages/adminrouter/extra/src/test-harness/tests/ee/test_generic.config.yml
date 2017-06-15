@@ -204,3 +204,26 @@ endpoint_tests:
           - /dcos-metadata/ui-config.json
     type:
       - master
+######### /system/v1/backup endpoint
+  - tests:
+      are_upstream_req_headers_ok:
+        enabled: true
+        jwt_should_be_forwarded: skip
+        test_paths:
+          - /system/v1/backup/foo/bar
+      is_upstream_req_ok:
+        enabled: true
+        expected_http_ver: HTTP/1.0
+        test_paths:
+          - expected: /foo/bar
+            sent: /system/v1/backup/foo/bar
+          - expected: /
+            sent: /system/v1/backup/
+      is_upstream_correct:
+        enabled: true
+        test_paths:
+          - /system/v1/backup/foo/bar
+          - /system/v1/backup/
+        upstream: http:///run/dcos/dcos-backup-master.sock
+    type:
+      - master
