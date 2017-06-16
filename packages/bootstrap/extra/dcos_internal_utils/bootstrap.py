@@ -342,6 +342,7 @@ class Bootstrapper(object):
         master_service_accounts = [
             'dcos_3dt_master',
             'dcos_adminrouter',
+            'dcos_backup_master',
             'dcos_history_service',
             'dcos_marathon',
             'dcos_mesos_dns',
@@ -1270,6 +1271,7 @@ def make_run_dirs(opts):
         opts.rundir,
         opts.rundir + '/etc',
         opts.rundir + '/etc/3dt',
+        opts.rundir + '/etc/dcos-backup',
         opts.rundir + '/etc/dcos-ca',
         opts.rundir + '/etc/dcos-metrics',
         opts.rundir + '/etc/history-service',
@@ -1638,6 +1640,24 @@ def dcos_adminrouter_agent(b, opts):
     b.write_service_auth_token('dcos_adminrouter_agent', opts.rundir + '/etc/adminrouter.env', exp=0)
 
 
+def dcos_backup_master(b, opts):
+    b.init_zk_acls()
+    b.create_master_secrets()
+
+    b.create_service_account('dcos_backup_master', superuser=True)
+
+    svc_acc_creds_fn = opts.rundir + '/etc/dcos-backup/master_service_account.json'
+    b.write_service_account_credentials('dcos_backup_master', svc_acc_creds_fn)
+    shutil.chown(svc_acc_creds_fn, user='dcos_backup')
+
+    backup_dir = opts.statedir + '/backup'
+    try:
+        os.makedirs(backup_dir)
+    except FileExistsError:
+        pass
+    shutil.chown(backup_dir, user='dcos_backup')
+
+
 def dcos_spartan(b, opts):
     if os.path.exists('/opt/mesosphere/etc/roles/master'):
         return dcos_spartan_master(b, opts)
@@ -1843,6 +1863,7 @@ def dcos_history(b, opts):
 bootstrappers = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-adminrouter-agent': dcos_adminrouter_agent,
+    'dcos-backup-master': dcos_backup_master,
     'dcos-bouncer': dcos_bouncer,
     'dcos-ca': dcos_ca,
     'dcos-cosmos': dcos_cosmos,
@@ -1854,6 +1875,8 @@ bootstrappers = {
     'dcos-mesos-slave-public': dcos_mesos_slave_public,
     'dcos-mesos-dns': dcos_mesos_dns,
     'dcos-mesos-master': dcos_mesos_master,
+    'dcos-metrics-agent': dcos_metrics_agent,
+    'dcos-metrics-master': dcos_metrics_master,
     'dcos-metronome': dcos_metronome,
     'dcos-minuteman': (lambda b, opts: dcos_erlang_service('minuteman', b, opts)),
     'dcos-navstar': (lambda b, opts: dcos_erlang_service('navstar', b, opts)),
@@ -1861,7 +1884,5 @@ bootstrappers = {
     'dcos-secrets': dcos_secrets,
     'dcos-signal': dcos_signal,
     'dcos-spartan': dcos_spartan,
-    'dcos-vault_default': dcos_vault_default,
-    'dcos-metrics-agent': dcos_metrics_agent,
-    'dcos-metrics-master': dcos_metrics_master
+    'dcos-vault_default': dcos_vault_default
 }

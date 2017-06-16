@@ -2,7 +2,10 @@ import logging
 
 from mocker.common import MockerBase
 from mocker.endpoints.ee.iam import IamEndpoint
-from mocker.endpoints.reflectors import ReflectingTcpIpEndpoint
+from mocker.endpoints.reflectors import (
+    ReflectingTcpIpEndpoint,
+    ReflectingUnixSocketEndpoint,
+)
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +27,8 @@ class Mocker(MockerBase):
         ee_endpoints.append(IamEndpoint(ip='127.0.0.1', port=8101))
         # Networking API
         ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=61430))
+        # Backup service
+        ee_endpoints.append(ReflectingUnixSocketEndpoint('/run/dcos/dcos-backup-master.sock'))
 
         # Add more EE endpoints here...
 

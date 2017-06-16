@@ -2124,6 +2124,51 @@
           <div class="heading">
             <h3>
               <span class="route-type">Proxy</span>
+              <span class="route-path"><code>/system/v1/backup/</code></span>
+            </h3>
+            <span class="route-desc">Backup & Restore DC/OS Components</span>
+          </div>
+          <div class="route-meta" style="display:none">
+            <table>
+              <tr>
+                <td>
+                  Path:
+                </td>
+                <td>
+                  <code>http://$backend</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Server:
+                </td>
+                <td>
+                  <code>unix:/run/dcos/dcos-backup-master.sock</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Backend:
+                </td>
+                <td>
+                  DC/OS Backup
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  API Reference:
+                </td>
+                <td>
+                  <a href="https://docs.mesosphere.com/1.10/backup/backup-api/">https://docs.mesosphere.com/1.10/backup/backup-api/</a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </li>
+        <li class="route route-type-proxy">
+          <div class="heading">
+            <h3>
+              <span class="route-type">Proxy</span>
               <span class="route-path"><code>/system/v1/leader/marathon(?&lt;url&gt;.*)</code></span>
             </h3>
             <span class="route-desc">System proxy to the master node with the Marathon leader</span>

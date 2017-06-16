@@ -213,6 +213,23 @@ class TestAdminRouterACLs:
         r = peter_api_session.ca.post(endpoint, json=data)
         assert r.status_code == 200
 
+    def test_adminrouter_ops_system_backup(self, peter, peter_api_session, noauth_api_session, set_user_permission):
+        endpoint = '/system/v1/backup/v1/list'
+
+        r = noauth_api_session.get(endpoint)
+        assert r.status_code == 401
+
+        r = peter_api_session.get(endpoint)
+        assert r.status_code == 403
+
+        set_user_permission(
+            rid='dcos:adminrouter:ops:system-backup',
+            uid=peter_api_session.auth_user.uid,
+            action='full')
+
+        r = peter_api_session.get(endpoint)
+        assert r.status_code == 200
+
     def test_adminrouter_ops_system_health(self, peter, peter_api_session, noauth_api_session, set_user_permission):
         endpoint = '/system/health/v1'
 

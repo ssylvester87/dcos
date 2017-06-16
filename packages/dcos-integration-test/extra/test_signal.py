@@ -74,6 +74,8 @@ def test_ee_signal_service(superuser_api_session):
         'adminrouter-service',
         'adminrouter-reload-service',
         'adminrouter-reload-timer',
+        'backup-master-service',
+        'backup-master-socket',
         'bouncer-service',
         'ca-service',
         'cosmos-service',

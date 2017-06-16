@@ -6,6 +6,8 @@
     "python-jwkest",
     "python-jwt",
     "python-kazoo",
+    "python-lxml",
+    "python-xmlsec",
     "python-passlib",
     "python-pycryptodomex",
     "python-retrying",
@@ -13,12 +15,7 @@
     "python-cython",
     "python-cryptography",
     "python-gunicorn",
-    "six",
-    "libxml2",
-    "libxslt",
-    "xmlsec1",
-    "libffi",
-    "libtool-ltdl"
+    "six"
   ],
   "sources": {
     "bouncer": {
@@ -56,24 +53,14 @@
     },
     "pycryptodome": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/45/ef/4514a01be3d8f5383cd12fc5612ffd8a2508ac7e7ff6bde2da708e71c9a3/pycryptodome-3.4.3.tar.gz",
-      "sha1": "1be4c06e91f22fc0b566e019e0a5278b6a0208bb"
+      "url": "https://pypi.python.org/packages/b7/fb/5ea74c6dfe6c4937f2ca2e609155c0d97bdf00f8aa306deb25c8f547fdb8/pycryptodome-3.4.6.tar.gz",
+      "sha1": "9e6d984562df9c3781dfefe2eec46c4e36c65902"
     },
     "ldap3": {
       "kind": "git",
       "git": "git@github.com:cannatag/ldap3.git",
       "ref": "0d30d3a6376f6fd095e40ae0e03ee4c293a0d703",
       "ref_origin": "master"
-    },
-    "lxml": {
-      "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/4f/3f/cf6daac551fc36cddafa1a71ed48ea5fd642e5feabd3a0d83b8c3dfd0cb4/lxml-3.6.4.tar.gz",
-      "sha1": "51fcf2a9a1499909f986c0663b4703406a4a12cc"
-    },
-    "xmlsec": {
-      "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/e1/ec/0330f39bc5eb270b6b62a9dbb11194c6d4215b48ef8d04c78a30dc1d2d1d/xmlsec-0.6.1.tar.gz",
-      "sha1": "e14bc5673b93d8155e23596978536a741fc5947d"
     },
     "isodate": {
       "kind": "url_extract",

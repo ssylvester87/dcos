@@ -5,8 +5,8 @@
   ],
   "single_source": {
     "kind": "url",
-    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.0-SNAPSHOT-31-refs_heads_master-c2e42c99e3/cosmos-enterprise-0.4.0-SNAPSHOT-31-refs_heads_master-c2e42c99e3-one-jar.jar",
-    "sha1": "877b5943b8b541db8fd56c3790e55eb8ac8282cc"
+    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.0-SNAPSHOT-53-master-84c6279db0/cosmos-enterprise-0.4.0-SNAPSHOT-53-master-84c6279db0-one-jar.jar",
+    "sha1": "09921e83252418422acd1609f9adf8d68e65af80"
   },
   "username": "dcos_cosmos",
   "state_directory": true
