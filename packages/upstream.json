@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "ffa71d8fb1453ede6294f97d2b914f3a764bef2d",
-  "ref_origin": "master"
+  "ref": "31304c2f36557a30241ef68bb27fa482e5ac532e",
+  "ref_origin": "dcos-ui/chore/DCOS-16113-update-dcos-ui-package"
 }
