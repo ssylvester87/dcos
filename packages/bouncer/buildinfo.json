@@ -72,8 +72,8 @@
     },
     "lxml": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/09/f3/c41293bc181b8c727cc485339dc57af653dae6d17d4c8dbf0cbac53cb4aa/lxml-3.6.1.tar.gz",
-      "sha1": "a37f3f77de191a490642d01250cf5e72153fb0b0"
+      "url": "https://pypi.python.org/packages/20/b3/9f245de14b7696e2d2a386c0b09032a2ff6625270761d6543827e667d8de/lxml-3.8.0.tar.gz",
+      "sha1": "9cc81a0b1559a21812cde9c42ca90ccd5c95e138"
     },
     "xmlsec": {
       "kind": "url_extract",
