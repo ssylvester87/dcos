@@ -366,6 +366,8 @@ class Bootstrapper(object):
                 'private_key': utils.generate_RSA_keypair(2048)[0],
             }
 
+        self.upgrade_19_to_110_secret_root_ca(acl)
+
         ca_crt, ca_key, ca_chain, ca_root = self._load_or_generate_ca_cert(
             self.cluster_id())
         ca_certs = {
@@ -1128,6 +1130,58 @@ class Bootstrapper(object):
         jwks = iamcli.jwks()
         output = utils.jwks_to_public_keys(jwks)
         _write_file(filename, bytes(output, 'ascii'), 0o644)
+
+    def upgrade_19_to_110_secret_root_ca(self, acl=None):
+        """
+        Runs an upgrade procedure when upgrading a cluster from 1.9.x to
+        1.10. Enterprise DC/OS 1.10 expects two additional top-level keys in
+        the JSON document stored in the /dcos/master/secrets/CA/RootCA z node.
+
+        The upgrade procedure (idempotent, no need to lock to single worker):
+
+        - Try to read value from `/dcos/master/secrets/CA/RootCA`
+        - If exists, deserialize JSON, see if only `key` and `certificate`
+          keys are present. If that is the case, proceed with the upgrade procedure
+        - Calculate values for `root` and `chain` from loaded data
+        - Serialize data into new JSON document, and write it with given ACL
+
+        Args:
+            acl (dict): ACLs to apply to zookeeper node
+        """
+        zk_path = '/dcos/master/secrets/CA/RootCA'
+
+        try:
+            root_ca_bytes = self.zk.get(zk_path)[0]
+        except kazoo.exceptions.NoNodeError:
+            log.info(
+                '`%s` does not contain any value, nothing to upgrade', zk_path)
+            return
+
+        root_ca = json.loads(root_ca_bytes.decode('ascii'))
+
+        has_length_2 = len(root_ca) == 2
+        has_key = 'key' in root_ca
+        has_certificate = 'certificate' in root_ca
+        if not (has_length_2 and has_key and has_certificate):
+            log.info(
+                '`RootCA` data structure does not look like 1.9.x, no upgrade')
+            return
+
+        # Add missing keys.
+        root_ca['chain'] = ''
+        root_ca['root'] = root_ca['certificate']
+
+        root_ca_bytes = json.dumps(root_ca, ensure_ascii=True).encode('ascii')
+
+        self.zk.set(zk_path, root_ca_bytes)
+        self.zk.sync(zk_path)
+        log.info(
+            '`RootCA` data has been upgraded from the 1.9.x '
+            'serialization format to the 1.10.x serialization format.'
+            )
+
+        if acl:
+            self.zk.set_acls(zk_path, acl)
 
 
 def _write_file(path, data, mode):
