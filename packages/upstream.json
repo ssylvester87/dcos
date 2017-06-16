@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "b064fcef955d63f222e89ad6531cb1c1ab5c5ab1",
-  "ref_origin": "master"
+  "ref": "71ebbfb146c13469962049e2a77d8d1f8bd5ed44",
+  "ref_origin": "avinash/dcos-mesos-master-d7c1245"
 }
