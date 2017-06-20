@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/branden/dcos",
   "kind": "git",
-  "ref": "a88cf059c56c445e9c3aca6319d0197bd0e6dcaf",
-  "ref_origin": "master"
+  "ref": "f45dc70ba9929b2e4c46e93b9bc7feb0db8de763",
+  "ref_origin": "custom-check-config"
 }
