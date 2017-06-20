@@ -177,7 +177,7 @@ class Bootstrapper(object):
         key = self.secrets['CA']['RootCA']['key']
         key = key.encode('utf-8')
         log.info('Writing CA key to {}'.format(path))
-        _write_file(path, key, 0o600)
+        _write_file_bytes(path, key, 0o600)
         return key
 
     def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
@@ -188,7 +188,7 @@ class Bootstrapper(object):
         """
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
-        _write_file(path, certbytes, 0o644)
+        _write_file_bytes(path, certbytes, 0o644)
         return certbytes
 
     def write_CA_certificate_chain(self, path):
@@ -204,7 +204,7 @@ class Bootstrapper(object):
         chainbytes = self._consensus('/dcos/CAChain', chainbytes, ANYONE_READ)
         log.info('Writing CA cert chain (of intermediate certs) to {}'.format(path))
 
-        _write_file(path, chainbytes, 0o644)
+        _write_file_bytes(path, chainbytes, 0o644)
         return chainbytes
 
     def write_CA_certificate_chain_with_root_cert(
@@ -225,7 +225,7 @@ class Bootstrapper(object):
             '/dcos/CAChainInclRoot', chainbytes, ANYONE_READ)
 
         log.info('Writing CA cert chain (including root) to {}'.format(path))
-        _write_file(path, chainbytes, 0o644)
+        _write_file_bytes(path, chainbytes, 0o644)
         return chainbytes
 
     def write_CA_trust_bundle(
@@ -242,7 +242,7 @@ class Bootstrapper(object):
         certbytes = self._consensus('/dcos/RootCA', certbytes, ANYONE_READ)
 
         log.info('Writing CA trust bundle (root CA certificate) to {}'.format(path))
-        _write_file(path, certbytes, 0o644)
+        _write_file_bytes(path, certbytes, 0o644)
 
         self.CA_certificate = certbytes
         self.CA_certificate_path = path
@@ -555,14 +555,14 @@ class Bootstrapper(object):
 
         log.info('Writing {} service account credentials to {}'.format(uid, filename))
         # credentials file that service can read, but not overwrite
-        _write_file(filename, creds, 0o400)
+        _write_file_bytes(filename, creds, 0o400)
 
     def write_private_key(self, name, filename):
         private_key = self.secrets['private_keys'][name]
         private_key = bytes(private_key, 'ascii')
         log.info('Writing {} private key to {}'.format(name, filename))
         # private key that service can read, but not overwrite
-        _write_file(filename, private_key, 0o400)
+        _write_file_bytes(filename, private_key, 0o400)
 
     def create_service_account(self, uid, superuser, zk_secret=True):
         if zk_secret:
@@ -753,7 +753,7 @@ class Bootstrapper(object):
             )
 
         blob = json.dumps(ca_conf, sort_keys=True, indent=True, ensure_ascii=False).encode('utf-8')
-        _write_file(dst, blob, 0o400)
+        _write_file_bytes(dst, blob, 0o400)
         shutil.chown(dst, user=self.opts.dcos_ca_user)
 
     def write_bouncer_env(self, filename):
@@ -781,7 +781,7 @@ class Bootstrapper(object):
         env = bytes(env.format_map(zk_creds), 'ascii')
 
         log.info('Writing CockroachDB ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_vault_config(self, filename):
         if self.opts.config['zk_acls_enabled']:
@@ -814,7 +814,7 @@ class Bootstrapper(object):
         cfg = cfg.encode('ascii')
 
         log.info('Writing Vault config to {}'.format(filename))
-        _write_file(filename, cfg, 0o400)
+        _write_file_bytes(filename, cfg, 0o400)
         shutil.chown(filename, user=self.opts.dcos_vault_user)
 
     def write_secrets_env(self, filename):
@@ -832,7 +832,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_executor_secret_key(self, path):
         if os.path.isfile(path):
@@ -843,7 +843,7 @@ class Bootstrapper(object):
                             'but is not a regular file'.format(path))
 
         key = utils.generate_executor_secret_key()
-        _write_file(path, key, 0o600)
+        _write_file_bytes(path, key, 0o600)
 
     def write_mesos_master_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
@@ -857,7 +857,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Mesos Master ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_cosmos_env(self, key_fn, crt_fn, ca_fn, env_fn):
         if not self.opts.config['zk_acls_enabled']:
@@ -870,7 +870,7 @@ class Bootstrapper(object):
 
         log.info('Writing Cosmos environment to {}'.format(env_fn))
         # environment file is owned by root because systemd reads it
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
     def write_metronome_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -893,7 +893,7 @@ class Bootstrapper(object):
         env = bytes(env1 + env2, 'ascii')
 
         log.info('Writing Metronome environment to {}'.format(env_fn))
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
         service_name = 'metronome'
 
@@ -946,7 +946,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Marathon ZK environment to {}'.format(env_fn))
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
     def write_marathon_tls_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -961,7 +961,7 @@ class Bootstrapper(object):
         env = 'SSL_KEYSTORE_PASSWORD={}\n'.format(password)
         env = bytes(env, 'ascii')
 
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
         service_name = 'marathon'
 
@@ -1074,7 +1074,7 @@ class Bootstrapper(object):
         token = self.service_auth_token(uid, exp)
         env = bytes('SERVICE_AUTH_TOKEN={}\n'.format(token), 'ascii')
         if filename is not None:
-            _write_file(filename, env, 0o600)
+            _write_file_bytes(filename, env, 0o600)
         return env
 
     def create_key_certificate(self, cn, key_filename, crt_filename,
@@ -1141,8 +1141,8 @@ class Bootstrapper(object):
 
         crt = self._append_ca_chain_to_certificate(crt)
 
-        _write_file(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
-        _write_file(crt_filename, bytes(crt, 'ascii'), 0o644)
+        _write_file_bytes(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
+        _write_file_bytes(crt_filename, bytes(crt, 'ascii'), 0o644)
 
     def _append_ca_chain_to_certificate(self, crt):
         """
@@ -1239,7 +1239,7 @@ class Bootstrapper(object):
         iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
         jwks = iamcli.jwks()
         output = utils.jwks_to_public_keys(jwks)
-        _write_file(filename, bytes(output, 'ascii'), 0o644)
+        _write_file_bytes(filename, bytes(output, 'ascii'), 0o644)
 
     def upgrade_19_to_110_secret_root_ca(self, acl=None):
         """
@@ -1294,7 +1294,12 @@ class Bootstrapper(object):
             self.zk.set_acls(zk_path, acl)
 
 
-def _write_file(path, data, mode):
+def _write_file_bytes(path, data, mode):
+    """Write byte sequence `data` to regular file located at `path`.
+
+    Set file permissions to `mode` (given in octal notation such as
+    `0o600`). Use canonical umask when applying mode.
+    """
     dirpath = os.path.dirname(os.path.abspath(path))
     with utils.Directory(dirpath) as d:
         with d.lock():
@@ -1833,7 +1838,7 @@ def dcos_adminrouter(b, opts):
 
     env_file_contents_bytes = '\n'.join(env_file_lines).encode('ascii')
     env_file_path = opts.rundir + '/etc/adminrouter.env'
-    _write_file(env_file_path, env_file_contents_bytes, 0o600)
+    _write_file_bytes(env_file_path, env_file_contents_bytes, 0o600)
 
 
 def dcos_adminrouter_agent(b, opts):
