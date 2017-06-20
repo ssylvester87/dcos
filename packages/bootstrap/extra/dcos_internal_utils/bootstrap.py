@@ -195,7 +195,7 @@ class Bootstrapper(object):
         _write_file_bytes(path, certbytes, 0o644)
         shutil.chown(path, user=user)
 
-    def write_CA_certificate_chain(self, path):
+    def write_CA_certificate_chain(self, path='/run/dcos/pki/CA/ca-chain.crt'):
         """
         Write the CA certificate chain (comprised of exclusively intermediate
         CA certificates) to a file.
@@ -1915,8 +1915,7 @@ def dcos_spartan_master(b, opts):
         b.write_CA_trust_bundle()
         b.write_CA_certificate_chain_with_root_cert()
 
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
+        b.write_CA_certificate_chain()
 
         key = opts.rundir + '/pki/tls/private/spartan.key'
         crt = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1930,8 +1929,7 @@ def dcos_spartan_agent(b, opts):
         b.write_CA_trust_bundle()
         b.write_CA_certificate_chain_with_root_cert()
 
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
+        b.write_CA_certificate_chain()
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
         crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
@@ -1966,8 +1964,7 @@ def dcos_erlang_service_master(servicename, b, opts):
 
     b.write_CA_certificate_chain_with_root_cert()
 
-    ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(ca_chain)
+    b.write_CA_certificate_chain()
 
     friendly_name = servicename[0].upper() + servicename[1:]
     key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
@@ -1993,8 +1990,7 @@ def dcos_erlang_service_agent(servicename, b, opts):
 
         b.write_CA_certificate_chain_with_root_cert()
 
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
+        b.write_CA_certificate_chain()
 
         friendly_name = servicename[0].upper() + servicename[1:]
         key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
