@@ -871,7 +871,7 @@ class Bootstrapper(object):
         log.info('Writing Mesos Master ZK credentials to {}'.format(filename))
         _write_file_bytes(filename, env, 0o600)
 
-    def write_cosmos_env(self, key_fn, crt_fn, ca_fn, env_fn):
+    def write_cosmos_env(self, env_fn):
         if not self.opts.config['zk_acls_enabled']:
             return
 
@@ -2009,8 +2009,7 @@ def dcos_cosmos(b, opts):
     ts = opts.rundir + '/pki/CA/certs/cacerts_cosmos.jks'
     b.write_truststore(ts, ca)
 
-    env = opts.rundir + '/etc/cosmos.env'
-    b.write_cosmos_env(key, crt, ca, env)
+    b.write_cosmos_env(env_fn='/run/dcos/etc/cosmos.env')
 
 
 def dcos_signal(b, opts):
