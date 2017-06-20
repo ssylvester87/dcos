@@ -1927,8 +1927,9 @@ def dcos_spartan_agent(b, opts):
 
     if opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
-        b.write_CA_certificate_chain_with_root_cert()
 
+        # Note(JP): Do we really need both?
+        b.write_CA_certificate_chain_with_root_cert()
         b.write_CA_certificate_chain()
 
         keypath = opts.rundir + '/pki/tls/private/spartan.key'
@@ -1962,8 +1963,9 @@ def dcos_erlang_service_master(servicename, b, opts):
 
     b.write_CA_trust_bundle()
 
+    # Note(JP): do we really need both? I believe we should be able to get rid of
+    # `write_CA_certificate_chain()`.
     b.write_CA_certificate_chain_with_root_cert()
-
     b.write_CA_certificate_chain()
 
     friendly_name = servicename[0].upper() + servicename[1:]
@@ -1988,8 +1990,8 @@ def dcos_erlang_service_agent(servicename, b, opts):
     if opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
 
+        # Note(JP): do we really need both?
         b.write_CA_certificate_chain_with_root_cert()
-
         b.write_CA_certificate_chain()
 
         friendly_name = servicename[0].upper() + servicename[1:]
