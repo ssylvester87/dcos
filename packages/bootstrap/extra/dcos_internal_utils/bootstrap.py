@@ -174,11 +174,14 @@ class Bootstrapper(object):
         return secrets
 
     def write_CA_key(self, path):
+        """
+        Write PEM-encoded private key corresponding to the "signing CA
+        certificate" to a file located at `path`. Set 0600 permissions.
+        """
         key = self.secrets['CA']['RootCA']['key']
         key = key.encode('utf-8')
-        log.info('Writing CA key to {}'.format(path))
+        log.info('Writing signing CA cert private key to {}'.format(path))
         _write_file_bytes(path, key, 0o600)
-        return key
 
     def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
         """
@@ -189,7 +192,6 @@ class Bootstrapper(object):
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
         _write_file_bytes(path, certbytes, 0o644)
-        return certbytes
 
     def write_CA_certificate_chain(self, path):
         """
@@ -201,11 +203,12 @@ class Bootstrapper(object):
         if 'CA' in self.secrets:
             chainbytes = self.secrets['CA']['RootCA']['chain'].encode('utf-8')
 
+        # Note(JP): Is this the fallback for agent nodes (where
+        # `create_master_secrets()` has not been called?
         chainbytes = self._consensus('/dcos/CAChain', chainbytes, ANYONE_READ)
         log.info('Writing CA cert chain (of intermediate certs) to {}'.format(path))
 
         _write_file_bytes(path, chainbytes, 0o644)
-        return chainbytes
 
     def write_CA_certificate_chain_with_root_cert(
             self, path='/run/dcos/pki/CA/ca-chain-inclroot.crt'):
@@ -231,7 +234,7 @@ class Bootstrapper(object):
     def write_CA_trust_bundle(
             self, path='/run/dcos/pki/CA/ca-bundle.crt'):
         """
-        Writes root CA certificate to the trust bundle file (intended to be used
+        Write root CA certificate to the trust bundle file (intended to be used
         for certificate verification).
         """
         certbytes = None
