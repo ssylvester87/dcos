@@ -254,22 +254,31 @@ class Bootstrapper(object):
 
     def write_CA_trust_bundle_for_libcurl(self):
         """
-        Writes a root CA certificate that can be picked up by curl from well
-        known location.
+        Write the DC/OS CA trust bundle (currently expected to contain just
+        a single root CA certificate) to a known location that is picked up
+        by DC/OS' curl/libcurl.
+
+        /var/lib/dcos/pki/tls/certs is the directory of trusted CA certificates
+        that curl/libcurl is configured to pick up. Certificates are looked up
+        by subject hash which is why modification of directory contents usually
+        requires a subsequent OpenSSL certificate directory rehash procedure:
+        https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/tools/c_rehash.in#L150
+
+        The curl/libcurl trusted certificates directory path is set via:
+        https://github.com/dcos/dcos/blob/4f5f15e363025327139b313737ab4d7fbb0b389d/packages/curl/build#L43-L44
         """
-        # Hardcoded libcurl trusted certificates path
-        # https://github.com/dcos/dcos/blob/4f5f15e363025327139b313737ab4d7fbb0b389d/packages/curl/build#L43-L44
-        basepath = '/var/lib/dcos/pki/tls/certs'
-        os.makedirs(basepath, exist_ok=True)
-        # Allow anybody to read certs
-        os.chmod(basepath, 0o755)
+        curl_trusted_certs_dir_path = '/var/lib/dcos/pki/tls/certs'
 
-        # Write root CA certificate
-        path = os.path.join(basepath, 'dcos-root-ca-cert.crt')
-        self.write_CA_trust_bundle(path=path)
+        # Create directory if not yet existing. Allow anyone to list / traverse
+        # directory, but only allow root to write new trust anchors.
+        os.makedirs(curl_trusted_certs_dir_path, exist_ok=True)
+        os.chmod(curl_trusted_certs_dir_path, 0o755)
 
-        # Hash the certificate subject so it is recognised by libcurl and openssl
-        # https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/tools/c_rehash.in#L150
+        # Write DC/OS root CA certificate file.
+        certfilepath = os.path.join(curl_trusted_certs_dir_path, 'dcos-root-ca-cert.crt')
+        self.write_CA_trust_bundle(path=certfilepath)
+
+        # Hash the certificate subject.
         p = subprocess.Popen(
             ['openssl', 'x509', '-hash', '-noout', '-in', path],
             stdout=subprocess.PIPE,
@@ -279,14 +288,12 @@ class Bootstrapper(object):
 
         if p.returncode != 0:
             log.error('OpenSSL error: `{}`'.format(stderr_bytes.decode('utf-8', errors='backslashreplace')))
-            raise Exception(
-                'Failed to hash certificate subject due to openssl error')
+            raise Exception('Failed to hash certificate subject')
 
-        cert_hash = stdout_bytes.decode('ascii').strip()
-        cert_hash = cert_hash + '.0'
-        cert_hash_path = os.path.join(basepath, cert_hash)
-
-        # Create a symlink if doesn't exists yet
+        # Create a symlink with the subject hash in its name (following OpenSSL
+        # convention, for it to discover the file knowing the subject).
+        cert_hash = stdout_bytes.decode('ascii').strip() + '.0'
+        cert_hash_path = os.path.join(curl_trusted_certs_dir_path, cert_hash)
         if not os.path.islink(cert_hash_path):
             os.symlink(path, cert_hash_path)
             os.chmod(cert_hash_path, 0o644)
