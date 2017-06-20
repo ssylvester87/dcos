@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/jgehrcke/dcos",
   "kind": "git",
-  "ref": "a88cf059c56c445e9c3aca6319d0197bd0e6dcaf",
-  "ref_origin": "master"
+  "ref": "30101468f5a924c5729263ea393a5e6193e2d841",
+  "ref_origin": "jp/address-dcos-1289"
 }
