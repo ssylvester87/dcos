@@ -173,7 +173,7 @@ class Bootstrapper(object):
 
         return secrets
 
-    def write_CA_key(self, path):
+    def write_CA_key(self, path, user):
         """
         Write PEM-encoded private key corresponding to the "signing CA
         certificate" to a file located at `path`. Set 0600 permissions.
@@ -182,8 +182,9 @@ class Bootstrapper(object):
         key = key.encode('utf-8')
         log.info('Writing signing CA cert private key to {}'.format(path))
         _write_file_bytes(path, key, 0o600)
+        shutil.chown(path, user=user)
 
-    def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
+    def write_CA_certificate(self, path, user):
         """
         Write the PEM-encoded "signing CA certificate" to a file. The signing
         CA certificate is either a custom CA certificate (root or intermediate)
@@ -192,6 +193,7 @@ class Bootstrapper(object):
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
         _write_file_bytes(path, certbytes, 0o644)
+        shutil.chown(path, user=user)
 
     def write_CA_certificate_chain(self, path):
         """
@@ -1581,20 +1583,10 @@ def dcos_ca(b, opts):
     path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
     b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
 
-    path = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(path=path)
-    shutil.chown(path, user=opts.dcos_ca_user)
-
-    path = opts.rundir + '/pki/CA/private/ca.key'
-    b.write_CA_key(path)
-    shutil.chown(path, user=opts.dcos_ca_user)
-
-    path = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(path=path)
-
-    path = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(path=path)
-
+    b.write_CA_certificate(path='/run/dcos/pki/CA/certs/ca.crt', user=opts.dcos_ca_user)
+    b.write_CA_key(path='/run/dcos/pki/CA/private/ca.key', user=opts.dcos_ca_user)
+    b.write_CA_certificate_chain()
+    b.write_CA_trust_bundle()
     b.write_CA_trust_bundle_for_libcurl()
 
 
