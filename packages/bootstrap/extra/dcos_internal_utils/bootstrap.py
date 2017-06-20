@@ -1710,8 +1710,7 @@ def dcos_marathon(b, opts):
         shutil.chown(key, user='dcos_marathon')
         shutil.chown(crt, user='dcos_marathon')
 
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+        b.write_CA_trust_bundle()
 
         ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
@@ -1754,8 +1753,7 @@ def dcos_metronome(b, opts):
         shutil.chown(key, user='dcos_metronome')
         shutil.chown(crt, user='dcos_metronome')
         # ca-bundle.crt also only for libmesos SSL.
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+        b.write_CA_trust_bundle()
 
         ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
@@ -1795,8 +1793,7 @@ def dcos_mesos_dns(b, opts):
     b.create_service_account('dcos_mesos_dns', superuser=True)
 
     if opts.config['ssl_enabled']:
-        path = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(path)
+        b.write_CA_trust_bundle()
 
         # Generate client certificate (In strict security mode, Mesos-DNS is
         # required to present this to the Mesos master during the TLS handshake).
@@ -1965,8 +1962,7 @@ def dcos_erlang_service_master(servicename, b, opts):
 
     user = 'dcos_' + servicename
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
+    b.write_CA_trust_bundle()
 
     b.write_CA_certificate_chain_with_root_cert()
 
@@ -1993,8 +1989,7 @@ def dcos_erlang_service_agent(servicename, b, opts):
     user = 'dcos_' + servicename
 
     if opts.config['ssl_enabled']:
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+        b.write_CA_trust_bundle()
 
         b.write_CA_certificate_chain_with_root_cert()
 
@@ -2027,8 +2022,7 @@ def dcos_cosmos(b, opts):
     shutil.chown(key, user='dcos_cosmos')
     shutil.chown(crt, user='dcos_cosmos')
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
+    b.write_CA_trust_bundle()
 
     # Note(JP): here we do not write interdiate CA certs
     #     into the TrustStore, but just the canonical
@@ -2127,8 +2121,7 @@ def dcos_history(b, opts):
     b.write_service_account_credentials('dcos_history_service', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_history')
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
+    b.write_CA_trust_bundle()
 
     os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
