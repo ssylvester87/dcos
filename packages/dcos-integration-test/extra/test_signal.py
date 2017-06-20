@@ -77,6 +77,7 @@ def test_ee_signal_service(superuser_api_session):
         'backup-master-service',
         'backup-master-socket',
         'bouncer-service',
+        'bouncer-legacy-service',
         'ca-service',
         'cosmos-service',
         'cockroach-service',

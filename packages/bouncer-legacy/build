@@ -1,0 +1,13 @@
+#!/bin/bash
+source /opt/mesosphere/environment.export
+
+# This package assumes that the main bouncer package installs all the python libraries we require.
+
+# Install bouncer (only cp directory tree).
+cp -r "/pkg/src/bouncer" "$PKG_PATH/bouncer"
+
+# Deploy service file.
+SERVICE_FILE_NAME="dcos-bouncer-legacy.service"
+SERVICE_FILE_PATH="$PKG_PATH/dcos.target.wants_master/${SERVICE_FILE_NAME}"
+mkdir -p "$(dirname "$SERVICE_FILE_PATH")"
+envsubst '$PKG_PATH' < "/pkg/extra/${SERVICE_FILE_NAME}" > "${SERVICE_FILE_PATH}"
