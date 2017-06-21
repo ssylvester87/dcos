@@ -7,7 +7,7 @@ endpoint_tests:
         enabled: true
         test_paths:
           - /system/health/v1/foo/bar
-        upstream: http:///run/dcos/3dt.sock
+        upstream: http:///run/dcos/dcos-diagnostics.sock
     type:
       - master
       - agent

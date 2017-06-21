@@ -354,24 +354,24 @@ def test_dcos_signal(testctx):
     bootstrap.dcos_signal(b, opts)
 
 
-def test_dcos_3dt_master(testctx):
+def test_dcos_diagnostics_master(testctx):
     test_dcos_ca(testctx)
     test_dcos_bouncer(testctx)
 
-    opts = testctx.opts(services=['dcos-3dt-master'])
+    opts = testctx.opts(services=['dcos-diagnostics-master'])
     bootstrap.make_run_dirs(opts)
     b = bootstrap.Bootstrapper(opts)
-    bootstrap.dcos_3dt_master(b, opts)
+    bootstrap.dcos_diagnostics_master(b, opts)
 
 
-def test_dcos_3dt_agent(testctx):
+def test_dcos_diagnostics_agent(testctx):
     test_dcos_ca(testctx)
     test_dcos_bouncer(testctx)
 
-    opts = testctx.opts(services=['dcos-3dt-agent'])
+    opts = testctx.opts(services=['dcos-diagnostics-agent'])
     bootstrap.make_run_dirs(opts)
     b = bootstrap.Bootstrapper(opts)
-    bootstrap.dcos_3dt_agent(b, opts)
+    bootstrap.dcos_diagnostics_agent(b, opts)
 
 
 def test_dcos_history(testctx):
