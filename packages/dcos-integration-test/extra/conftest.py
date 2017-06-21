@@ -14,10 +14,10 @@ from urllib.parse import urlparse
 import pytest
 import requests
 from api_session_fixture import make_session_fixture
+from dcos_test_utils.dcos_api_session import DcosAuth, DcosUser
 from dcoscli import DCOS_CLI_URL, DCOSCLI
 from jwt.utils import base64url_decode, base64url_encode
 
-from test_util.dcos_api_session import DcosAuth, DcosUser
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger("requests").setLevel(logging.WARNING)

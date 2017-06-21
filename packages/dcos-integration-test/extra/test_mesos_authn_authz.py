@@ -6,9 +6,9 @@ import uuid
 
 import pytest
 
+from dcos_test_utils.recordio import Decoder, Encoder
 from ee_helpers import bootstrap_config, sleep_app_definition
 
-from test_util.recordio import Decoder, Encoder
 
 log = logging.getLogger(__name__)
 
