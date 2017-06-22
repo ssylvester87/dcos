@@ -15,7 +15,8 @@
     "python-cython",
     "python-cryptography",
     "python-gunicorn",
-    "six"
+    "six",
+    "libpq"
   ],
   "sources": {
     "bouncer": {
@@ -67,10 +68,30 @@
       "url": "https://pypi.python.org/packages/f4/5b/fe03d46ced80639b7be9285492dc8ce069b841c0cebe5baacdd9b090b164/isodate-0.5.4.tar.gz",
       "sha1": "40ccf07a8e46284a79cfc4d41e151f71ae63f535"
     },
+    "psycopg2": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/f8/e9/5793369ce8a41bf5467623ded8d59a434dfef9c136351aca4e70c2657ba0/psycopg2-2.7.1.tar.gz",
+      "sha1": "284ae137dc4ddf1855d47f7e92434fcd06a27ec6"
+    },
     "pycparser": {
       "kind": "url_extract",
       "url": "https://pypi.python.org/packages/be/64/1bb257ffb17d01f4a38d7ce686809a736837ad4371bcc5c42ba7a715c3ac/pycparser-2.17.tar.gz",
       "sha1": "afc1f70c6fce0e196dece88d6da3b8d5b2af6297"
+    },
+    "sqlalchemy": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/02/69/9473d60abef55445f8e967cfae215da5de29ca21b865c99d2bf02a45ee01/SQLAlchemy-1.1.9.tar.gz",
+      "sha1": "d1d4900ae3d74a9a54070cf2ab25aa64688bb9b9"
+    },
+    "sqlalchemy-utils": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/ce/46/eaf163b7f4db1e7dc648f1036902892c91a99f2ee7a5191af0eb9cf39a2e/SQLAlchemy-Utils-0.32.14.tar.gz",
+      "sha1": "cf311246998669ed1f97922b2171e5038b9717a5"
+    },
+    "cockroachdb-python": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/00/1c/cbbeab7ecdd5ecf1213785bacf9cec05b8b5b49f2a1a84954a3deaf0acf2/cockroachdb-0.1.0.tar.gz",
+      "sha1": "679408a97802e9a4c8c79c6866eee8074f63eab0"
     }
   },
   "username": "dcos_bouncer",

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cd /pkg/src/cockroach
+
+# Build the cockroach binary.
+make build
+
+# Copy the cockroach binary to the the package bin directory.
+mkdir -p $PKG_PATH/bin
+install -m 755 src/github.com/cockroachdb/cockroach/cockroach $PKG_PATH/bin
+
+# Copy the wrapper script to the package bin directory.
+install -m 755 /pkg/extra/cockroach.py $PKG_PATH/bin/cockroach.py
+
+# Auto-start the dcos-cockroach service on the masters.
+mkdir -p "$PKG_PATH/dcos.target.wants_master"
+cp /pkg/extra/dcos-cockroach.service "$PKG_PATH/dcos.target.wants_master/dcos-cockroach.service"
