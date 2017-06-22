@@ -2,13 +2,15 @@ import collections
 import copy
 import json
 import logging
+import time
 import uuid
+from itertools import chain
 
 import pytest
 
+from dcos_test_utils.recordio import Decoder, Encoder
 from ee_helpers import bootstrap_config, sleep_app_definition
 
-from test_util.recordio import Decoder, Encoder
 
 log = logging.getLogger(__name__)
 
@@ -111,18 +113,48 @@ def is_unfiltered(response, filtered_field):
     return filtered_field in data and data[filtered_field]
 
 
+def reset_mesos_acls_cache():
+    # At the moment there's no API to reset the cache, so we just wait for the
+    # cache to be invalidated.
+    time.sleep(6)
+
+
+def grant_permissions(superuser, user_id, permissions):
+    """
+    Requests bouncer through superuser to grant the permissions set to the
+    user 'user'. 'superuser' should be a DcosApiSession object instance while
+    permissions is an array of dictionaries like in the example:
+    [
+      {
+        'rid': 'dcos:mesos:master:role:foo',
+        'actions: ['read', 'update']
+      },
+      {
+        'rid': 'dcos:mesos:master:role:bar',
+        'actions: ['full']
+      }
+    ]
+    """
+    for permission in permissions:
+        if permission['rid'] not in superuser.initial_resource_ids:
+            superuser.iam.create_acl(permission['rid'], 'ACL for rid "{}"'.format(permission['rid']))
+        for action in permission['actions']:
+            superuser.iam.grant_user_permission(user_id, action, permission['rid'])
+
+
 @pytest.mark.xfail(
     bootstrap_config['security'] in {'disabled', 'permissive'},
     reason='Mesos authZ is currently enabled only in strict mode.',
     strict=False)
 class TestMesosAuthz:
-    @pytest.mark.parametrize(("path", "targets"), [
-        ("/logging/toggle", ["master", "agent"]),
-        ("/metrics/snapshot", ["master", "agent"]),
-        ("/files/read", ["master", "agent"]),
-        ("/containers", ["agent"]),
-        ("/monitor/statistics", ["agent"])])
-    def test_endpoint(self, superuser_api_session, peter_api_session, path, targets):
+    @pytest.mark.parametrize(('path', 'targets', 'rid_template'), [
+        ('/logging/toggle', ['master', 'agent'], 'dcos:mesos:{}:endpoint:path:{}'),
+        ('/metrics/snapshot', ['master', 'agent'], 'dcos:mesos:{}:endpoint:path:{}'),
+        ('/files/read', ['master', 'agent'], 'dcos:mesos:{}:log'),
+        ('/containers', ['agent'], 'dcos:mesos:{}:endpoint:path:{}'),
+        ('/monitor/statistics', ['agent'], 'dcos:mesos:{}:endpoint:path:{}')])
+    def test_endpoint(self, superuser_api_session, peter_api_session, peter, path, targets,
+                      rid_template):
         for node_type in targets:
             query = get_query_path(path, node_type)
             r = peter_api_session.get(path, query=query, mesos_node=node_type)
@@ -130,19 +162,58 @@ class TestMesosAuthz:
             r = superuser_api_session.get(path, query=query, mesos_node=node_type)
             assert r.status_code == 200
 
-    def test_state_filtering(self, superuser_api_session, peter_api_session):
+            rid = rid_template.format(node_type, path)
+            if rid not in superuser_api_session.initial_resource_ids:
+                superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+            superuser_api_session.iam.grant_user_permission(peter.uid, 'read', rid)
+            reset_mesos_acls_cache()
+            r = peter_api_session.get(path, query=query, mesos_node=node_type)
+            assert r.status_code == 200, r.text
+
+    def test_state_filtering(self, superuser_api_session, peter_api_session, peter):
         for node_type in ['agent', 'master']:
             assert is_unfiltered(superuser_api_session.get('/state', mesos_node=node_type), 'flags')
             assert not is_unfiltered(peter_api_session.get('/state', mesos_node=node_type), 'flags')
 
-    def test_task_filtering(self, superuser_api_session, peter_api_session):
-        sleep_app = sleep_app_definition('mesos-authz-{}'.format(str(uuid.uuid4())))
+            rid = 'dcos:mesos:{}:flags'.format(node_type)
+
+            if rid not in superuser_api_session.initial_resource_ids:
+                superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+            superuser_api_session.iam.grant_user_permission(peter.uid, 'read', rid)
+
+            reset_mesos_acls_cache()
+            assert is_unfiltered(peter_api_session.get('/state', mesos_node=node_type), 'flags')
+
+    def test_task_filtering(self, superuser_api_session, peter_api_session, peter):
+        sleep_app_id = 'mesos-authz-{}'.format(str(uuid.uuid4()))
+        sleep_app = sleep_app_definition(sleep_app_id)
         with superuser_api_session.marathon.deploy_and_cleanup(sleep_app, check_health=False):
             assert is_unfiltered(superuser_api_session.get('/tasks', mesos_node='master'), 'tasks')
             assert not is_unfiltered(peter_api_session.get('/tasks', mesos_node='master'), 'tasks')
 
-    def test_mesos_weights_endpoint_authz(self, superuser_api_session, peter_api_session):
+            grant_permissions(
+                superuser_api_session,
+                peter.uid,
+                [
+                    {
+                        'rid': 'dcos:mesos:master:task:app_id:/integration-test-sleep-app-{}'.format(sleep_app_id),
+                        'actions': ['read']
+                    },
+                    {
+                        'rid': 'dcos:mesos:master:framework:role:slave_public',
+                        'actions': ['read']
+                    }
+                ])
+            reset_mesos_acls_cache()
+            r = peter_api_session.get('/tasks', mesos_node='master')
+            assert is_unfiltered(r, 'tasks')
+
+    def test_mesos_weights_endpoint_authz(self, superuser_api_session, peter_api_session, peter):
         """Test that Mesos weights-related endpoints perform authorization correctly"""
+
+        def find_weight(weight_name, json):
+            return next((data['weight'] for data in json if data['role'] == weight_name), None)
+
         set_weight = '[{"role": "test-weights-role", "weight": #WEIGHT#}]'
         try:
             r = peter_api_session.put(
@@ -157,13 +228,27 @@ class TestMesosAuthz:
             assert r.status_code == 200
             r = superuser_api_session.get('/weights', mesos_node='master')
             assert r.status_code == 200
+            assert find_weight('test-weights-role', r.json()) == 2.5
 
-            found_weight = False
-            for data in r.json():
-                if data['role'] == 'test-weights-role':
-                    found_weight = True
-                    assert data['weight'] == 2.5
-            assert found_weight
+            r = superuser_api_session.put(
+                '/weights', mesos_node='master', data=set_weight.replace('#WEIGHT#', '3.0'))
+            assert r.status_code == 200
+            r = superuser_api_session.get('/weights', mesos_node='master')
+            assert r.status_code == 200
+            assert find_weight('test-weights-role', r.json()) == 3.0
+
+            rid = 'dcos:mesos:master:weight:role:test-weights-role'
+            if rid not in superuser_api_session.initial_resource_ids:
+                superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+            superuser_api_session.iam.grant_user_permission(peter.uid, 'read', rid)
+            superuser_api_session.iam.grant_user_permission(peter.uid, 'update', rid)
+            reset_mesos_acls_cache()
+            r = peter_api_session.put('/weights', mesos_node='master', data=set_weight.replace('#WEIGHT#', '2.5'))
+            assert r.status_code == 200
+            r = peter_api_session.get('/weights', mesos_node='master')
+            assert r.status_code == 200
+
+            assert find_weight('test-weights-role', r.json()) == 2.5
         finally:
             # Mesos does not provide a way to remove weights,
             # so we set it to the default value of 1.0 here.
@@ -176,12 +261,6 @@ class TestMesosAuthz:
         created with the reservation, and then both are destroyed"""
         def add_principal(string, principal):
             return copy.copy(string).replace('#PRINCIPAL#', principal)
-
-        def check_authz(authorized, path, data):
-            if authorized:
-                assert superuser_api_session.post(path, data=data, mesos_node='master').status_code == 202
-            else:
-                assert peter_api_session.post(path, data=data, mesos_node='master').status_code == 403
 
         # Get a valid agent ID.
         r = superuser_api_session.get('/mesos/master/state')
@@ -224,14 +303,66 @@ class TestMesosAuthz:
                     }
                 }
             ]'''
-        check_authz(False, '/reserve', add_principal(reservation_data, peter.uid))
-        check_authz(True, '/reserve', add_principal(reservation_data, superuser.uid))
-        check_authz(False, '/create-volumes', add_principal(volume_data, peter.uid))
-        check_authz(True, '/create-volumes', add_principal(volume_data, superuser.uid))
-        check_authz(False, '/destroy-volumes', add_principal(volume_data, superuser.uid))
-        check_authz(True, '/destroy-volumes', add_principal(volume_data, superuser.uid))
-        check_authz(False, '/unreserve', add_principal(reservation_data, superuser.uid))
-        check_authz(True, '/unreserve', add_principal(reservation_data, superuser.uid))
+
+        assert peter_api_session.post('/reserve',
+                                      data=add_principal(reservation_data, peter.uid),
+                                      mesos_node='master').status_code == 403
+        assert superuser_api_session.post('/reserve',
+                                          data=add_principal(reservation_data, superuser.uid),
+                                          mesos_node='master').status_code == 202
+        assert peter_api_session.post('/create-volumes',
+                                      data=add_principal(volume_data, peter.uid),
+                                      mesos_node='master').status_code == 403
+        assert superuser_api_session.post('/create-volumes',
+                                          data=add_principal(volume_data, superuser.uid),
+                                          mesos_node='master').status_code == 202
+        assert peter_api_session.post('/destroy-volumes',
+                                      data=add_principal(volume_data, superuser.uid),
+                                      mesos_node='master').status_code == 403
+        assert superuser_api_session.post('/destroy-volumes',
+                                          data=add_principal(volume_data, superuser.uid),
+                                          mesos_node='master').status_code == 202
+        assert peter_api_session.post('/unreserve',
+                                      data=add_principal(reservation_data, superuser.uid),
+                                      mesos_node='master').status_code == 403
+        assert superuser_api_session.post('/unreserve',
+                                          data=add_principal(reservation_data, superuser.uid),
+                                          mesos_node='master').status_code == 202
+
+        grant_permissions(
+            superuser_api_session,
+            peter.uid,
+            [
+                {
+                    'rid': 'dcos:mesos:master:reservation:role:test-reservation-role',
+                    'actions': ['create']
+                },
+                {
+                    'rid': 'dcos:mesos:master:reservation:principal:{}'.format(peter.uid),
+                    'actions': ['delete']
+                },
+                {
+                    'rid': 'dcos:mesos:master:volume:role:test-reservation-role',
+                    'actions': ['create']
+                },
+                {
+                    'rid': 'dcos:mesos:master:volume:principal:{}'.format(peter.uid),
+                    'actions': ['delete']
+                }
+            ])
+        reset_mesos_acls_cache()
+        assert peter_api_session.post('/reserve',
+                                      data=add_principal(reservation_data, peter.uid),
+                                      mesos_node='master').status_code == 202
+        assert peter_api_session.post('/create-volumes',
+                                      data=add_principal(volume_data, peter.uid),
+                                      mesos_node='master').status_code == 202
+        assert peter_api_session.post('/destroy-volumes',
+                                      data=add_principal(volume_data, peter.uid),
+                                      mesos_node='master').status_code == 202
+        assert peter_api_session.post('/unreserve',
+                                      data=add_principal(reservation_data, peter.uid),
+                                      mesos_node='master').status_code == 202
 
     @pytest.mark.parametrize('node_type', ['master', 'agent'])
     @pytest.mark.parametrize('path', [
@@ -239,13 +370,20 @@ class TestMesosAuthz:
         '/files/read',
         '/files/download',
         '/files/browse'])
-    def test_files_endpoints(self, superuser_api_session, peter_api_session, path, node_type):
+    def test_files_endpoints(self, superuser_api_session, peter_api_session, peter, path, node_type):
         """Test that Mesos files endpoints perform authorization correctly"""
         query = get_query_path(path, node_type)
         assert superuser_api_session.get(path, query=query, mesos_node=node_type).status_code == 200
         assert peter_api_session.get(path, query=query, mesos_node=node_type).status_code == 403
 
-    def test_mesos_quota_endpoint_authz(self, superuser_api_session, peter_api_session):
+        for rid in [t.format(node_type) for t in ['dcos:mesos:{}:log', 'dcos:mesos:{}:endpoint:path:/files/debug']]:
+            if rid not in superuser_api_session.initial_resource_ids:
+                superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+            superuser_api_session.iam.grant_user_permission(peter.uid, 'read', rid)
+        reset_mesos_acls_cache()
+        assert peter_api_session.get(path, query=query, mesos_node=node_type).status_code == 200
+
+    def test_mesos_quota_endpoint_authz(self, superuser_api_session, peter_api_session, peter):
         """Test that Mesos master's '/quota' endpoint performs authorization correctly"""
         def found_quota(response):
             assert response.status_code == 200
@@ -282,20 +420,41 @@ class TestMesosAuthz:
         assert peter_api_session.delete('/quota/' + test_role, mesos_node='master').status_code == 403
         assert superuser_api_session.delete('/quota/' + test_role, mesos_node='master').status_code == 200
 
-    @pytest.mark.parametrize(('data', 'peter_expected'), [
-        ({'type': 'GET_HEALTH'}, 200),
-        ({'type': 'GET_FLAGS'}, 403),
-        ({'type': 'GET_VERSION'}, 200),
-        ({'type': 'GET_METRICS', 'get_metrics': {}}, 200),
-        ({'type': 'GET_LOGGING_LEVEL'}, 200),
-        ({'type': 'SET_LOGGING_LEVEL', 'set_logging_level': {'level': 0, 'duration': {'nanoseconds': 7}}}, 403),
-        ({'type': 'LIST_FILES', 'list_files': {'path': '/slave/log'}}, 403),
-        ({'type': 'READ_FILE', 'read_file': {'path': '/slave/log', 'offset': 0}}, 403)
+        rid = 'dcos:mesos:master:quota:role:{}'.format(test_role)
+        if rid not in superuser_api_session.initial_resource_ids:
+            superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+        superuser_api_session.iam.grant_user_permission(peter.uid, 'update', rid)
+        superuser_api_session.iam.grant_user_permission(peter.uid, 'read', rid)
+        reset_mesos_acls_cache()
+
+        assert peter_api_session.post('/quota', data=data, mesos_node='master').status_code == 200
+        assert found_quota(peter_api_session.get('/quota', mesos_node='master'))
+        assert peter_api_session.delete('/quota/' + test_role, mesos_node='master').status_code == 200
+
+    @pytest.mark.parametrize(('data', 'peter_expected', 'rid', 'action'), [
+        ({'type': 'GET_HEALTH'}, 200, None, None),
+        ({'type': 'GET_FLAGS'}, 403, 'dcos:mesos:agent:flags', 'read'),
+        ({'type': 'GET_VERSION'}, 200, None, None),
+        ({'type': 'GET_METRICS', 'get_metrics': {}}, 200, None, None),
+        ({'type': 'GET_LOGGING_LEVEL'}, 200, None, None),
+        ({'type': 'SET_LOGGING_LEVEL', 'set_logging_level': {'level': 0, 'duration': {'nanoseconds': 7}}}, 403,
+         'dcos:mesos:agent:log_level', 'update'),
+        ({'type': 'LIST_FILES', 'list_files': {'path': '/slave/log'}}, 403,
+         'dcos:mesos:agent:log', 'read'),
+        ({'type': 'READ_FILE', 'read_file': {'path': '/slave/log', 'offset': 0}}, 403,
+         'dcos:mesos:agent:log', 'read')
     ])
-    def test_mesos_v1_agent_operator_endpoint_authz(self, superuser_api_session, peter_api_session, data,
-                                                    peter_expected):
+    def test_mesos_v1_agent_operator_endpoint_authz(self, superuser_api_session, peter_api_session, peter,
+                                                    data, peter_expected, rid, action):
+        reset_mesos_acls_cache()
         assert superuser_api_session.post('/api/v1', json=data, mesos_node='agent').status_code == 200
         assert peter_api_session.post('/api/v1', json=data, mesos_node='agent').status_code == peter_expected
+        if peter_expected != 200:
+            if rid not in superuser_api_session.initial_resource_ids:
+                superuser_api_session.iam.create_acl(rid, 'ACL for rid "{}"'.format(rid))
+            superuser_api_session.iam.grant_user_permission(peter.uid, action, rid)
+            reset_mesos_acls_cache()
+            assert peter_api_session.post('/api/v1', json=data, mesos_node='agent').status_code == 200
 
     @pytest.mark.parametrize(('action', 'field'), [
         ('GET_STATE', 'get_tasks'),
@@ -304,22 +463,15 @@ class TestMesosAuthz:
         ('GET_EXECUTORS', 'get_executors'),
         ('GET_TASKS', 'get_tasks')
     ])
-    def test_mesos_v1_agent_endpoint_authz_filtering(self, superuser_api_session, peter_api_session, action, field):
+    def test_mesos_v1_agent_endpoint_authz_filtering(self, superuser_api_session, peter_api_session, peter, action,
+                                                     field):
 
         def extract_executing_agent(state, app_id):
-            agent_id = None
-            for framework in state['frameworks']:
-                for task in framework['tasks']:
-                    if app_id in task['id']:
-                        agent_id = task['slave_id']
-                        break
+            tasks = chain.from_iterable(framework['tasks'] for framework in state['frameworks'])
+            agent_id = next((t['slave_id'] for t in tasks if app_id in t['id']), None)
             if agent_id is None:
                 return None
-
-            for agent in state['slaves']:
-                if agent['id'] == agent_id:
-                    return agent['hostname']
-            return None
+            return next((a['hostname'] for a in state['slaves'] if a['id'] == agent_id), None)
 
         def is_unfiltered(data):
             return field in data and data[field]
@@ -345,6 +497,7 @@ class TestMesosAuthz:
             data = extract_data(response)
             assert is_unfiltered(data)
 
+            reset_mesos_acls_cache()
             response = peter_api_session.api_request('POST',
                                                      '/api/v1',
                                                      host=agent,
@@ -354,6 +507,44 @@ class TestMesosAuthz:
             assert response.status_code == 200
             data = extract_data(response)
             assert not is_unfiltered(data)
+
+            app_id = '/integration-test-sleep-app-{}'.format(sleep_app_id)
+            grant_permissions(
+                superuser_api_session,
+                peter.uid,
+                [
+                    {
+                        'rid': 'dcos:mesos:agent:task:app_id:{}'.format(app_id),
+                        'actions': ['read']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:container:app_id:{}'.format(app_id),
+                        'actions': ['read']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:executor:app_id:{}'.format(app_id),
+                        'actions': ['read']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:framework:role:slave_public',
+                        'actions': ['read']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:framework:role:*',
+                        'actions': ['read']
+                    }
+                ])
+            reset_mesos_acls_cache()
+
+            response = peter_api_session.api_request('POST',
+                                                     '/api/v1',
+                                                     host=agent,
+                                                     port=5051,
+                                                     json={'type': action},
+                                                     headers={'Accept': 'application/json'})
+            assert response.status_code == 200
+            data = extract_data(response)
+            assert is_unfiltered(data)
 
     def test_mesos_v1_agent_operator_containers_api_authz(self, superuser_api_session, peter_api_session):
 
@@ -369,11 +560,7 @@ class TestMesosAuthz:
             if container_id is None or agent_id is None:
                 return (None, None)
 
-            agent_location = None
-            for agent in state['slaves']:
-                if agent['id'] == agent_id:
-                    agent_location = agent['hostname']
-                    break
+            agent_location = next((a['hostname'] for a in state['slaves'] if a['id'] == agent_id), None)
             if agent_location is None:
                 return (None, None)
             return (container_id, agent_location)
@@ -538,6 +725,266 @@ class TestMesosAuthz:
             assert response.status_code == 403, response.text
             attach_input_kwargs['data'] = input_streamer()
             response = superuser_api_session.api_request('POST', '/api/v1', **attach_input_kwargs)
+            assert response.status_code == 200, response.text
+
+            # Verify the streamed output from the launch session
+            decoder = Decoder(lambda s: json.loads(s.decode("UTF-8")))
+            for chunk in session.iter_content():
+                for decoded in decoder.decode(chunk):
+                    if decoded['type'] == 'DATA':
+                        assert decoded['data']['data'] == 'meow', 'Output did not match expected'
+
+            # Verify the streamed output from the attached output.
+            for chunk in attached_output.iter_content():
+                for decoded in decoder.decode(chunk):
+                    if decoded['type'] == 'DATA':
+                        assert decoded['data']['data'] == 'meow', 'Output did not match expected'
+
+    def test_mesos_v1_agent_operator_containers_api_authz_known_user(self, superuser_api_session, peter_api_session,
+                                                                     peter):
+
+        def extract_container_agent(state, app_id):
+            container_id = None
+            agent_id = None
+            for framework in state['frameworks']:
+                for task in framework['tasks']:
+                    if app_id in task['id']:
+                        container_id = task['statuses'][0]['container_status']['container_id']['value']
+                        agent_id = task['slave_id']
+                        break
+            if container_id is None or agent_id is None:
+                return (None, None)
+
+            agent_location = next((a['hostname'] for a in state['slaves'] if a['id'] == agent_id), None)
+            if agent_location is None:
+                return (None, None)
+            return (container_id, agent_location)
+
+        app_uid = 'mesos-authz-{}'.format(str(uuid.uuid4()))
+        sleep_app = sleep_app_definition(app_uid)
+        app_id = sleep_app['id']
+        grant_permissions(
+            superuser_api_session,
+            peter.uid,
+            [
+                {
+                    'rid': 'dcos:mesos:master:task:user:{}'.format(peter_api_session.default_os_user),
+                    'actions': ['create']
+                },
+                {
+                    'rid': 'dcos:service:marathon:marathon:services:/',
+                    'actions': ['full']
+                },
+                {
+                    'rid': 'dcos:adminrouter:service:marathon',
+                    'actions': ['full']
+                },
+                {
+                    'rid': 'dcos:mesos:master:task:app_id:{}'.format(app_id),
+                    'actions': ['read']
+                },
+                {
+                    'rid': 'dcos:mesos:master:framework:role:*',
+                    'actions': ['read']
+                },
+                {
+                    'rid': 'dcos:mesos:master:framework:role:slave_public',
+                    'actions': ['read']
+                }
+            ])
+        reset_mesos_acls_cache()
+        with peter_api_session.marathon.deploy_and_cleanup(sleep_app, check_health=False):
+            r = peter_api_session.get('/state', mesos_node='master')
+            log.info(r.text)
+            container_id, agent_address = extract_container_agent(r.json(), app_uid)
+            assert container_id is not None
+            assert agent_address is not None
+
+            grant_permissions(
+                superuser_api_session,
+                peter.uid,
+                [
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container:app_id:{}'.format(app_id),
+                        'actions': ['full']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container:role:slave_public',
+                        'actions': ['full']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container:user:{}'.format(
+                            peter_api_session.default_os_user),
+                        'actions': ['full']
+                    }
+                ])
+            nested_container_id = {'value': 'pod-{}'.format(uuid.uuid4()), 'parent': {'value': container_id}}
+
+            # Attempt to launch a nested container.
+            launch_nested_container_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'json': {
+                    'type': 'LAUNCH_NESTED_CONTAINER',
+                    'launch_nested_container': {
+                        'container_id': nested_container_id,
+                        'command': {
+                            'value': 'echo echo'
+                        }
+                    }
+                }
+            }
+            reset_mesos_acls_cache()
+            response = peter_api_session.api_request('POST', '/api/v1', **launch_nested_container_kwargs)
+            assert response.status_code == 200, response.text
+
+            # Wait for the container to exit.
+            wait_nested_container_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'json': {
+                    'type': 'WAIT_NESTED_CONTAINER',
+                    'wait_nested_container': {
+                        'container_id': nested_container_id
+                    }
+                }
+            }
+            response = peter_api_session.api_request('POST', '/api/v1', **wait_nested_container_kwargs)
+            assert response.status_code == 200, response.text
+
+            # Launch a long-running nested container and kill it.
+            nested_container_id = {'value': 'pod-{}'.format(uuid.uuid4()), 'parent': {'value': container_id}}
+            launch_nested_container_kwargs['json']['launch_nested_container']['container_id'] = nested_container_id
+            launch_nested_container_kwargs['json']['launch_nested_container']['command']['value'] = 'cat'
+            response = peter_api_session.api_request('POST', '/api/v1', **launch_nested_container_kwargs)
+            assert response.status_code == 200, response.text
+
+            kill_nested_container_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'json': {
+                    'type': 'KILL_NESTED_CONTAINER',
+                    'kill_nested_container': {
+                        'container_id': nested_container_id
+                    }
+                }
+            }
+            response = peter_api_session.api_request('POST', '/api/v1', **kill_nested_container_kwargs)
+            assert response.status_code == 200, response.text
+
+            grant_permissions(
+                superuser_api_session,
+                peter.uid,
+                [
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container_session:app_id:{}'.format(app_id),
+                        'actions': ['full']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container_session:role:slave_public',
+                        'actions': ['full']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:nested_container_session:user:{}'.format(
+                            peter_api_session.default_os_user),
+                        'actions': ['full']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:container:app_id:{}'.format(app_id),
+                        'actions': ['read', 'update']
+                    },
+                    {
+                        'rid': 'dcos:mesos:agent:container:role:slave_public',
+                        'actions': ['read', 'update']
+                    }
+                ])
+            reset_mesos_acls_cache()
+            # Launch nested container session.
+            nested_container_id = {'value': 'debug-{}'.format(uuid.uuid4()), 'parent': {'value': container_id}}
+            launch_nested_container_session_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'json': {
+                    'type': 'LAUNCH_NESTED_CONTAINER_SESSION',
+                    'launch_nested_container_session': {
+                        'container_id': nested_container_id,
+                        'command': {
+                            'value': 'cat'
+                        }
+                    }
+                },
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/recordio',
+                    'Message-Accept': 'application/json',
+                    'Connection': 'keep-alive'
+                },
+                'stream': True
+            }
+            session = peter_api_session.api_request('POST', '/api/v1', **launch_nested_container_session_kwargs)
+            assert session.status_code == 200, session.text
+
+            encoder = Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
+            attach_output_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'json': {
+                    'type': 'ATTACH_CONTAINER_OUTPUT',
+                    'attach_container_output': {
+                        'container_id': nested_container_id
+                    }
+                },
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/recordio',
+                    'Message-Accept': 'application/json',
+                    'Connection': 'keep-alive'
+                },
+                'stream': True
+            }
+            attached_output = peter_api_session.api_request('POST', '/api/v1', **attach_output_kwargs)
+            assert attached_output.status_code == 200, attached_output.text
+
+            def input_streamer():
+                message = {
+                    'type': 'ATTACH_CONTAINER_INPUT',
+                    'attach_container_input': {
+                        'type': 'CONTAINER_ID',
+                        'container_id': nested_container_id
+                    }
+                }
+                yield encoder.encode(message)
+                message['attach_container_input'] = {
+                    'type': 'PROCESS_IO',
+                    'process_io': {
+                        'type': 'DATA',
+                        'data': {
+                            'type': 'STDIN',
+                            'data': 'meow'
+                        }
+                    }
+                }
+                yield encoder.encode(message)
+                # Place an empty string to indicate EOF to the server and push
+                # 'None' to our queue to indicate that we are done processing input.
+                message['attach_container_input']['process_io']['data']['data'] = ''
+                yield encoder.encode(message)
+
+            attach_input_kwargs = {
+                'host': agent_address,
+                'port': 5051,
+                'data': '',
+                'headers': {
+                    'Content-Type': 'application/recordio',
+                    'Message-Content-Type': 'application/json',
+                    'Accept': 'application/recordio',
+                    'Message-Accept': 'application/json',
+                    'Connection': 'keep-alive',
+                    'Transfer-Encoding': 'chunked'
+                }
+            }
+            attach_input_kwargs['data'] = input_streamer()
+            response = peter_api_session.api_request('POST', '/api/v1', **attach_input_kwargs)
             assert response.status_code == 200, response.text
 
             # Verify the streamed output from the launch session

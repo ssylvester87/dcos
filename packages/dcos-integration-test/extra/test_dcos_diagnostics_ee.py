@@ -11,26 +11,26 @@ def create_and_grant_user_permission(superuser_api_session, uid, action, rid, de
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
-def test_ee_3dt_runner_poststart(superuser_api_session):
+def test_ee_dcos_diagnostics_runner_poststart(superuser_api_session):
     if bootstrap_config['security'] == 'strict':
         create_and_grant_user_permission(
             superuser_api_session,
             'dcos_marathon',
             'create',
-            'dcos:mesos:master:task:user:dcos_3dt',
-            'Grants marathon access to start task as dcos_3dt user'
+            'dcos:mesos:master:task:user:dcos_diagnostics',
+            'Grants marathon access to start task as dcos_diagnostics user'
         )
 
         create_and_grant_user_permission(
             superuser_api_session,
             'dcos_marathon',
             'create',
-            'dcos:mesos:agent:task:user:dcos_3dt',
-            'Grants marathon access to start task as dcos_3dt user'
+            'dcos:mesos:agent:task:user:dcos_diagnostics',
+            'Grants marathon access to start task as dcos_diagnostics user'
         )
 
     cmd = [
-        "/opt/mesosphere/bin/3dt",
+        "/opt/mesosphere/bin/dcos-diagnostics",
         "check",
         "node-poststart",
         "&&",
@@ -39,8 +39,8 @@ def test_ee_3dt_runner_poststart(superuser_api_session):
     ]
     test_uuid = uuid.uuid4().hex
     poststart_job = {
-        'id': 'test-dcos-3dt-runner-poststart-ee-' + test_uuid,
-        'user': 'dcos_3dt',
+        'id': 'test-dcos-diagnostics-runner-poststart-ee-' + test_uuid,
+        'user': 'dcos_diagnostics',
         'instances': 1,
         'cpus': .1,
         'mem': 128,
