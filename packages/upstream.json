@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/jsancio/dcos",
   "kind": "git",
-  "ref": "b064fcef955d63f222e89ad6531cb1c1ab5c5ab1",
-  "ref_origin": "master"
+  "ref": "86b3fa0892b723c2f0ba87aa61a06838c1a9c692",
+  "ref_origin": "bump-cosmos"
 }
