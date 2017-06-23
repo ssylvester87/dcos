@@ -7,16 +7,11 @@ For example, at the time of writing:
 
 ```sh
 ARTIFACT_URL=https://downloads.mesosphere.com/dcos-enterprise/testing/pull/930/dcos_generate_config.ee.sh
-DCOS_DOCKER_REPOSITORY=https://github.com/dcos/dcos-docker.git
-DCOS_DOCKER_BRANCH=master
+export DCOS_E2E_GENCONF_PATH=/tmp/dcos_generate_config.sh
+export DCOS_E2E_TMP_DIR_PATH=/tmp
 
-ARTIFACT_PATH=/tmp/dcos_generate_config.sh
-DCOS_DOCKER_PATH=/tmp/dcos-docker
-
-rm -rf $ARTIFACT_PATH
-rm -rf $DCOS_DOCKER_PATH
-curl -o $ARTIFACT_PATH $ARTIFACT_URL
-git clone -b $DCOS_DOCKER_BRANCH $DCOS_DOCKER_REPOSITORY $DCOS_DOCKER_PATH
+rm -rf $DCOS_E2E_GENCONF_PATH
+curl -o $DCOS_E2E_GENCONF_PATH $ARTIFACT_URL
 ```
 
 Then, install the test dependencies, preferably in a virtual environment:

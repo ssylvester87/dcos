@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/adamtheturtle/dcos",
   "kind": "git",
-  "ref": "95dc15d63a421a4deec17bb254c1632214a1e96f",
-  "ref_origin": "master"
+  "ref": "2bb09b7a508b120cf6043aa6501e762343641491",
+  "ref_origin": "bump-dcos-test-utils-DCOS-16421"
 }
