@@ -3,10 +3,13 @@ Test IAM/Bouncer functionality through Admin Router.
 """
 import base64
 import json
+import logging
+import os
 import time
 import uuid
 
 import jwt
+import pexpect
 import pytest
 from ee_helpers import generate_RSA_keypair
 from jwt.utils import base64url_decode
@@ -311,3 +314,119 @@ class TestIAMUserGroupCRUD:
         r = superuser_api_session.iam.get('groups')
         gids = [o['gid'] for o in r.json()['array']]
         assert gid not in gids
+
+
+def reset_superuser_run(uid, password):
+    """
+    Runs the `reset-superuser` script for given user and set provided
+    password and resets credentials and privileges for uid.
+
+    Args:
+        uid (str): User UID to be resetted.
+        password (str): New password.
+
+    Raises:
+        Exception if script exits with other return code than 0.
+    """
+    path = '/opt/mesosphere/active/bouncer/bouncer/bin/reset-superuser'
+    process = pexpect.spawn(path, [uid])
+
+    # Although password prompt shouldn't be delayed add a safe `timeout`
+    # 3 seconds to avoid potential flakyness.
+    process.expect('Type superuser password: ', timeout=3)
+    process.sendline(password)
+    process.expect('Retype superuser password: ', timeout=3)
+    process.sendline(password)
+
+    # Make sure that process ended with result code 0
+    return_code = process.wait()
+    if return_code != 0:
+        raise Exception(
+            '`reset-superuser` script failed with '
+            'return code: `{return_code}`'.format(
+                return_code=return_code
+                )
+            )
+
+
+@pytest.fixture()
+def reset_superuser_password():
+    """
+    Use bouncer `reset-superuser` script to reset the test super user password.
+
+    Running this script adds considerable time to execution so its not used
+    to reset superuser credentials as part of `iam_verify_and_reset`.
+    """
+    # Run this fixture after tests
+    yield
+
+    logging.info(
+        'reset-superuser: `{uid}` user password back to `{password}` with '
+        'admin priviledges'.format(
+            uid=os.environ['DCOS_LOGIN_UNAME'],
+            password=os.environ['DCOS_LOGIN_PW'],
+            )
+        )
+
+    reset_superuser_run(
+        os.environ['DCOS_LOGIN_UNAME'], os.environ['DCOS_LOGIN_PW'])
+
+
+@pytest.mark.usefixtures('iam_verify_and_reset')
+class TestIAMResetSuperuser:
+
+    @pytest.mark.usefixtures('reset_superuser_password')
+    def test_reset_admin_superuser(
+            self, superuser_api_session, noauth_api_session):
+        """
+        Attempting to reset the password of an existing superuser.
+        """
+        uid = superuser_api_session.auth_user.uid
+        new_password = str(uuid.uuid4())
+
+        reset_superuser_run(uid, new_password)
+
+        # Superuser can no longer login with original password
+        r = noauth_api_session.iam.post(
+            '/auth/login',
+            json={'uid': uid, 'password': os.environ['DCOS_LOGIN_PW']}
+            )
+        r.status_code == 401
+
+        r = noauth_api_session.iam.post(
+            '/auth/login',
+            json={'uid': uid, 'password': new_password}
+            )
+        r.raise_for_status()
+        # Assert that bouncer responded with auth token
+        assert 'token' in r.json()
+
+    def test_reset_nonexisting_user(
+            self, superuser_api_session, noauth_api_session):
+        """
+        Attempting to reset the password of a user which does not exist creates
+        new user with superuser privileges.
+        """
+        uid = 'new_uid'
+        new_password = str(uuid.uuid4())
+
+        # Check that user doesn't exists
+        r = superuser_api_session.iam.get('/user/{}'.format(uid))
+        assert r.status_code == 404
+
+        reset_superuser_run(uid, new_password)
+
+        r = noauth_api_session.iam.post(
+            '/auth/login',
+            json={'uid': uid, 'password': new_password}
+            )
+        r.raise_for_status()
+        # Assert that bouncer responded with auth token
+        assert 'token' in r.json()
+
+        # Make sure that newly created user is in superusers group
+        r = superuser_api_session.iam.get('/groups/superusers/users')
+        r.raise_for_status()
+
+        uids = set([u['user']['uid'] for u in r.json()['array']])
+        assert uid in uids

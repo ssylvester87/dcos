@@ -3,6 +3,8 @@ source /opt/mesosphere/environment.export
 export LIB_INSTALL_DIR="$PKG_PATH/lib/python3.5/site-packages"
 mkdir -p "$LIB_INSTALL_DIR"
 pip3 install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/pytest_html
+pip3 install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/ptyprocess
+pip3 install --no-deps --install-option="--prefix=$PKG_PATH" --root=/ /pkg/src/pexpect
 
 # import the open source tests
 mkdir -p $PKG_PATH/open_source_tests
