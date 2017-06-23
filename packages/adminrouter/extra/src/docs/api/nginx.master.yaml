@@ -8,6 +8,10 @@ backends:
     server: '127.0.0.1:8888'
     name: DC/OS Certificate Authority
     reference: 'https://docs.mesosphere.com/1.9/networking/tls-ssl/ca-api/'
+  cockroachdb:
+    server: '127.0.0.1:8090'
+    name: CockroachDB
+    reference: 'https://www.cockroachlabs.com/'
   dcos_diagnostics:
     server: 'unix:/run/dcos/dcos-diagnostics.sock'
     name: DC/OS Diagnostics
@@ -170,6 +174,23 @@ routes:
     description: Get CA public key Privacy Enhanced Mail file (unauthenticated)
     file: /run/dcos/pki/CA/ca-bundle.crt
     path: /ca/dcos-ca.crt
+  /cockroachdb:
+    group: CockroachDB
+    matcher: exact
+    description: Redirect to the CockroachDB Admin UI
+    redirects:
+      - regex: ^/cockroachdb$
+        replacement: '$scheme://$http_host/cockroachdb/'
+        type: permanent
+    path: /cockroachdb
+  /cockroachdb/:
+    group: CockroachDB
+    matcher: path
+    description: The CockroachDB Admin UI
+    proxy:
+      path: 'https://$backend/'
+      backend: cockroachdb
+    path: /cockroachdb/
   /cosmos/service/:
     group: Cosmos
     matcher: path

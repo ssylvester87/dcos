@@ -15,6 +15,18 @@ def _master_count():
 
 class TestCockroach:
 
+    def test_admin_ui_superuser(self, superuser_api_session):
+        r = superuser_api_session.get("/cockroachdb/", allow_redirects=False)
+        assert r.status_code == 200
+
+    def test_admin_ui_peteruser(self, peter_api_session):
+        r = peter_api_session.get("/cockroachdb/", allow_redirects=False)
+        assert r.status_code == 403
+
+    def test_admin_ui_noauth(self, noauth_api_session):
+        r = noauth_api_session.get("/cockroachdb/", allow_redirects=False)
+        assert r.status_code == 401
+
     def test_cluster_ensemble(self):
         """Test that all the CockroachDB instances have joined the cluster.
 
