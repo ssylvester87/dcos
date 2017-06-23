@@ -40,9 +40,22 @@ done
 # TODO(jp): cherry-pick what is required.
 cp -r "/pkg/src/bouncer" "$PKG_PATH/bouncer"
 
-
 # Deploy service file.
 SERVICE_FILE_NAME="dcos-bouncer.service"
 SERVICE_FILE_PATH="$PKG_PATH/dcos.target.wants_master/${SERVICE_FILE_NAME}"
 mkdir -p "$(dirname "$SERVICE_FILE_PATH")"
 envsubst '$PKG_PATH' < "/pkg/extra/${SERVICE_FILE_NAME}" > "${SERVICE_FILE_PATH}"
+
+# Deploy switch-bouncer-backend.sh
+FILE_NAME="switch-bouncer-backend.sh"
+FILE_PATH="$PKG_PATH/bin/${FILE_NAME}"
+mkdir -p "$(dirname "$FILE_PATH")"
+envsubst '$PKG_PATH' < "/pkg/extra/${FILE_NAME}" > "${FILE_PATH}"
+chmod +x ${FILE_PATH}
+
+# Deploy switch-bouncer-readonly.sh
+FILE_NAME="switch-bouncer-readonly.sh"
+FILE_PATH="$PKG_PATH/bin/${FILE_NAME}"
+mkdir -p "$(dirname "$FILE_PATH")"
+envsubst '$PKG_PATH' < "/pkg/extra/${FILE_NAME}" > "${FILE_PATH}"
+chmod +x ${FILE_PATH}

@@ -754,15 +754,17 @@ class Bootstrapper(object):
         shutil.chown(dst, user=self.opts.dcos_ca_user)
 
     def write_bouncer_env(self, filename):
-        if not self.opts.config['zk_acls_enabled']:
-            return
+        env = 'SQLALCHEMY_DB_URL=cockroachdb://root@{my_ip}:26257/iam\n'.format(
+            my_ip=utils.detect_ip())
+        if self.opts.config['zk_acls_enabled']:
+            zk_creds = self.secrets['zk']['dcos_bouncer']
+            env += 'DATASTORE_ZK_USER={username}\nDATASTORE_ZK_SECRET={password}\n'.format(
+                username=zk_creds['username'],
+                password=zk_creds['password'])
 
-        zk_creds = self.secrets['zk']['dcos_bouncer']
+        env = bytes(env, 'ascii')
 
-        env = 'DATASTORE_ZK_USER={username}\nDATASTORE_ZK_SECRET={password}\n'
-        env = bytes(env.format_map(zk_creds), 'ascii')
-
-        log.info('Writing Bouncer ZK credentials to {}'.format(filename))
+        log.info('Writing Bouncer environment and credentials to {}'.format(filename))
         _write_file(filename, env, 0o600)
 
     def write_cockroach_env(self, filename):

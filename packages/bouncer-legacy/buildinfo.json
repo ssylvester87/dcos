@@ -1,0 +1,28 @@
+{
+  "requires": [
+    "python",
+    "python-future",
+    "python-isodate",
+    "python-jwkest",
+    "python-jwt",
+    "python-kazoo",
+    "python-lxml",
+    "python-xmlsec",
+    "python-passlib",
+    "python-pycryptodomex",
+    "python-retrying",
+    "python-pyyaml",
+    "python-cython",
+    "python-cryptography",
+    "python-gunicorn",
+    "six"
+  ],
+  "sources": {
+    "bouncer": {
+      "kind": "git",
+      "git": "git@github.com:mesosphere/bouncer.git",
+      "ref": "d90e719b7b5ca1db922031c8b0e89b7f88f97248",
+      "ref_origin": "dcos/1.9"
+    }
+  }
+}
