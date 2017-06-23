@@ -395,6 +395,11 @@ function _M.init(use_auth)
         return res.do_authn_or_exit("dcos:adminrouter:ops:system-logs");
     end
 
+    -- /cockroachdb/
+    res.access_cockroachdb_endpoint = function()
+        return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:cockroachdb");
+    end
+
     return res
 end
 

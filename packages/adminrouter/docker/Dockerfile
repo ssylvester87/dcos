@@ -136,6 +136,9 @@ COPY ca.crt /run/dcos/pki/CA/certs/
 COPY ca.crt /run/dcos/pki/CA/ca-bundle.crt
 COPY adminrouter.crt /run/dcos/pki/tls/certs/
 COPY adminrouter.key /run/dcos/pki/tls/private/
+COPY ca.crt /run/dcos/pki/cockroach/
+COPY client.root.crt /run/dcos/pki/cockroach/
+COPY client.root.key /run/dcos/pki/cockroach/
 
 # Workers run as the dcos_adminrouter group.
 RUN groupadd --system dcos_adminrouter
