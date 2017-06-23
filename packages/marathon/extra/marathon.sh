@@ -21,6 +21,7 @@ fi
 export -n MARATHON_EXTRA_ARGS
 exec $PKG_PATH/marathon/bin/marathon \
     $JAVA_ARGS \
+    -Djava.security.properties=/opt/mesosphere/etc/java.security \
     -Duser.dir=/var/lib/dcos/marathon \
     -J-server \
     -J-verbose:gc \

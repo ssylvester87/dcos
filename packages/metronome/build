@@ -33,5 +33,5 @@ ExecStartPre=/usr/bin/env mkdir -p /run/dcos/etc/metronome
 ExecStartPre=/bin/bash -c 'echo "METRONOME_LEADER_ELECTION_HOSTNAME=\$(\$MESOS_IP_DISCOVERY_COMMAND)" > /run/dcos/etc/metronome/service.env'
 ExecStartPre=/bin/bash -c 'echo "LIBPROCESS_IP=\$(\$MESOS_IP_DISCOVERY_COMMAND)" >> /run/dcos/etc/metronome/service.env'
 ExecStartPre=/usr/bin/env rm -f /run/dcos/etc/metronome/play.pid
-ExecStart=/opt/mesosphere/bin/metronome -Dpidfile.path=/run/dcos/etc/metronome/play.pid
+ExecStart=/opt/mesosphere/bin/metronome -Dpidfile.path=/run/dcos/etc/metronome/play.pid -Djava.security.properties=/opt/mesosphere/etc/java.security
 EOF

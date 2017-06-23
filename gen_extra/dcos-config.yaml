@@ -1134,3 +1134,34 @@ package:
       {{ ca_certificate }}
 {% case "false" %}
 {% endswitch %}
+  - path: /etc_master/java.security
+    permissions: "0644"
+    content: |
+      # This file overrides the default security settings in
+      #
+      #   /opt/mesosphere/packages/java--*/usr/java/jre/lib/security/java.security
+      #
+      # It can be used to modify various JVM security properties which includes
+      # but is not limited to TLS and certificate verification properties.
+      # This takes effect for JVM processes that are invoked with the argument
+      #
+      #     -Djava.security.properties=/opt/mesosphere/etc/java.security
+  
+      # Algorithm restrictions for certification path processing.
+      jdk.certpath.disabledAlgorithms=DSA, MD2, MD5, \
+          RSA keySize < 2048, \
+          EC keySize < 256
+  
+      # Disabled algorithms will not be negotiated for TLS connections, even
+      # if they are enabled explicitly in an application.
+      # - Enable TLSv1.2 exclusively.
+      # - Disable 3DES bulk encryption method ("Triple-DES" /
+      #   "DES-CBC3" / "DESede", https://stackoverflow.com/a/17281431/145400).
+      # - Disable RC4 bulk encryption method.
+      # - Disable DHE key exchange with short keys.
+      jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, \
+          RC4, MD5withRSA, DESede \
+          RSA keySize < 2048, \
+          DH keySize < 2048, \
+          EC keySize < 256
+
