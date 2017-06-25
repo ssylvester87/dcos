@@ -29,7 +29,8 @@ class Mocker(MockerBase):
         ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=61430))
         # Backup service
         ee_endpoints.append(ReflectingUnixSocketEndpoint('/run/dcos/dcos-backup-master.sock'))
-
+        # CockroachDB
+        ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=8090))
         # Add more EE endpoints here...
 
         super().__init__(ee_endpoints)
