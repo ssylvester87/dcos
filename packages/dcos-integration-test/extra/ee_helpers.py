@@ -1,3 +1,5 @@
+import os
+
 import cryptography.hazmat.backends
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -21,6 +23,35 @@ OPS_ENDPOINTS = [
     '/secrets/v1/store',
     '/system/health/v1',
     'pkgpanda/active/']
+
+
+class _DCOSNodes:
+
+    # This uses the same interface as the dcos_api session:
+    # https://github.com/mesosphere/dcos-test-utils/blob/c4b660991995f20a8e6d3ed08bdb1e691374530f/dcos_test_utils/dcos_api_session.py#L123
+
+    def __init__(self):
+
+        masters = os.getenv('MASTER_HOSTS')
+        self.masters = sorted(masters.split(',')) if masters else None
+
+        agents = os.getenv('SLAVE_HOSTS')
+        self.agents = sorted(agents.split(',')) if agents else None
+
+        public_agents = os.getenv('PUBLIC_SLAVE_HOSTS')
+        self.public_agents = sorted(public_agents.split(',')) \
+            if public_agents else None
+
+        self.all_agents = self.agents + self.public_agents
+
+
+# Meant to be a singleton that represents the nodes in the test cluster. This is
+# required for tests that need to be (pytest-)parametrized with / based on the
+# set of nodes. In pytest, parametrization is performed during the collection
+# phase which is about the same as during module import. That is, this data must
+# be available through Python's import system and not be provided through a
+# pytest fixture.
+DCOS_NODES = _DCOSNodes()
 
 
 def sleep_app_definition(uid):
