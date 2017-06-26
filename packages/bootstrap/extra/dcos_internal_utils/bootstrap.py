@@ -176,19 +176,33 @@ class Bootstrapper(object):
     def write_CA_key(self, path, user):
         """
         Write PEM-encoded private key corresponding to the "signing CA
-        certificate" to a file located at `path`. Set 0600 permissions.
+        certificate" to a file located at `path`. Set file owner to `user` and
+        lock the file access permissions down to 0o600.
+
+        Args:
+            path (str):
+                File path of the file to write the key to.
+            user (str):
+                Set the owner of the file to this system/unix user name.
         """
-        key = self.secrets['CA']['RootCA']['key']
-        key = key.encode('utf-8')
+        key = self.secrets['CA']['RootCA']['key'].encode('utf-8')
         log.info('Writing signing CA cert private key to {}'.format(path))
         _write_file_bytes(path, key, 0o600)
         shutil.chown(path, user=user)
 
     def write_CA_certificate(self, path, user):
         """
-        Write the PEM-encoded "signing CA certificate" to a file. The signing
-        CA certificate is either a custom CA certificate (root or intermediate)
-        or an auto-generated root CA certificate.
+        Write the PEM-encoded "signing CA certificate" to a file located at
+        `path`. Set file owner to `user` and lock the file access permissions
+        down to 0o600. The signing CA certificate is either a custom CA
+        certificate (root or intermediate) or an auto-generated root CA
+        certificate.
+
+        Args:
+            path (str):
+                File path of the file to write the key to.
+            user (str):
+                Set the owner of the file to this system/unix user name.
         """
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
@@ -259,6 +273,9 @@ class Bootstrapper(object):
         Write the DC/OS CA trust bundle (currently expected to contain just
         a single root CA certificate) to a known location that is picked up
         by DC/OS' curl/libcurl.
+
+        Note(JP): In the moment we allow customization of the DC/OS CA trust
+        bundle (e.g. via dcos-config.yaml) this routine needs to be amended.
 
         /var/lib/dcos/pki/tls/certs is the directory of trusted CA certificates
         that curl/libcurl is configured to pick up. Certificates are looked up
@@ -1758,15 +1775,14 @@ def dcos_metronome(b, opts):
         ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
-        # For Metronome UI/API SSL.
         # Note(JP): why do we create a distinct TrustStore file for Metronome
-        #     whereas we use the canonical one for Marathon? The contents are
-        #     should / can be the same in case of Marathon, Cosmos, Metronome.
-        #     Normalize this.
+        # whereas we use the canonical one for Marathon? The contents should /
+        # can be the same in case of Marathon, Cosmos, Metronome. Normalize
+        # this.
         ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
 
-        # Note(JP): why write intermediate CA certs? Cf. comments in
-        #   Cosmos and Marathon bootstrappers.
+        # Note(JP): why write intermediate CA certs? Cf. comments in Cosmos and
+        # Marathon bootstrappers.
         b.write_truststore(ts, ca_chain_with_root_cert)
 
         env = opts.rundir + '/etc/metronome/tls.env'
