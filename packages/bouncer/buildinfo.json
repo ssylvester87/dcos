@@ -22,7 +22,7 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "ea4987c5db55cda2a56101b7e7bb31203dc8cd3f",
+      "ref": "fe1e1e630b531863e8e5331120284e393f532fde",
       "ref_origin": "master"
     },
     "python3-saml": {
@@ -38,8 +38,8 @@
     },
     "falcon": {
       "kind": "url_extract",
-      "url": "https://pypi.python.org/packages/91/1a/363c71aba58e94d73aa363de2c80dd5b81e938db8b3120fd8a40a6783152/falcon-1.1.0.tar.gz",
-      "sha1": "7dfab9e6fb4215bdc00d7c98fab1cecdab9232d4"
+      "url": "https://pypi.python.org/packages/60/b4/15fa780425c40a585b77888c05e2b098b22c259713269b55c01aa04282eb/falcon-1.2.0.tar.gz",
+      "sha1": "153afb5c9d0291899dca8a84dec15fd799bb8b0c"
     },
     "python-mimeparse": {
       "kind": "url_extract",
