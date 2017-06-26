@@ -1594,6 +1594,11 @@ def dcos_mesos_master(b, opts):
         crtpath = opts.rundir + '/pki/tls/certs/mesos-master.crt'
         b.ensure_key_certificate('Mesos Master', keypath, crtpath, master=True)
 
+    # Service account needed to retrieve ACLs from bouncer.
+    # As a result, we always create this account.
+    svc_acc_creds_fn = opts.rundir + '/etc/mesos/master_service_account.json'
+    b.write_service_account_credentials('dcos_mesos_master', svc_acc_creds_fn)
+
     # agent secrets are needed for it to contact the master
     b.create_agent_secrets(opts.zk_agent_digest)
 
