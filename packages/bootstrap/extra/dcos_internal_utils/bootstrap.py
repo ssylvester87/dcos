@@ -282,7 +282,7 @@ class Bootstrapper(object):
 
         # Hash the certificate subject.
         p = subprocess.Popen(
-            ['openssl', 'x509', '-hash', '-noout', '-in', path],
+            ['openssl', 'x509', '-hash', '-noout', '-in', certfilepath],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             )
@@ -297,7 +297,7 @@ class Bootstrapper(object):
         cert_hash = stdout_bytes.decode('ascii').strip() + '.0'
         cert_hash_path = os.path.join(curl_trusted_certs_dir_path, cert_hash)
         if not os.path.islink(cert_hash_path):
-            os.symlink(path, cert_hash_path)
+            os.symlink(certfilepath, cert_hash_path)
             os.chmod(cert_hash_path, 0o644)
 
     def get_CA_private_key_type(self):
@@ -780,7 +780,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Bouncer environment and credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_cockroach_env(self, filename):
         """Write CockroachDB's Zookeeper credentials to a dedicated environment file."""
@@ -1069,7 +1069,7 @@ class Bootstrapper(object):
             '-keystore', ts_filepath,
             '-storepass', 'changeit',
         ]
-        log.info('Importing DC/OS CA bundle into TrustStore: {}'.format(' '.join(cmd)))
+        log.info('Importing CA bundle into TrustStore: {}'.format(' '.join(cmd)))
         proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
