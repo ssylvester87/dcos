@@ -91,12 +91,12 @@ def calculate_mesos_elevate_unknown_users(security):
         }[security]
 
 
-def calculate_mesos_authorizer(mesos_authz_enforced):
-    if mesos_authz_enforced == 'true':
-        return 'com_mesosphere_dcos_Authorizer'
-
-    else:
-        return 'local'
+def calculate_mesos_authorizer(security):
+    return {
+        'strict': 'com_mesosphere_dcos_Authorizer',
+        'permissive': 'com_mesosphere_dcos_Authorizer',
+        'disabled': 'local'
+        }[security]
 
 
 def calculate_framework_authentication_required(security):

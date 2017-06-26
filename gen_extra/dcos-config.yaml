@@ -1002,7 +1002,14 @@ package:
                   },
                   {
                     "key": "authorizers",
-                    "value": "bouncer"
+{% switch security %}
+{% case "disabled" %}
+                    "value": "secret"
+{% case "permissive" %}
+                    "value": "secret"
+{% case "strict" %}
+                    "value": "secret,bouncer"
+{% endswitch %}
                   }
                 ]
               },
@@ -1077,7 +1084,14 @@ package:
                   },
                   {
                     "key": "authorizers",
-                    "value": "bouncer"
+{% switch security %}
+{% case "disabled" %}
+                    "value": "secret"
+{% case "permissive" %}
+                    "value": "secret"
+{% case "strict" %}
+                    "value": "secret,bouncer"
+{% endswitch %}
                   }
                 ]
               },
@@ -1197,6 +1211,21 @@ package:
                       "value":".ssl"
                    }
                 ]
+              }
+            ]
+          }
+        ]
+      }
+
+  - path: /etc/mesos-scheduler-modules/dcos_authenticatee_module.json
+    content: |
+      {
+        "libraries": [
+          {
+            "file": "/opt/mesosphere/lib/mesos/libdcos_security.so",
+            "modules": [
+              {
+                "name": "com_mesosphere_dcos_ClassicRPCAuthenticatee"
               }
             ]
           }
