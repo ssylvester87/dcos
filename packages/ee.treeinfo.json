@@ -7,7 +7,8 @@
     "metronome": "ee",
     "dcos-signal": "ee",
     "bootstrap": "ee",
-    "cosmos": "ee"
+    "cosmos": "ee",
+    "dcos-checks": "ee"
   },
   "exclude": [
     "dcos-oauth",

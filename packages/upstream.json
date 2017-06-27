@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/amitaekbote/dcos",
   "kind": "git",
-  "ref": "95dc15d63a421a4deec17bb254c1632214a1e96f",
-  "ref_origin": "master"
+  "ref": "65fa103e81b77bca3c2f3498faca0f3850295d5d",
+  "ref_origin": "diag-bootstrap"
 }

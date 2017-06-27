@@ -467,6 +467,47 @@ def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master
         ca_cert = "--ca-cert=/run/dcos/pki/CA/ca-bundle.crt"
 
     check_config = {
+        'cluster_checks': {
+            'mesos_leader': {
+                'description': 'There is an elected Mesos leader',
+                'cmd': [
+                    '/opt/mesosphere/bin/dcos-checks',
+                    '--iam-config',
+                    '/run/dcos/etc/dcos-checks/checks_service_account.json',
+                    force_tls,
+                    ca_cert,
+                    'cluster',
+                    'mesos-leader'
+                ],
+                'timeout': '1s'
+            },
+            'marathon_leader': {
+                'description': 'There is an elected Marathon leader',
+                'cmd': [
+                    '/opt/mesosphere/bin/dcos-checks',
+                    '--iam-config',
+                    '/run/dcos/etc/dcos-checks/checks_service_account.json',
+                    force_tls,
+                    ca_cert,
+                    'cluster',
+                    'marathon-leader'
+                ],
+                'timeout': '1s'
+            },
+            'metronome_leader': {
+                'description': 'There is an elected Metronome leader',
+                'cmd': [
+                    '/opt/mesosphere/bin/dcos-checks',
+                    '--iam-config',
+                    '/run/dcos/etc/dcos-checks/checks_service_account.json',
+                    force_tls,
+                    ca_cert,
+                    'cluster',
+                    'metronome-leader'
+                ],
+                'timeout': '1s'
+            }
+        },
         'node_checks': {
             'checks': {
                 'components_master': {
