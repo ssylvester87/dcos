@@ -264,6 +264,11 @@ function _M.init(use_auth)
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:ca:ro");
     end
 
+    -- /ca/api/v2/bundle
+    res.access_cabundle_endpoint = function()
+        return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:ca:ro");
+    end
+
     -- /ca/api/v2/(newcert|newkey|sign)
     res.access_carw_endpoint = function()
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:ca:rw");

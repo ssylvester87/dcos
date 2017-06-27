@@ -146,6 +146,14 @@ routes:
       path: 'http://$backend~ /ca/api/v2/(newcert|newkey|sign)$'
       backend: certificate_authority
     path: /ca/api/v2/(newcert|newkey|sign)
+  /ca/api/v2/bundle:
+    group: Certificate Authority
+    matcher: exact
+    description: Retrieve certificate chain without root CA cert for provided certificate
+    proxy:
+      path: 'http://$backend= /ca/api/v2/bundle'
+      backend: certificate_authority
+    path: /ca/api/v2/bundle
   /ca/api/v2/certificates:
     group: Certificate Authority
     matcher: exact
