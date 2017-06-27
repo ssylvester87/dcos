@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e  # Fail the script if anything fails
+set -x  # Verbose output
+set -u  # Undefined variables
+
+mkdir -p /pkg/src/github.com/dcos
+mv /pkg/src/dcos-checks /pkg/src/github.com/dcos/
+
+# copy ee specific checks
+cp -r /pkg/src/dcos-checks-enterprise/cmd/*.go /pkg/src/github.com/dcos/dcos-checks/cmd/
+
+cd /pkg/src/github.com/dcos/dcos-checks
+
+go install -v
+cp -r /pkg/bin/ "$PKG_PATH"
