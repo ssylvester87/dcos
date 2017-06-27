@@ -467,7 +467,6 @@ def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master
         ca_cert = "--ca-cert=/run/dcos/pki/CA/ca-bundle.crt"
 
     check_config = {
-        'cluster_checks': {},
         'node_checks': {
             'checks': {
                 'components_master': {

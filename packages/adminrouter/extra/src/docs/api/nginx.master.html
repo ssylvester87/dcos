@@ -484,6 +484,11 @@
         <label class="heading"><span class="route-type toggle-route-type">Lua</span> <span class="route-desc">executes Lua code to generate response.</span> </label>
         </input>
       </li>
+      <li class="route route-type-redirect">
+        <input type="checkbox" data-type="redirect" checked="checked">
+        <label class="heading"><span class="route-type toggle-route-type">Redirect</span> <span class="route-desc">redirects to another address.</span> </label>
+        </input>
+      </li>
       <li class="route route-type-rewrite">
         <input type="checkbox" data-type="rewrite" checked="checked">
         <label class="heading"><span class="route-type toggle-route-type">Rewrite</span> <span class="route-desc">retrieves resources from another route.</span> </label>
@@ -1110,6 +1115,99 @@
                 </td>
                 <td>
                   <code>/run/dcos/pki/CA/ca-bundle.crt</code>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </li>
+      </ul>
+    </li>
+    <li id="resource-cockroachdb" class="resource">
+      <div class="heading">
+        <h2>
+          <a id="cockroachdb" href="#cockroachdb" aria-hidden="true" class="toggle-route-group" data-id="cockroachdb">
+            <div class="arrow arrow-right"></div>CockroachDB</a>
+        </h2>
+        <span class="options"><a href="#cockroachdb" class="toggle-route-group" data-id="cockroachdb">Show/Hide</a> </span>
+      </div>
+      <ul id="routes-cockroachdb" class="routes">
+        <li class="route route-type-redirect">
+          <div class="heading">
+            <h3>
+              <span class="route-type">Redirect</span>
+              <span class="route-path"><code>/cockroachdb</code></span>
+            </h3>
+            <span class="route-desc">Redirect to the CockroachDB Admin UI</span>
+          </div>
+          <div class="route-meta" style="display:none">
+            <table>
+              <tr>
+                <td>
+                  Regex:
+                </td>
+                <td>
+                  <code>^/cockroachdb$</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Replacement:
+                </td>
+                <td>
+                  <code>$scheme://$http_host/cockroachdb/</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Type:
+                </td>
+                <td>
+                  <code>permanent</code>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </li>
+        <li class="route route-type-proxy">
+          <div class="heading">
+            <h3>
+              <span class="route-type">Proxy</span>
+              <span class="route-path"><code>/cockroachdb/</code></span>
+            </h3>
+            <span class="route-desc">The CockroachDB Admin UI</span>
+          </div>
+          <div class="route-meta" style="display:none">
+            <table>
+              <tr>
+                <td>
+                  Path:
+                </td>
+                <td>
+                  <code>https://$backend/</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Server:
+                </td>
+                <td>
+                  <code>127.0.0.1:8090</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Backend:
+                </td>
+                <td>
+                  CockroachDB
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  API Reference:
+                </td>
+                <td>
+                  <a href="https://www.cockroachlabs.com/">https://www.cockroachlabs.com/</a>
                 </td>
               </tr>
             </table>

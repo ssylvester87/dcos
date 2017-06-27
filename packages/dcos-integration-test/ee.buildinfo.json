@@ -18,6 +18,16 @@
       "url": "https://pypi.python.org/packages/2d/f2/8b2afdef7fc60314d35065801933675fc228eb031db3176c6b99a9de36a1/pytest-html-1.9.0.tar.gz",
       "sha1": "40bdb9c829627dac345c781a24a247bbf5d5b255"
     },
+    "ptyprocess": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/db/d7/b465161910f3d1cef593c5e002bff67e0384898f597f1a7fdc8db4c02bf6/ptyprocess-0.5.1.tar.gz",
+      "sha1": "3290062d67ef8a2f136bff9c2cd106673ff21316"
+    },
+    "pexpect": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/e8/13/d0b0599099d6cd23663043a2a0bb7c61e58c6ba359b2656e6fb000ef5b98/pexpect-4.2.1.tar.gz",
+      "sha1": "79239071ffc3afa8297f813e8c4691a1df74153c"
+    },
     "dcos": {
       "kind": "git_local",
       "rel_path": "../../ext/upstream/"

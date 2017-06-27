@@ -1,6 +1,6 @@
 [Unit]
 Description=DC/OS Identity and Access Manager (Bouncer): controls access to DC/OS components and services by managing users, user groups, service accounts, permissions, and identity providers
-ConditionPathExists=!/var/lib/dcos/bouncer-legacy
+ConditionPathExists=/var/lib/dcos/bouncer-legacy
 
 [Service]
 Type=simple
@@ -18,8 +18,6 @@ Environment=BOUNCER_CONFIG_FILE_PATH=/opt/mesosphere/etc/bouncer-config.json
 Environment=SECRET_KEY_FILE_PATH=/run/dcos/pki/tls/private/bouncer.key
 Environment=AUTH_TOKEN_SIGNATURE_ALGORITHM=RS256
 Environment=BOUNCER_CONFIG_CLASS=DCOSConfig
-WorkingDirectory=${PKG_PATH}
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-bouncer
-ExecStartPre=${PKG_PATH}/bouncer/upgrade/bin/readonly --enable
-ExecStartPre=${PKG_PATH}/bouncer/upgrade/bin/migrate
+WorkingDirectory=${PKG_PATH}
 ExecStart=${PKG_PATH}/bouncer/bin/bouncer.sh
