@@ -2,7 +2,6 @@ import time
 import uuid
 
 import ee_helpers
-import pytest
 
 
 def test_framework_principal_present(superuser_api_session):
