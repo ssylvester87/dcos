@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "b078ee797200ea5d7c3f87ada68ad4e5924d3f32",
-  "ref_origin": "master"
+  "ref": "7fe1c49864d04cd8be0db3de4a976a670f85cbda",
+  "ref_origin": "prozlach/klarrio/ip-per-container-dcos-service"
 }
