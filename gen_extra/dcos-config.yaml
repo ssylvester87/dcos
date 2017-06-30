@@ -190,7 +190,7 @@ package:
         "SQLALCHEMY_CONNECT_ARGS": {
           "sslmode": "verify-full",
           "sslcert": "/run/dcos/pki/cockroach/client.root.crt",
-          "sslrootcert": "/run/dcos/pki/CA/certs/ca.crt",
+          "sslrootcert": "/run/dcos/pki/cockroach/ca.crt",
           "sslkey": "/run/dcos/pki/cockroach/client.root.key"
         }
       }
