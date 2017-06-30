@@ -15,6 +15,7 @@ acl_endpoints = [
     ('/acs/acl-schema.json', 'dcos:adminrouter:acs'),
     ('/acs/api/v1/reflect/me', 'dcos:adminrouter:acs'),
     ('/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
+    ('/ca/api/v2/bundle', 'dcos:adminrouter:ops:ca:ro'),
     ('/ca/api/v2/certificates', 'dcos:adminrouter:ops:ca:ro'),
     ('/ca/api/v2/newcert', 'dcos:adminrouter:ops:ca:rw'),
     ('/ca/api/v2/newkey', 'dcos:adminrouter:ops:ca:rw'),
