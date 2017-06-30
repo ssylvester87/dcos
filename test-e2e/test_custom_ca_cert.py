@@ -1,12 +1,13 @@
+import uuid
 from pathlib import Path
 from typing import List
 from urllib.parse import urljoin
 
 import pytest
 import requests
-
 from dcos_e2e.backends import ClusterBackend
 from dcos_e2e.cluster import Cluster
+from passlib.hash import sha512_crypt
 
 
 class TestCustomCACert:
@@ -48,6 +49,7 @@ class TestCustomCACert:
             fixture_dir: str,
             test_filenames: List[str],
             dcos_docker_backend: ClusterBackend,
+            artifact_path: Path,
     ) -> None:
         """
         It is possible to install cluster with custom CA certificate.
@@ -88,7 +90,13 @@ class TestCustomCACert:
         # When the cluster configuration is generated / validated from the
         # configuration file, these paths will be checked for in the
         # installer container.
+        superuser_username = str(uuid.uuid4())
+        superuser_password = str(uuid.uuid4())
         config = {
+            'superuser_username': superuser_username,
+            # We can hash the password with any `passlib`-based method here.
+            # We choose `sha512_crypt` arbitrarily.
+            'superuser_password_hash': sha512_crypt.hash(superuser_password),
             'security': 'strict',
             'ca_certificate_path': str(installer_cert_path),
             'ca_certificate_key_path': str(installer_key_path),
@@ -104,16 +112,22 @@ class TestCustomCACert:
             files_to_copy_to_installer[chain_path] = installer_chain_path
 
         with Cluster(
-            destroy_on_error=False,
             log_output_live=True,
             extra_config=config,
             files_to_copy_to_installer=files_to_copy_to_installer,
             files_to_copy_to_masters={ca_key_path: master_key_path},
             cluster_backend=dcos_docker_backend,
+            generate_config_path=artifact_path,
         ) as cluster:
-            cluster.run_integration_tests(pytest_command=[
-                'pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)
-            ])
+            environment_variables = {
+                'DCOS_LOGIN_UNAME': superuser_username,
+                'DCOS_LOGIN_PW': superuser_password,
+            }
+            pytest_command = ['pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)]
+            cluster.run_integration_tests(
+                pytest_command=pytest_command,
+                env=environment_variables,
+            )
             # Select single master as an endpoint for HTTP requests.
             master = next(iter(cluster.masters))
 
