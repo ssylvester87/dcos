@@ -11,7 +11,7 @@
       "dcos-ca": {
           "kind": "git",
           "git": "git@github.com:mesosphere/dcos-ca.git",
-          "ref": "ba117a1cd369fff9ed4f801c095d56603d9a9c13",
+          "ref": "79a49ce1a3c35286afbb051702379d62eacd9dc1",
           "ref_origin": "master"
       }
   },
