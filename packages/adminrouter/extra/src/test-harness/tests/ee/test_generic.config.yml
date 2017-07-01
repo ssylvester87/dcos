@@ -23,6 +23,7 @@ endpoint_tests:
         jwt_should_be_forwarded: false
         test_paths:
           - /ca/api/v2/info
+          - /ca/api/v2/bundle
           - /ca/api/v2/newcert
           - /ca/api/v2/certificates
           - /ca/api/v2/newkey
@@ -31,6 +32,7 @@ endpoint_tests:
         enabled: true
         test_paths:
           - /ca/api/v2/info
+          - /ca/api/v2/bundle
           - /ca/api/v2/newcert
           - /ca/api/v2/certificates
           - /ca/api/v2/newkey
@@ -42,6 +44,8 @@ endpoint_tests:
         test_paths:
           - expected: /ca/api/v2/certificates
             sent: /ca/api/v2/certificates
+          - expected: /ca/api/v2/bundle
+            sent: /ca/api/v2/bundle
           - expected: /ca/api/v2/info
             sent: /ca/api/v2/info
           - expected: /ca/api/v2/newcert
