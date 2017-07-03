@@ -660,9 +660,9 @@ class Bootstrapper(object):
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_marathon', all=True)]
         self.ensure_zk_path('/marathon', acl=acl)
 
-    def marathon_iam_acls(self):
+    def marathon_iam_permissions(self):
         if self.opts.config['security'] == 'permissive':
-            permissive_acls = [
+            permissive_rid_action_pairs = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
                 ('dcos:mesos:master:reservation', 'delete'),
@@ -673,7 +673,7 @@ class Bootstrapper(object):
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(permissive_acls, 'dcos_marathon')
+            iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_marathon')
 
         elif self.opts.config['security'] == 'strict':
             # Can only register with 'slave_public' role,
@@ -681,7 +681,7 @@ class Bootstrapper(object):
             # only destroy volumes/reservations created by 'dcos_marathon',
             # only run tasks as linux user 'nobody',
             # but can create apps in any folder/namespace.
-            strict_acls = [
+            strict_rid_action_pairs = [
                 ('dcos:mesos:master:framework:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
@@ -694,7 +694,7 @@ class Bootstrapper(object):
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(strict_acls, 'dcos_marathon')
+            iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_marathon')
 
     def metronome_zk_acls(self):
         acl = None
@@ -702,22 +702,22 @@ class Bootstrapper(object):
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_metronome', all=True)]
         self.ensure_zk_path('/metronome', acl=acl)
 
-    def metronome_iam_acls(self):
+    def metronome_iam_permissions(self):
         if self.opts.config['security'] == 'permissive':
-            permissive_acls = [
+            permissive_rid_action_pairs = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:agent:task', 'create')
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(permissive_acls, 'dcos_metronome')
+            iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_metronome')
 
         elif self.opts.config['security'] == 'strict':
             # Can only register with '*' role,
             # only run tasks as linux user 'nobody',
             # but can create jobs in any folder/namespace.
-            strict_acls = [
+            strict_rid_action_pairs = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
                 ('dcos:mesos:master:task:user:nobody', 'create'),
@@ -726,7 +726,7 @@ class Bootstrapper(object):
             ]
 
             iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(strict_acls, 'dcos_metronome')
+            iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_metronome')
 
     def cosmos_acls(self):
         acl = None
@@ -1753,8 +1753,8 @@ def dcos_marathon(b, opts):
         b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
 
-    # IAM ACLs must be created after the service account.
-    b.marathon_iam_acls()
+    # Permissions in the IAM must be granted after creating the service account.
+    b.marathon_iam_permissions()
 
 
 def dcos_metronome(b, opts):
@@ -1800,7 +1800,7 @@ def dcos_metronome(b, opts):
     shutil.chown(opts.rundir + '/etc/metronome', user='dcos_metronome')
 
     # IAM ACLs must be created after the service account.
-    b.metronome_iam_acls()
+    b.metronome_iam_permissions()
 
 
 def dcos_mesos_dns(b, opts):
