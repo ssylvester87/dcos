@@ -1,8 +1,16 @@
+"""
+A set of utilities that is used in the dcos-intergration-test test modules in
+the dcos-enterprise repository.
+"""
+
+# Note(JP): isort is not well-configured. Import of custom code should be below
+# import of third party modules.
+import dcos_test_utils
+
 import cryptography.hazmat.backends
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-import dcos_test_utils
 from pkgpanda.util import load_json
 
 
