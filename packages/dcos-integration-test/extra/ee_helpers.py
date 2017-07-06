@@ -1,10 +1,10 @@
-import os
-
 import cryptography.hazmat.backends
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
+import dcos_test_utils
 from pkgpanda.util import load_json
+
 
 CRYPTOGRAPHY_BACKEND = cryptography.hazmat.backends.default_backend()
 
@@ -26,31 +26,48 @@ OPS_ENDPOINTS = [
 
 
 class _DCOSNodes:
+    """
+    Meant to be instantiated as a singleton during module import. That singleton
+    then represents the nodes in the test cluster and can be used in other
+    modules at import time. This assumes that the DC/OS cluster has
 
-    # This uses the same interface as the dcos_api session:
-    # https://github.com/mesosphere/dcos-test-utils/blob/c4b660991995f20a8e6d3ed08bdb1e691374530f/dcos_test_utils/dcos_api_session.py#L123
+    - at least one master node
+    - at least one (private) agent node
+    - at least one public agent node
 
+    The public (and intended to be stable) interface of this class is comprised
+    of the following attributes:
+
+        - `masters`: a list of strings, the master node hostnames/IP addresses
+        - `agents`: a list of strings, the (private) agent node hostnames/IP
+          addresses
+        - `public_agents`: a list of strings, the public agent node hostnames/IP
+          addresses
+        - `all_agents`: a list of strings, the node hostnames/IP addresses for
+          all agent nodes
+
+    As of now this uses the same environment-based interface as the dcos_api_session:
+    https://github.com/mesosphere/dcos-test-utils/blob/c4b660991995f20a8e6d3ed08bdb1e691374530f/dcos_test_utils/dcos_api_session.py#L123
+    """
     def __init__(self):
 
-        masters = os.getenv('MASTER_HOSTS')
-        self.masters = sorted(masters.split(',')) if masters else None
+        cluster_args = dcos_test_utils.enterprise.EnterpriseApiSession.get_args_from_env()
 
-        agents = os.getenv('SLAVE_HOSTS')
-        self.agents = sorted(agents.split(',')) if agents else None
+        self.masters = sorted(cluster_args['masters'])
+        self.agents = sorted(cluster_args['slaves'])
+        self.public_agents = sorted(cluster_args['public_slaves'])
 
-        public_agents = os.getenv('PUBLIC_SLAVE_HOSTS')
-        self.public_agents = sorted(public_agents.split(',')) \
-            if public_agents else None
+        assert self.agents is not None
+        assert self.public_agents is not None
 
         self.all_agents = self.agents + self.public_agents
 
 
-# Meant to be a singleton that represents the nodes in the test cluster. This is
-# required for tests that need to be (pytest-)parametrized with / based on the
-# set of nodes. In pytest, parametrization is performed during the collection
-# phase which is about the same as during module import. That is, this data must
-# be available through Python's import system and not be provided through a
-# pytest fixture.
+# This singleton creation during module import is required for tests that need
+# to be (pytest-)parametrized with / based on the set of nodes. In pytest,
+# parametrization is performed during the collection phase which is about the
+# same as during module import. That is, this data must be available through
+# Python's import system and not be provided through a pytest fixture.
 DCOS_NODES = _DCOSNodes()
 
 
