@@ -178,7 +178,7 @@ def test_cert_san_entries(netloc):
     entries found in the server certificate to those that are expected. Each
     expected SAN must be found in the server certificate, otherwise the test
     fails. If the server certificate encodes more SANs than those that are
-    expected that this does not make the test fail (the set of expected SANs is
+    expected then this does not make the test fail (the set of expected SANs is
     expected to be just a subset of the SANs encoded in the server certificate).
     """
 
@@ -236,8 +236,18 @@ def test_cert_hostname_verification(netloc, superuser_api_session):
     ssl.match_hostname(certdict, netloc.host)
 
 
+# Note(JP): SSLv2 and SSLv3 cannot be tested using this test runner (a CPython
+# process), because both are disabled here by default (because our OpenSSL build
+# that backs our CPython build has been compiled w/o SSLv2/v3 support). This
+# test assumes that we never enable SSLv2/v3 in our OpenSSL build. Of course
+# this assumption should be verified by some entirely different level of
+# (penetration) testing.
 @pytest.mark.parametrize('netloc', tls_netlocs, ids=tls_netlocs_ids)
-def test_internal_components_only_support_tls12(netloc):
+@pytest.mark.parametrize('unsupported_tls_version', [
+    ssl.PROTOCOL_TLSv1,
+    ssl.PROTOCOL_TLSv1_1]
+    )
+def test_internal_components_only_support_tls12(netloc, unsupported_tls_version):
     """
     Verify that 'internal components' do not support protocol versions besides
     TLSv1.2.
@@ -249,56 +259,46 @@ def test_internal_components_only_support_tls12(netloc):
         log.info('Skip test for the master Admin Router %r', netloc)
         return
 
-    # SSLv2 and SSLv3 cannot be tested using this test runner (CPython), because
-    # both are disabled here by default (because the OpenSSL that backs CPython
-    # has been compiled w/o SSLv2/v3 support).
-    unsupported_tls_protocol_versions = (
-        ssl.PROTOCOL_TLSv1,
-        ssl.PROTOCOL_TLSv1_1
-        )
+    log.info('Verify that %r does not support %s', netloc, unsupported_tls_version)
 
-    for tls_version in unsupported_tls_protocol_versions:
+    try:
+        ssl.get_server_certificate(
+            addr=(netloc.host, netloc.port),
+            ssl_version=unsupported_tls_version)
 
-        log.info('Verify that %r does not support %s', netloc, tls_version)
+        raise Exception(
+            'TLS handshake between the test runner and `{netloc}` '
+            'with `{tls_version!s}` succeeded, but was not expected to '
+            'succeed'.format_map({
+                'tls_version': unsupported_tls_version,
+                'netloc': netloc.description}))
 
-        try:
-            ssl.get_server_certificate(
-                addr=(netloc.host, netloc.port),
-                ssl_version=tls_version)
+    except ssl.SSLError as exc:
 
-            raise Exception(
-                'TLS handshake between the test runner and `{netloc}` '
-                'with `{tls_version!s}` succeeded, but was not expected to '
-                'succeed'.format_map({
-                    'tls_version': tls_version,
-                    'netloc': netloc.description}))
-
-        except ssl.SSLError as exc:
-
-            expected_error_codes = ('TLSV1_ALERT_PROTOCOL_VERSION', )
-            for ecode in expected_error_codes:
-                if ecode in str(exc):
-                    log.info('Exception is presumed to be expected: %s', exc)
-                    break
-            else:
-                # 'nobreak' case: unexpected `SSLError`, re-raise.
-                raise
-
-        except ConnectionResetError as exc:
-            # Make sure that the ConnectionResetError was raised within the
-            # `do_handshake` method:
-            # >    self._sslobj.do_handshake()
-            # E    ConnectionResetError: [Errno 104] Connection reset by peer
-            #
-            # Background: https://hg.python.org/cpython/rev/69f737f410f0 "What
-            #    probably happens is that OpenSSL versions, instead of answering
-            #    'sorry, I can't talk to you', brutally reset the connections."
-            #
-            # Extract only the last stack trace entry / line
-            tb = traceback.format_exc(limit=-1)
-            if '_sslobj.do_handshake()' in tb:
-                log.info('Expected exception during `do_handshake()`: %s', exc)
-                # Test next `tls_version`.
-                continue
-            # Re-raise what's unexpected.
+        expected_error_codes = ('TLSV1_ALERT_PROTOCOL_VERSION', )
+        for ecode in expected_error_codes:
+            if ecode in str(exc):
+                log.info('Exception is presumed to be expected: %s', exc)
+                break
+        else:
+            # 'nobreak' case: unexpected `SSLError`, re-raise.
             raise
+
+    except ConnectionResetError as exc:
+        # Make sure that the ConnectionResetError was raised within the
+        # `do_handshake` method:
+        # >    self._sslobj.do_handshake()
+        # E    ConnectionResetError: [Errno 104] Connection reset by peer
+        #
+        # Background: https://hg.python.org/cpython/rev/69f737f410f0 "What
+        #    probably happens is that OpenSSL versions, instead of answering
+        #    'sorry, I can't talk to you', brutally reset the connections."
+        #
+        # Extract only the last stack trace entry / line
+        tb = traceback.format_exc(limit=-1)
+        if '_sslobj.do_handshake()' in tb:
+            log.info('Expected exception during `do_handshake()`: %s', exc)
+            return
+
+        # Re-raise what's unexpected.
+        raise
