@@ -1,4 +1,4 @@
-FROM golang:1.7.4
+FROM dcos/dcos-builder:dcos-builder_dockerdir-latest
 
 ENV USER root
 
@@ -47,9 +47,16 @@ RUN apt-get install \
         --no-install-recommends \
         lsb-release \
         dpkg-dev
-RUN echo "deb-src http://httpredir.debian.org/debian jessie main" >> /etc/apt/sources.list \
-        && echo "deb-src http://httpredir.debian.org/debian jessie-updates main" >> /etc/apt/sources.list \
-        && echo "deb-src http://security.debian.org/ jessie/updates main" >> /etc/apt/sources.list \
+
+# Install gcc 4.9 toolchain
+RUN apt-get install -y gcc-4.9 g++-4.9 cpp-4.9 \
+        && ln -sf /usr/bin/gcc-4.9 /usr/bin/gcc \
+        && ln -sf /usr/bin/cpp-4.9 /usr/bin/cpp \
+        && ln -sf /usr/bin/g++-4.9 /usr/bin/g++
+
+RUN echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" >> /etc/apt/sources.list \
+        && echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial-updates main" >> /etc/apt/sources.list \
+        && echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial-security main" >> /etc/apt/sources.list \
         && /bin/bash -x -c 'for i in {1..5}; do apt-get update && break || sleep 2; done'
 COPY libzookeeper_mt2-no_glibc.patch /buildir/
 RUN cd /buildir/ \
