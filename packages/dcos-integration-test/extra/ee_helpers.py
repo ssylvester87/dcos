@@ -35,6 +35,11 @@ class _DCOSNodes:
     - at least one (private) agent node
     - at least one public agent node
 
+    This code also assumes that the corresponding data is available at import
+    time without performing networked I/O. That is, the node information must be
+    readily available to the test runner process through e.g. the process
+    environment, file input, or command line arguments.
+
     The public (and intended to be stable) interface of this class is comprised
     of the following attributes:
 

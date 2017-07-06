@@ -128,7 +128,7 @@ def test_retrieve_server_cert(netloc):
 
 
 @pytest.mark.parametrize('netloc', tls_netlocs, ids=tls_netlocs_ids)
-def test_retrieve_server_cert_enforce_tls_1_2(netloc):
+def test_retrieve_server_cert_via_tls_1_2(netloc):
     """
     Verify that the remote end supports a TLS 1.2 connection.
     """
@@ -168,7 +168,22 @@ def test_component_cert_issuer(netloc, signing_ca_cert):
 
 
 @pytest.mark.parametrize('netloc', tls_netlocs, ids=tls_netlocs_ids)
-def test_cert_dns_names(netloc):
+def test_cert_san_entries(netloc):
+    """
+    For every network location in `tls_netlocs`, fetch the end entity ("server")
+    certificate that the remote end presents during the TLS handshake and
+    inspect its Subject Alternative Name entries (SANs).
+
+    Each `netloc` object encodes a list of expected SANs. Compare the SAN
+    entries found in the server certificate to those that are expected. Each
+    expected SAN must be found in the server certificate, otherwise the test
+    fails. If the server certificate encodes more SANs than those that are
+    expected that this does not make the test fail (the set of expected SANs is
+    expected to be just a subset of the SANs encoded in the server certificate).
+    """
+
+    # Todo(JP): Use `ssl.PROTOCOL_TLS` instead of `ssl.PROTOCOL_SSLv23` from
+    # CPython 3.5.3 on.
     cert_pem = ssl.get_server_certificate(
         (netloc.host, netloc.port),
         ssl_version=ssl.PROTOCOL_SSLv23)
@@ -178,16 +193,21 @@ def test_cert_dns_names(netloc):
 
     ext = cert.extensions.get_extension_for_oid(
         x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+
+    # Get list of SAN entries of type `dNSName` (list of strings) as well as the
+    # list of SAN entries of type `iPAddress` (list of strings).
+    # Reference: https://tools.ietf.org/html/rfc5280#section-4.2.1.6
     dns_names = ext.value.get_values_for_type(x509.DNSName)
     ip_names = [str(x) for x in ext.value.get_values_for_type(x509.IPAddress)]
+
     assert len(dns_names) > 1
     assert len(ip_names) > 1
     log.info("dns names: %s", dns_names)
-    log.info("ip names: %s", ip_names)
-    # TODO(prozlach): not sure how we can test DNSNames that contain i.e. lb
-    # addr
+    log.info("ip addresses: %s", ip_names)
+
     for expected_dns in (x.val for x in netloc.expected_sans if x.type == 'dns'):
         assert expected_dns in dns_names
+
     for expected_ip in (x.val for x in netloc.expected_sans if x.type == 'ip'):
         assert expected_ip in ip_names
 
