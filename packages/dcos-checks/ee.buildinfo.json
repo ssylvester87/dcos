@@ -3,8 +3,8 @@
     "dcos-checks-enterprise": {
       "kind": "git",
       "git": "git@github.com:mesosphere/dcos-checks-enterprise.git",
-      "ref": "5271def0876ee6875cb7192a7265edbeb5a7cce2",
-      "ref_origin": "count"
+      "ref": "2d0ce82903d890007de87eab53eac97f9995667e",
+      "ref_origin": "master"
     },
     "dcos-checks": {
       "kind": "git",
