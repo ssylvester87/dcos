@@ -2,14 +2,8 @@ import time
 import uuid
 
 import ee_helpers
-import pytest
 
 
-@pytest.mark.xfail(
-    ee_helpers.bootstrap_config['security'] == 'disabled',
-    reason='framework_principal" should only be present in strict and permissive mode',
-    strict=True
-)
 def test_framework_principal_present(superuser_api_session):
     """ Test that the framework_principal is present as a dimension in EE
     superuser_api_sessions.
