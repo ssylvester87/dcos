@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/benclarkwood/dcos",
+  "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "45d9fc10831758344765b22fb38419421b7f6138",
+  "ref": "bcf8ef6fa17e32a48fd86732f32583fb546266ce",
   "ref_origin": "master"
 }
