@@ -349,6 +349,7 @@ class Bootstrapper(object):
             'dcos_history_service',
             'dcos_marathon',
             'dcos_mesos_dns',
+            'dcos_mesos_master',
             'dcos_metrics_master',
             'dcos_metronome',
             'dcos_minuteman_master',
@@ -1596,6 +1597,7 @@ def dcos_mesos_master(b, opts):
 
     # Service account needed to retrieve ACLs from bouncer.
     # As a result, we always create this account.
+    b.create_service_account('dcos_mesos_master', superuser=True)
     svc_acc_creds_fn = opts.rundir + '/etc/mesos/master_service_account.json'
     b.write_service_account_credentials('dcos_mesos_master', svc_acc_creds_fn)
 
