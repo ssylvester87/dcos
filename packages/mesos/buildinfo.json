@@ -3,8 +3,8 @@
   "single_source" : {
     "kind": "git",
     "git": "https://github.com/mesosphere/mesos",
-    "ref": "3f17db7961464b49e920d350f1c009c3d4dddcc4",
-    "ref_origin" : "dcos-mesos-1.2.x-875a4a5a"
+    "ref" : "2755894a5a41994ef6ad4f25e29f1933ffd5fd94",
+    "ref_origin": "gaston/test-fix-fetcher-dns-error"
   },
   "environment": {
     "JAVA_LIBRARY_PATH": "/opt/mesosphere/lib",
