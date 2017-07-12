@@ -1754,11 +1754,7 @@ def dcos_marathon(b, opts):
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
 
-        # Note(JP): why did we opt for writing intermediate CA certificates
-        # into Marathon's truststore? Instead of `ca_chain_with_root_cert`
-        # writing just the default DC/OS CA cert bundle (i.e. omitting the
-        # `ca_bundle_filepath` arg) should be sufficient.
-        b.write_truststore(ca_bundle_filepath=ca_chain_with_root_cert)
+        b.write_truststore()
 
         env = opts.rundir + '/etc/marathon/tls.env'
         b.write_marathon_tls_env(key, crt, ca_chain_with_root_cert, env)
@@ -1798,11 +1794,7 @@ def dcos_metronome(b, opts):
         # whereas we use the canonical one for Marathon? The contents should /
         # can be the same in case of Marathon, Cosmos, Metronome. Normalize
         # this.
-        ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
-
-        # Note(JP): why write intermediate CA certs? Cf. comments in Cosmos and
-        # Marathon bootstrappers.
-        b.write_truststore(ts, ca_chain_with_root_cert)
+        b.write_truststore(ts_filepath='/run/dcos//pki/CA/certs/cacerts_metronome.jks')
 
         env = opts.rundir + '/etc/metronome/tls.env'
         b.write_metronome_env(key, crt, ca_chain_with_root_cert, env)
