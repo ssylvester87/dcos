@@ -243,7 +243,6 @@ class Bootstrapper(object):
 
         log.info('Writing CA cert chain (including root) to {}'.format(path))
         _write_file_bytes(path, chainbytes, 0o644)
-        return chainbytes
 
     def write_CA_trust_bundle(self):
         """
