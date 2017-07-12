@@ -97,7 +97,7 @@ class DCOSCLI():
 
         # install enterprise CLI
         self.exec_command(
-            ["dcos", "package", "install", "dcos-enterprise-cli", "--cli", "--global"])
+            ["dcos", "package", "install", "dcos-enterprise-cli", "--cli", "--global", "--yes"])
 
 
 class Configuration:
