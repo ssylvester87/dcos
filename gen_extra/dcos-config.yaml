@@ -999,6 +999,10 @@ package:
                   {
                     "key": "dcos_space_label",
                     "value": "DCOS_SPACE"
+                  },
+                  {
+                    "key": "authorizers",
+                    "value": "bouncer"
                   }
                 ]
               },
@@ -1070,6 +1074,10 @@ package:
                   {
                     "key": "dcos_space_label",
                     "value": "DCOS_SPACE"
+                  },
+                  {
+                    "key": "authorizers",
+                    "value": "bouncer"
                   }
                 ]
               },
@@ -1214,12 +1222,12 @@ package:
       # This takes effect for JVM processes that are invoked with the argument
       #
       #     -Djava.security.properties=/opt/mesosphere/etc/java.security
-  
+
       # Algorithm restrictions for certification path processing.
       jdk.certpath.disabledAlgorithms=DSA, MD2, MD5, \
           RSA keySize < 2048, \
           EC keySize < 256
-  
+
       # Disabled algorithms will not be negotiated for TLS connections, even
       # if they are enabled explicitly in an application.
       # - Enable TLSv1.2 exclusively.
@@ -1232,4 +1240,3 @@ package:
           RSA keySize < 2048, \
           DH keySize < 2048, \
           EC keySize < 256
-
