@@ -2,20 +2,21 @@ import json
 import logging
 import time
 
-
 import jwt
 import requests
 import retrying
+
+
+from dcos_internal_utils import DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
 
 log = logging.getLogger(__name__)
 
 
 class IAMClient:
-    def __init__(self, base_url, CA_certificate_filename=None):
+    def __init__(self, base_url):
         self.base_url = base_url
         self.default_headers = {'Accept': 'application/json', 'Accept-Charset': 'utf-8'}
-        self.CA_certificate_filename = CA_certificate_filename
 
     def request(self, method, path, **kwargs):
         url = self.base_url + path
@@ -23,7 +24,7 @@ class IAMClient:
         if 'headers' not in kwargs:
             kwargs['headers'] = self.default_headers.copy()
         if 'verify' not in kwargs:
-            kwargs['verify'] = self.CA_certificate_filename
+            kwargs['verify'] = DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
         if method == 'get':
             r = requests.get(url, **kwargs)

@@ -21,6 +21,7 @@ import gen
 from dcos_internal_utils import ca
 from dcos_internal_utils import iam
 from dcos_internal_utils import utils
+from dcos_internal_utils import DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
 
 log = logging.getLogger(__name__)
@@ -73,9 +74,6 @@ class Bootstrapper(object):
         self.iam_url = opts.iam_url
         self.ca_url = opts.ca_url
         self.secrets = {}
-
-        self.CA_certificate = None
-        self.CA_certificate_path = None
 
         self.agent_services = [
             'dcos_diagnostics_agent',
@@ -247,26 +245,41 @@ class Bootstrapper(object):
         _write_file_bytes(path, chainbytes, 0o644)
         return chainbytes
 
-    def write_CA_trust_bundle(
-            self, path='/run/dcos/pki/CA/ca-bundle.crt'):
+    def write_CA_trust_bundle(self):
         """
-        Write root CA certificate to the trust bundle file (intended to be used
-        for certificate verification).
+        Write the DC/OS CA trust bundle file. It is intended to contain the
+        trust anchor(s) to be used for certificate verification by various
+        DC/OS-internal components. That is, for security reasons it is important
+        that this bundle contains the smallest set of trust anchors that is
+        conceptually required.
+
+        The file is written to `DCOS_CA_TRUST_BUNDLE_FILE_PATH`, where other
+        DC/OS-internal components but also readers of the public-facing docs
+        expect the DC/OS CA trust bundle file to exist.
+
+        Note(JP): For now, the DC/OS CA trust bundle file only contains a single
+        item; the root CA certificate corresponding to the DC/OS Certificate
+        Authority. In the future we might allow operators to inject their own
+        trust anchors (via the DC/OS configuration), in which case this method
+        here must be amended correspondingly.
         """
-        certbytes = None
 
         if 'CA' in self.secrets:
-            certbytes = self.secrets['CA']['RootCA']['root'].encode('utf-8')
+            certbytes_proposal = self.secrets['CA']['RootCA']['root'].encode('utf-8')
+        else:
+            # On agents the `'CA'` key does not exist in `self.secrets`. A
+            # proposed value of `None` in the consensus procedure invoked below
+            # reads out the result of the consensus procedure between the master
+            # nodes.
+            certbytes_proposal = None
 
-        certbytes = self._consensus('/dcos/RootCA', certbytes, ANYONE_READ)
+        certbytes = self._consensus('/dcos/RootCA', certbytes_proposal, ANYONE_READ)
 
-        log.info('Writing CA trust bundle (root CA certificate) to {}'.format(path))
-        _write_file_bytes(path, certbytes, 0o644)
+        log.info(
+            'Writing CA trust bundle (root CA certificate) to %s',
+            DCOS_CA_TRUST_BUNDLE_FILE_PATH)
 
-        self.CA_certificate = certbytes
-        self.CA_certificate_path = path
-
-        return certbytes
+        _write_file_bytes(DCOS_CA_TRUST_BUNDLE_FILE_PATH, certbytes, 0o644)
 
     def write_CA_trust_bundle_for_libcurl(self):
         """
@@ -293,9 +306,16 @@ class Bootstrapper(object):
         os.makedirs(curl_trusted_certs_dir_path, exist_ok=True)
         os.chmod(curl_trusted_certs_dir_path, 0o755)
 
-        # Write DC/OS root CA certificate file.
-        certfilepath = os.path.join(curl_trusted_certs_dir_path, 'dcos-root-ca-cert.crt')
-        self.write_CA_trust_bundle(path=certfilepath)
+        # Make sure that the DC/OS CA trust bundle file is written to the file
+        # system (to `DCOS_CA_TRUST_BUNDLE_FILE_PATH`).
+        self.write_CA_trust_bundle()
+
+        # Copy that file to curl's trust bundle directory, with a new filename.
+        # Set file permissions to 0o644 (same as for the original file).
+        certfilepath = os.path.join(
+            curl_trusted_certs_dir_path, 'dcos-root-ca-cert.crt')
+        shutil.copy2(DCOS_CA_TRUST_BUNDLE_FILE_PATH, certfilepath)
+        os.chmod(certfilepath, 0o644)
 
         # Hash the certificate subject.
         p = subprocess.Popen(
@@ -611,7 +631,7 @@ class Bootstrapper(object):
         pubkey_pem = utils.public_key_pem(private_key)
         account['public_key'] = pubkey_pem
 
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iamcli = iam.IAMClient(self.iam_url)
         iamcli.create_service_account(uid, public_key=pubkey_pem, exist_ok=True)
 
         # TODO fine-grained permissions for all service accounts
@@ -672,7 +692,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+            iamcli = iam.IAMClient(self.iam_url)
             iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_marathon')
 
         elif self.opts.config['security'] == 'strict':
@@ -693,7 +713,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+            iamcli = iam.IAMClient(self.iam_url)
             iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_marathon')
 
     def metronome_zk_acls(self):
@@ -710,7 +730,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+            iamcli = iam.IAMClient(self.iam_url)
             iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_metronome')
 
         elif self.opts.config['security'] == 'strict':
@@ -725,7 +745,7 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+            iamcli = iam.IAMClient(self.iam_url)
             iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_metronome')
 
     def cosmos_acls(self):
@@ -1094,7 +1114,7 @@ class Bootstrapper(object):
         os.chmod(ts_filepath, 0o644)
 
     def service_auth_token(self, uid, exp=None):
-        iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iam_cli = iam.IAMClient(self.iam_url)
         acc = self.secrets['services'][uid]
         log.info('Service account login as service {}'.format(uid))
         token = iam_cli.service_account_login(uid, private_key=acc['private_key'], exp=exp)
@@ -1176,7 +1196,7 @@ class Bootstrapper(object):
         if service_account:
             token = self.service_auth_token(service_account)
             headers = {'Authorization': 'token=' + token}
-        cacli = ca.CAClient(self.ca_url, headers, self.CA_certificate_path)
+        cacli = ca.CAClient(self.ca_url, headers)
 
         msg_fmt = 'Signing CSR at {} with service account {}'
         log.info(msg_fmt.format(self.ca_url, service_account))
@@ -1279,7 +1299,7 @@ class Bootstrapper(object):
             log.debug('Certificate {} already exists'.format(crt_filename))
 
     def write_jwks_public_keys(self, filename):
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iamcli = iam.IAMClient(self.iam_url)
         jwks = iamcli.jwks()
         output = utils.jwks_to_public_keys(jwks)
         _write_file_bytes(filename, bytes(output, 'ascii'), 0o644)
