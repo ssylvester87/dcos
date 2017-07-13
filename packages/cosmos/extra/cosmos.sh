@@ -16,7 +16,7 @@ if [ "${TLS_ENABLED-}" = "true" ]; then
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
-        -io.github.benwhitehead.finch.httpInterface=127.0.0.1:7070 \
+        -com.mesosphere.cosmos.httpInterface=127.0.0.1:7070 \
         -com.mesosphere.cosmos.adminRouterUri=${ADMINROUTER_URI} \
         -com.mesosphere.cosmos.marathonUri=${MARATHON_URI} \
         -com.mesosphere.cosmos.mesosMasterUri=${MESOSMASTER_URI} \
@@ -31,7 +31,7 @@ else
         -classpath $PKG_PATH/usr/cosmos.jar \
         com.simontuffs.onejar.Boot \
         -admin.port=127.0.0.1:9990 \
-        -io.github.benwhitehead.finch.httpInterface=127.0.0.1:7070 \
+        -com.mesosphere.cosmos.httpInterface=127.0.0.1:7070 \
         ${COSMOS_STAGED_PACKAGE_STORAGE_URI_FLAG} \
         ${COSMOS_PACKAGE_STORAGE_URI_FLAG}
 fi
