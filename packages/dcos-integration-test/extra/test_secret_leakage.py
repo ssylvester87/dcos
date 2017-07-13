@@ -31,7 +31,7 @@ def secret(superuser_api_session):
     _create_secret(superuser_api_session, path + name, value)
     assert _has_secret(superuser_api_session, path + name)
 
-    yield name, value
+    yield {'name': name, 'value': value}
 
     _delete_secret(superuser_api_session, path + name)
     assert not _has_secret(superuser_api_session, path + name)
@@ -46,8 +46,6 @@ def test_application_secret_leakage(superuser_api_session, secret, containerizer
     """Marathon app deployment integration test validating if tasks using
     a secret leave any traces of them in the sandbox log files.
     """
-    name, value = secret
-
     app, test_uuid = get_test_app(container_type=containerizer)
 
     if image is not None:
@@ -57,7 +55,7 @@ def test_application_secret_leakage(superuser_api_session, secret, containerizer
 
     app['secrets'] = {
         'secret0': {
-            'source': name
+            'source': secret['name']
         }
     }
 
@@ -81,5 +79,5 @@ def test_application_secret_leakage(superuser_api_session, secret, containerizer
 
             logging.info('File {} contains:\n{}\n'.format(required_sandbox_file, content))
 
-            assert value not in content, 'File {} should not contain any references of \'{}\''.format(
-                required_sandbox_file, value)
+            assert secret['value'] not in content,
+              'File {} should not contain any references of \'{}\''.format(required_sandbox_file, secret['value'])
