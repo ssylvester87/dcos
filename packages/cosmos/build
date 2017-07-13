@@ -32,7 +32,7 @@ EnvironmentFile=/opt/mesosphere/etc/proxy.env
 EnvironmentFile=/opt/mesosphere/etc/cosmos.env
 EnvironmentFile=/opt/mesosphere/etc/cosmos
 EnvironmentFile=-/run/dcos/etc/cosmos.env
-ExecStartPre=/bin/ping -c1 ready.spartan
+ExecStartPre=/bin/ping -c1 leader.mesos
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-cosmos
 ExecStart=/opt/mesosphere/bin/cosmos.sh
 EOF
