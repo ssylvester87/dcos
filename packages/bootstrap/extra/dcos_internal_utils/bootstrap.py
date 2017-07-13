@@ -1054,21 +1054,23 @@ class Bootstrapper(object):
         subprocess.check_call(cmd, preexec_fn=_set_umask)
         os.remove(pfx_fn)
 
-    def write_truststore(
-            self,
-            ts_filepath='/run/dcos/pki/CA/certs/cacerts.jks',
-            ca_bundle_filepath='/run/dcos/pki/CA/ca-bundle.crt'):
+    def write_java_truststore_with_dcos_ca_bundle(self):
         """
-        Write Java TrustStore to file located at `ts_filepath` (the default
-        `/run/dcos/pki/CA/certs/cacerts.jks` is also exposed by Admin Router's
+        Write Java TrustStore to file located at
+        `/run/dcos/pki/CA/certs/cacerts.jks` which is expected by e.g. Marathon,
+        Cosmos, Metronome, but also by Admin Router for exposing the
         `/ca/cacerts.jks` HTTP endpoint).
 
-        Copy Java's default trust database into the new TrustStore. In addition,
-        copy the trust anchors (certificates) from the CA bundle file located
-        at `ca_bundle_filepath`. The latter defaults to
-        `/run/dcos/pki/CA/ca-bundle.crt` which is the canonical DC/OS CA bundle
+        Note(JP): We copy Java's default trust database into the new TrustStore,
+        but it's unclear to my why we do so. I am not sure if we actually want
+        Marathon and Metronome to trust "the Internet". In addition, we copy the
+        trust anchors (certificates) from the DC/OS CA bundle file located at
+        `DCOS_CA_TRUST_BUNDLE_FILE_PATH` which is the canonical DC/OS CA bundle
         location.
         """
+        ts_filepath = '/run/dcos/pki/CA/certs/cacerts.jks'
+        ca_bundle_filepath = DCOS_CA_TRUST_BUNDLE_FILE_PATH
+
         keytool = shutil.which('keytool')
         if not keytool:
             raise Exception('keytool not found')
@@ -1090,7 +1092,7 @@ class Bootstrapper(object):
             '-destkeystore', ts_filepath
         ]
 
-        log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
+        log.info('Copying Java TrustStore: {}'.format(' '.join(cmd)))
         proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
@@ -1754,7 +1756,7 @@ def dcos_marathon(b, opts):
     # For Marathon UI/API SSL.
     if opts.config['marathon_https_enabled']:
 
-        b.write_truststore()
+        b.write_java_truststore_with_dcos_ca_bundle()
 
         env = opts.rundir + '/etc/marathon/tls.env'
         b.write_marathon_tls_env(key, crt, ca_chain_with_root_cert, env)
@@ -1790,11 +1792,7 @@ def dcos_metronome(b, opts):
         ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
-        # Note(JP): why do we create a distinct TrustStore file for Metronome
-        # whereas we use the canonical one for Marathon? The contents should /
-        # can be the same in case of Marathon, Cosmos, Metronome. Normalize
-        # this.
-        b.write_truststore(ts_filepath='/run/dcos//pki/CA/certs/cacerts_metronome.jks')
+        b.write_java_truststore_with_dcos_ca_bundle()
 
         env = opts.rundir + '/etc/metronome/tls.env'
         b.write_metronome_env(key, crt, ca_chain_with_root_cert, env)
@@ -2049,12 +2047,7 @@ def dcos_cosmos(b, opts):
 
     b.write_CA_trust_bundle()
 
-    # Note(JP): here we do not write interdiate CA certs
-    #     into the TrustStore, but just the canonical
-    #     DC/OS trust bundle. We probably can do the same
-    #     for Metronome and Marathon. All three services
-    #     can probably use the same TrustStore.
-    b.write_truststore(ts_filepath='/run/dcos//pki/CA/certs/cacerts_cosmos.jks')
+    b.write_java_truststore_with_dcos_ca_bundle()
 
     b.write_cosmos_env(env_fn='/run/dcos/etc/cosmos.env')
 

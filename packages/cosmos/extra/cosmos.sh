@@ -4,7 +4,10 @@ TLS_ENABLED=${TLS_ENABLED:-false}
 DISABLED_PROXY_SCHEMES='-Djdk.http.auth.tunneling.disabledSchemes="NTLM"'
 
 if [ "${TLS_ENABLED-}" = "true" ]; then
-    TLS_TRUSTSTORE=${TLS_TRUSTSTORE:-/run/dcos/pki/CA/certs/cacerts_cosmos.jks}
+    # Note(JP): The systemd EnvironmentFile `/opt/mesosphere/etc/cosmos` defines
+    # `TLS_TRUSTSTORE` (sets it to `/run/dcos/pki/CA/certs/cacerts.jks`). I
+    # don't think we should duplicate logic here.
+    TLS_TRUSTSTORE=${TLS_TRUSTSTORE:-/run/dcos/pki/CA/certs/cacerts.jks}
     ADMINROUTER_URI=${ADMINROUTER_URI:-https://master.mesos}
     MARATHON_URI=${MARATHON_URI:-https://master.mesos:8443}
     MESOSMASTER_URI=${MESOSMASTER_URI:-https://leader.mesos:5050}
