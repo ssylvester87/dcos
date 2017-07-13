@@ -25,10 +25,6 @@ make -j$NUM_CORES
 make install
 popd
 
-# Install master modules.
-mkdir -p "$PKG_PATH/etc/mesos-master-modules"
-cp /pkg/extra/master_dcos_security_modules.json "$PKG_PATH/etc/mesos-master-modules/"
-
 # Install DC/OS authenticatee module.
 mkdir -p "$PKG_PATH/etc/mesos-scheduler-modules"
 cp /pkg/extra/dcos_authenticatee_module.json "$PKG_PATH/etc/mesos-scheduler-modules/"
