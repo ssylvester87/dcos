@@ -34,6 +34,7 @@ class TestCustomCACert:
             # TODO: Enable MARATHON_EE-1489
             # 'test_authentication.py',
             'test_adminrouter.py',
+            'test_applications_enterprise.py',
         ]
 
     @pytest.mark.parametrize(
