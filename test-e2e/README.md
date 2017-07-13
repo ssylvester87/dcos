@@ -1,12 +1,12 @@
-This directory contains PoC end to end tests.
+This directory contains end to end tests.
 
-To run these tests, create an environment which can run DC/OS Docker as per the [README](https://github.com/dcos/dcos-docker/blob/master/README.md#requirements).
+To run these tests, create an environment which can run DC/OS Docker as per the [DC/OS Docker README](https://github.com/dcos/dcos-docker/blob/master/README.md#requirements).
 
-Then, download DC/OS Docker and the relevant build artifact as per the [DC/OS E2E README](https://github.com/adamtheturtle/dcos-e2e#test-environment).
+Then, download the relevant build artifact as per the [DC/OS E2E README](https://github.com/adamtheturtle/dcos-e2e#test-environment).
 For example, at the time of writing:
 
 ```sh
-ARTIFACT_URL=https://downloads.mesosphere.com/dcos-enterprise/testing/pull/930/dcos_generate_config.ee.sh
+ARTIFACT_URL=https://downloads.mesosphere.com/dcos-enterprise/testing/master/dcos_generate_config.ee.sh
 export DCOS_E2E_GENCONF_PATH=/tmp/dcos_generate_config.sh
 export DCOS_E2E_TMP_DIR_PATH=/tmp
 

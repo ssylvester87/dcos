@@ -19,9 +19,13 @@ class TestCustomCACert:
     def test_filenames(self) -> List[str]:
         """
         We run various integration test files.
-        We run only tests that are related to custom CA certificates.
+        We run only a subset of tests which have been hand picked to be most
+        relevant for the custom CA cert features.
 
         Return a list of these filenames.
+
+        See https://jira.mesosphere.com/browse/DCOS-17256 for running all
+        integration tests with custom CA certificates.
         """
         return [
             'test_tls.py',
@@ -34,6 +38,7 @@ class TestCustomCACert:
             # TODO: Enable MARATHON_EE-1489
             # 'test_authentication.py',
             'test_adminrouter.py',
+            'test_applications_enterprise.py',
         ]
 
     @pytest.mark.parametrize(
