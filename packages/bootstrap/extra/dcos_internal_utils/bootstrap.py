@@ -171,43 +171,36 @@ class Bootstrapper(object):
 
         return secrets
 
-    def write_signing_CA_key(self, user):
+    def write_signing_CA_key(self):
         """
         Write PEM-encoded private key corresponding to the "signing CA
-        certificate" to /run/dcos/pki/CA/private/signing-ca.key. Set file owner to
-        `user` and set the file access permissions down to 0o600.
-
-        Args:
-            user (str):
-                Set the owner of the file to this system/unix user name.
+        certificate" to /run/dcos/pki/CA/private/signing-ca.key. Set file owner
+        to the unix user that runs the DC/OS CA process and set the file access
+        permissions down to 0o600.
         """
         # This file must not be read by any component besides the DC/OS CA.
         path = '/run/dcos/pki/CA/private/signing-ca.key'
         key = self.secrets['CA']['RootCA']['key'].encode('utf-8')
         log.info('Writing signing CA cert private key to {}'.format(path))
         _write_file_bytes(path, key, 0o600)
-        shutil.chown(path, user=user)
+        shutil.chown(path, user=self.opts.dcos_ca_user)
 
-    def write_signing_CA_certificate(self, user):
+    def write_signing_CA_certificate(self):
         """
         Write the PEM-encoded "signing CA certificate" to a file located at
-        '/run/dcos/pki/CA/certs/signing-ca.crt'. Set file owner to `user` and
-        set the file access permissions to 0o600: while certificates are
-        non-sensitive data in general, this file is intended to be accessed
-        exclusively by the DC/OS CA (cfssl) process. The signing CA certificate
-        is either a custom CA certificate (root or intermediate) or an
-        auto-generated root CA certificate.
-
-        Args:
-            user (str):
-                Set the owner of the file to this system/unix user name.
+        '/run/dcos/pki/CA/certs/signing-ca.crt'. Set file owner to the unix user
+        that runs the DC/OS CA process and set the file access permissions to
+        0o600: while certificates are non-sensitive data in general, this file
+        is intended to be accessed exclusively by the DC/OS CA (cfssl) process.
+        The signing CA certificate is either a custom CA certificate (root or
+        intermediate) or an auto-generated root CA certificate.
         """
         # This file should not be read by any component besides the DC/OS CA.
         path = '/run/dcos/pki/CA/certs/signing-ca.crt'
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
         _write_file_bytes(path, certbytes, 0o644)
-        shutil.chown(path, user=user)
+        shutil.chown(path, user=self.opts.dcos_ca_user)
 
     def write_CA_certificate_chain(self, path='/run/dcos/pki/CA/ca-chain.crt'):
         """
@@ -1637,8 +1630,8 @@ def dcos_ca(b, opts):
     path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
     b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
 
-    b.write_signing_CA_certificate(user=opts.dcos_ca_user)
-    b.write_signing_CA_key(user=opts.dcos_ca_user)
+    b.write_signing_CA_certificate()
+    b.write_signing_CA_key()
     b.write_CA_certificate_chain()
     b.write_CA_trust_bundle()
     b.write_CA_trust_bundle_for_libcurl()
