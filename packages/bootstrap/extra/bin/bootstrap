@@ -55,7 +55,7 @@ def main():
 
     exhibitor.wait(opts.master_count)
 
-    bootstrap.make_run_dirs(opts)
+    bootstrap.make_run_dirs()
 
     bootstrapper = bootstrap.Bootstrapper(opts)
     for service in opts.services:

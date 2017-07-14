@@ -1390,10 +1390,6 @@ def parse_args():
 
     parser.add_argument('services', nargs='+')
     parser.add_argument(
-        '--rundir',
-        default='/run/dcos',
-        help='Runtime directory')
-    parser.add_argument(
         '--statedir',
         default='/var/lib/dcos',
         help='State direcotry')
@@ -1501,33 +1497,37 @@ def parse_args():
     return opts
 
 
-def make_run_dirs(opts):
-    dirs = [
-        opts.rundir,
-        opts.rundir + '/etc',
-        opts.rundir + '/etc/dcos-diagnostics',
-        opts.rundir + '/etc/dcos-checks',
-        opts.rundir + '/etc/dcos-backup',
-        opts.rundir + '/etc/dcos-ca',
-        opts.rundir + '/etc/dcos-metrics',
-        opts.rundir + '/etc/history-service',
-        opts.rundir + '/etc/marathon',
-        opts.rundir + '/etc/mesos',
-        opts.rundir + '/etc/mesos-dns',
-        opts.rundir + '/etc/metronome',
-        opts.rundir + '/etc/signal-service',
-        opts.rundir + '/pki/CA/certs',
-        opts.rundir + '/pki/CA/private',
-        opts.rundir + '/pki/tls/certs',
-        opts.rundir + '/pki/tls/private',
+def make_run_dirs():
+    rundir_abspath = '/run/dcos/'
+    subdirs_relpaths = [
+        'etc',
+        'etc/dcos-diagnostics',
+        'etc/dcos-checks',
+        'etc/dcos-backup',
+        'etc/dcos-ca',
+        'etc/dcos-metrics',
+        'etc/history-service',
+        'etc/marathon',
+        'etc/mesos',
+        'etc/mesos-dns',
+        'etc/metronome',
+        'etc/signal-service',
+        'pki/CA/certs',
+        'pki/CA/private',
+        'pki/tls/certs',
+        'pki/tls/private',
         # cockroachdb 1.0 expects the CA and end entity certs and keys in the same directory.
         # See https://github.com/cockroachdb/cockroach/issues/15760
-        opts.rundir + '/pki/cockroach'
+        'pki/cockroach'
     ]
 
-    for d in dirs:
-        log.info('Preparing directory {}'.format(d))
-        os.makedirs(d, exist_ok=True)
+    # Build all absolute directory paths.
+    dirpaths = [rundir_abspath + sd for sd in subdirs_relpaths]
+
+    # Create directories with the `mkdir -p` equivalent.
+    for path in dirpaths:
+        log.info('Make sure directory exists: %s', path)
+        os.makedirs(path, exist_ok=True)
 
 
 def dcos_bouncer(b, opts):
