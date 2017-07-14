@@ -171,37 +171,39 @@ class Bootstrapper(object):
 
         return secrets
 
-    def write_CA_key(self, path, user):
+    def write_signing_CA_key(self, user):
         """
         Write PEM-encoded private key corresponding to the "signing CA
-        certificate" to a file located at `path`. Set file owner to `user` and
-        lock the file access permissions down to 0o600.
+        certificate" to /run/dcos/pki/CA/private/signing-ca.key. Set file owner to
+        `user` and set the file access permissions down to 0o600.
 
         Args:
-            path (str):
-                File path of the file to write the key to.
             user (str):
                 Set the owner of the file to this system/unix user name.
         """
+        # This file must not be read by any component besides the DC/OS CA.
+        path = '/run/dcos/pki/CA/private/signing-ca.key'
         key = self.secrets['CA']['RootCA']['key'].encode('utf-8')
         log.info('Writing signing CA cert private key to {}'.format(path))
         _write_file_bytes(path, key, 0o600)
         shutil.chown(path, user=user)
 
-    def write_CA_certificate(self, path, user):
+    def write_signing_CA_certificate(self, user):
         """
         Write the PEM-encoded "signing CA certificate" to a file located at
-        `path`. Set file owner to `user` and lock the file access permissions
-        down to 0o600. The signing CA certificate is either a custom CA
-        certificate (root or intermediate) or an auto-generated root CA
-        certificate.
+        '/run/dcos/pki/CA/certs/signing-ca.crt'. Set file owner to `user` and
+        set the file access permissions to 0o600: while certificates are
+        non-sensitive data in general, this file is intended to be accessed
+        exclusively by the DC/OS CA (cfssl) process. The signing CA certificate
+        is either a custom CA certificate (root or intermediate) or an
+        auto-generated root CA certificate.
 
         Args:
-            path (str):
-                File path of the file to write the key to.
             user (str):
                 Set the owner of the file to this system/unix user name.
         """
+        # This file should not be read by any component besides the DC/OS CA.
+        path = '/run/dcos/pki/CA/certs/signing-ca.crt'
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
         _write_file_bytes(path, certbytes, 0o644)
@@ -1552,7 +1554,7 @@ def dcos_cockroach(b, opts):
 
     cockroachdir = opts.rundir + '/pki/cockroach'
     # Copy CA cert to cockroach cert dir. They don't support specifying separate
-    # cert paths in v1.0. CockroachDB requires the CA certificate chain to be
+    # cert paths in v1.0. CockroachDB requires the CA bundle to be
     # named `ca.crt`.
     capath = cockroachdir + '/ca.crt'
     shutil.copy2(opts.rundir + '/pki/CA/ca-bundle.crt', capath)
@@ -1635,8 +1637,8 @@ def dcos_ca(b, opts):
     path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
     b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
 
-    b.write_CA_certificate(path='/run/dcos/pki/CA/certs/ca.crt', user=opts.dcos_ca_user)
-    b.write_CA_key(path='/run/dcos/pki/CA/private/ca.key', user=opts.dcos_ca_user)
+    b.write_signing_CA_certificate(user=opts.dcos_ca_user)
+    b.write_signing_CA_key(user=opts.dcos_ca_user)
     b.write_CA_certificate_chain()
     b.write_CA_trust_bundle()
     b.write_CA_trust_bundle_for_libcurl()
