@@ -605,6 +605,8 @@ def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master
                         '/opt/mesosphere/bin/dcos-checks',
                         '--role',
                         'master',
+                        force_tls,
+                        ca_cert,
                         '--iam-config',
                         '/run/dcos/etc/dcos-checks/checks_service_account.json',
                         'zk-quorum'
