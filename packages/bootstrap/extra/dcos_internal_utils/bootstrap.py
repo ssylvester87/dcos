@@ -2147,7 +2147,7 @@ def dcos_history(b, opts):
     shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
 
 
-bootstrappers = {
+service_bootstrap_functions = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-adminrouter-agent': dcos_adminrouter_agent,
     'dcos-backup-master': dcos_backup_master,
