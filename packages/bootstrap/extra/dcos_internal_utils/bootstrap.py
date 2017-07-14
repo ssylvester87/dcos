@@ -1064,7 +1064,7 @@ class Bootstrapper(object):
         `/ca/cacerts.jks` HTTP endpoint).
 
         Note(JP): We copy Java's default trust database into the new TrustStore,
-        but it's unclear to my why we do so. I am not sure if we actually want
+        but it's unclear to me why we do so. I am not sure if we actually want
         Marathon and Metronome to trust "the Internet". In addition, we copy the
         trust anchors (certificates) from the DC/OS CA bundle file located at
         `DCOS_CA_TRUST_BUNDLE_FILE_PATH` which is the canonical DC/OS CA bundle
