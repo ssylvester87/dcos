@@ -141,10 +141,6 @@ class TestResourceAvailability:
         assert 'BEGIN CERTIFICATE' in r.text
         assert r.headers['Content-Type'] == 'application/x-x509-ca-cert'
 
-    @pytest.mark.xfail(
-        bootstrap_config['security'] in {'disabled'},
-        reason='cacerts.jks is not created when security is disabled.',
-        strict=True)
     def test_jks_ca_cert_retrieval(self, noauth_api_session):
         # No authentication required.
         r = noauth_api_session.get('/ca/cacerts.jks')
