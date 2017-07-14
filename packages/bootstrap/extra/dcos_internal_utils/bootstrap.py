@@ -902,18 +902,20 @@ class Bootstrapper(object):
         log.info('Writing Mesos Master ZK credentials to {}'.format(filename))
         _write_file_bytes(filename, env, 0o600)
 
-    def write_cosmos_env(self, env_fn):
+    def write_cosmos_env(self):
         if not self.opts.config['zk_acls_enabled']:
             return
+
+        env_filepath = '/run/dcos/etc/cosmos.env'
 
         zk_creds = self.secrets['zk']['dcos_cosmos']
         env = 'ZOOKEEPER_USER={username}\nZOOKEEPER_SECRET={password}\n'
         env = env.format_map(zk_creds)
         env = bytes(env, 'ascii')
 
-        log.info('Writing Cosmos environment to {}'.format(env_fn))
+        log.info('Writing Cosmos environment to {}'.format(env_filepath))
         # environment file is owned by root because systemd reads it
-        _write_file_bytes(env_fn, env, 0o600)
+        _write_file_bytes(env_filepath, env, 0o600)
 
     def write_metronome_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -2041,10 +2043,8 @@ def dcos_cosmos(b):
     shutil.chown(crt, user='dcos_cosmos')
 
     b.write_CA_trust_bundle()
-
     b.write_java_truststore_with_dcos_ca_bundle()
-
-    b.write_cosmos_env(env_fn='/run/dcos/etc/cosmos.env')
+    b.write_cosmos_env()
 
 
 def dcos_signal(b):
