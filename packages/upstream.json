@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "bee27570482feb38ae264050a861fc84797c9a41",
-  "ref_origin": "1.9.2"
+  "ref": "8562c2f4c7c42526bfdff152854ed5c2728bb4fe",
+  "ref_origin": "gilbert/1.9.2-bump-mesos"
 }
