@@ -44,7 +44,8 @@ def secret(superuser_api_session):
 ])
 def test_application_secret_leakage(superuser_api_session, secret, containerizer, image):
     """Marathon app deployment integration test validating if tasks using
-    a secret leave any traces of them in the sandbox log files.
+    a secret reference their value in clear text in the sandbox log files
+    (stdout & stderr).
     """
     app, test_uuid = get_test_app(container_type=containerizer)
 
