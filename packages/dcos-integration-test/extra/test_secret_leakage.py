@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from test_util.marathon import Container, get_test_app
+from dcos_test_utils.marathon import Container, get_test_app
 
 
 def _create_secret(superuser_api_session, path, value):
