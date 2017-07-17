@@ -79,5 +79,5 @@ def test_application_secret_leakage(superuser_api_session, secret, containerizer
 
             logging.info('File {} contains:\n{}\n'.format(required_sandbox_file, content))
 
-            assert secret['value'] not in content,
-                'File {} should not contain any references of \'{}\''.format(required_sandbox_file, secret['value'])
+            assert secret['value'] not in content, 'File {} should not contain any references of \'{}\''.format(
+                required_sandbox_file, secret['value'])
