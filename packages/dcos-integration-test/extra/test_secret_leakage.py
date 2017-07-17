@@ -38,9 +38,9 @@ def secret(superuser_api_session):
 
 
 @pytest.mark.parametrize('containerizer,image', [
-    (Container.MESOS, None),              # Mesos containerizer.
-    (Container.MESOS, "debian:jessie"),   # Mesos containerizer (UCR).
-    (Container.DOCKER, "debian:jessie")   # Docker containerizer.
+    (Container.MESOS, None),            # Mesos containerizer.
+    (Container.MESOS, "alpine"),        # Mesos containerizer (UCR).
+    (Container.DOCKER, "alpine")        # Docker containerizer.
 ])
 def test_application_secret_leakage(superuser_api_session, secret, containerizer, image):
     """Marathon app deployment integration test validating if tasks using
