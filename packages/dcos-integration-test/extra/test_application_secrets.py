@@ -1,6 +1,80 @@
+import json
 import uuid
 
 import pytest
+
+
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets(superuser_api_session, service_accounts_fixture):
+    # creating a secret
+    r = superuser_api_session.secrets.put('/secret/default/hello/mysecret', json={'value': 'anewpassword'})
+    assert r.status_code == 201
+
+    test_uuid = uuid.uuid4().hex
+
+    # app definition
+    app_definition = {
+        'id': '/hello/world/integration-test-file-based-secret{}'.format(test_uuid),
+        'cpus': 0.1,
+        'mem': 128,
+        'cmd': "sh -c '/bin/bash -c \"diff <(cat path) <(echo -n anewpassword)\"' && cat path && sleep 1000",
+        'instances': 1,
+        'container': {
+            'type': 'MESOS',
+            'volumes': [
+                {
+                    'mode': 'RO',
+                    'containerPath': 'path',
+                    'secret': 'secretpassword'
+                }
+            ]
+        },
+        'secrets': {
+            'secretpassword': {
+                'source': '/hello/mysecret'
+            }
+        }
+    }
+
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
+
+    # creating a secret
+    r = superuser_api_session.secrets.put('/secret/default/some/unauthorized/path/mysecret',
+                                          json={'value': 'anewpassword'})
+    assert r.status_code == 201
+
+    # wrong path app definition, current secret is not nested under the same path as the app
+    bad_definition = {
+        'id': '/hello/world/integration-test-wrong-file-based-secret{}'.format(test_uuid),
+        'cpus': 0.1,
+        'mem': 128,
+        'cmd': '`cat path`" = "anewpassword" && sleep 1000',
+        'instances': 1,
+        'container': {
+            'type': 'MESOS',
+            'volumes': [
+                {
+                    'mode': 'RO',
+                    'containerPath': 'path',
+                    'secret': 'secretpassword'
+                }
+            ]
+        },
+        'secrets': {
+            'secretpassword': {
+                # unauthorized secret path
+                'source': '/some/unauthorized/path/mysecret'
+            }
+        }
+    }
+
+    r = superuser_api_session.marathon.post('v2/apps', json=bad_definition)
+
+    assert r.status_code == 422
+    data = json.loads(r.text)
+    assert data['details'][0]['errors'][0] == \
+        'Secret /some/unauthorized/path/mysecret is not accessible'
 
 
 @pytest.mark.usefixtures("secrets_verify_and_reset")
