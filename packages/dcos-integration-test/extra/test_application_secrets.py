@@ -17,7 +17,7 @@ def test_enterprise_if_file_based_secrets(superuser_api_session, service_account
         'id': '/hello/world/integration-test-file-based-secret{}'.format(test_uuid),
         'cpus': 0.1,
         'mem': 128,
-        'cmd': "sh -c '/bin/bash -c \"diff <(cat path) <(echo -n anewpassword)\"' && cat path && sleep 1000",
+        'cmd': 'test "`cat path`" = "anewpassword" && sleep 1000',
         'instances': 1,
         'container': {
             'type': 'MESOS',
@@ -45,33 +45,19 @@ def test_enterprise_if_file_based_secrets(superuser_api_session, service_account
     assert r.status_code == 201
 
     # wrong path app definition, current secret is not nested under the same path as the app
-    bad_definition = {
-        'id': '/hello/world/integration-test-wrong-file-based-secret{}'.format(test_uuid),
-        'cpus': 0.1,
-        'mem': 128,
-        'cmd': '`cat path`" = "anewpassword" && sleep 1000',
-        'instances': 1,
-        'container': {
-            'type': 'MESOS',
-            'volumes': [
-                {
-                    'mode': 'RO',
-                    'containerPath': 'path',
-                    'secret': 'secretpassword'
-                }
-            ]
-        },
-        'secrets': {
-            'secretpassword': {
-                # unauthorized secret path
-                'source': '/some/unauthorized/path/mysecret'
-            }
+    bad_definition = app_definition
+    bad_definition['id'] = '/hello/world/integration-test-wrong-file-based-secret{}'.format(test_uuid)
+    bad_definition['secrets'] = {
+        'secretpassword': {
+            # unauthorized secret path
+            'source': '/some/unauthorized/path/mysecret'
         }
     }
 
     r = superuser_api_session.marathon.post('v2/apps', json=bad_definition)
 
     assert r.status_code == 422
+
     data = json.loads(r.text)
     assert data['details'][0]['errors'][0] == \
         'Secret /some/unauthorized/path/mysecret is not accessible'
@@ -84,6 +70,7 @@ def test_enterprise_if_application_run_with_secrets(superuser_api_session, servi
 
     # Create service account secret
     stdout, stderr = cli.exec_command(
+        ["dcos", "security", "secrets", "create-sa-secret",
          private_key_filepath, "mlb-secret", "/mlb-secret"])
     assert stdout == ''
     assert stderr == ''
