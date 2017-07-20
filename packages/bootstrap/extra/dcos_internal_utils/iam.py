@@ -2,20 +2,21 @@ import json
 import logging
 import time
 
-
 import jwt
 import requests
 import retrying
+
+
+from dcos_internal_utils import DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
 
 log = logging.getLogger(__name__)
 
 
 class IAMClient:
-    def __init__(self, base_url, CA_certificate_filename=None):
+    def __init__(self, base_url):
         self.base_url = base_url
         self.default_headers = {'Accept': 'application/json', 'Accept-Charset': 'utf-8'}
-        self.CA_certificate_filename = CA_certificate_filename
 
     def request(self, method, path, **kwargs):
         url = self.base_url + path
@@ -23,7 +24,7 @@ class IAMClient:
         if 'headers' not in kwargs:
             kwargs['headers'] = self.default_headers.copy()
         if 'verify' not in kwargs:
-            kwargs['verify'] = self.CA_certificate_filename
+            kwargs['verify'] = DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
         if method == 'get':
             r = requests.get(url, **kwargs)
@@ -107,11 +108,22 @@ class IAMClient:
         if r.status_code != 201:
             raise Exception('create service account failed: status {}'.format(r.status_code))
 
-    def create_acls(self, rids_and_actions, username):
+    def grant_permissions(self, rids_and_actions, uid):
+        """
+        Grant permissions for the identity with the given `uid`: for all (`rid`,
+        `action`) pairs in `rids_and_actions`, allow to perform that given
+        action on the resource represented by `rid`.
+        """
+
         for rid, action in rids_and_actions:
-            acl_url = '/acs/api/v1/acls/{}'.format(rid)
+
+            # Slashes in a `rid` must be encoded when a `rid` is being used in
+            # a URL. That's part of the IAM HTTP API specification.
+            encoded_rid = rid.replace('/', '%252F')
+            acl_url = '/acs/api/v1/acls/{}'.format(encoded_rid)
+
             if not self._entry_exists(acl_url, 'ERR_UNKNOWN_RESOURCE_ID'):
-                data = {'description': 'ACL for rid {}'.format(rid)}
+                data = {'description': 'Created during bootstrap'}
                 r = self.request('put', acl_url, json=data)
                 # If we fail to create an ACL for the resource we crash and
                 # retry when we boot again. This also guards against the case
@@ -120,19 +132,23 @@ class IAMClient:
                 # all others will fail if at that point the resource already
                 # exists.
                 r.raise_for_status()
+
             # Check whether the user has been assigned to the ACL and action.
             # The user and ACL are expected to exist. The user and the ACL are
             # both expected to exist. We expect true/false to be returned from
             # the server and any failure is unexpected and should lead to a
             # crash.
-            action_url = '{}/users/{}/{}'.format(acl_url, username, action)
+            action_url = '{}/users/{}/{}'.format(acl_url, uid, action)
             r = self.request('get', action_url)
             r.raise_for_status()
-            data = json.loads(r.text)
+
+            data = r.json()
             assert isinstance(data['allowed'], bool)
+
             if data['allowed']:
                 # The user is already permitted to perform the action on the resource.
                 continue
+
             r = self.request('put', action_url)
             # If we are racing with another bootstrap process we may receive an
             # error here. In that case we simply crash and retry as the next
