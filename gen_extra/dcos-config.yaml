@@ -224,7 +224,7 @@ package:
       TLS_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       TLS_CERT_FILE=/run/dcos/pki/tls/certs/cosmos.crt
       TLS_KEY_FILE=/run/dcos/pki/tls/private/cosmos.key
-      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts_cosmos.jks
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
 {% endswitch %}
   - path: /etc/dcos-signal-extra.json
     content: |
@@ -859,7 +859,7 @@ package:
       LIBPROCESS_SSL_CA_FILE=/run/dcos/pki/CA/ca-bundle.crt
       LIBPROCESS_SSL_CERT_FILE=/run/dcos/pki/tls/certs/metronome.crt
       LIBPROCESS_SSL_KEY_FILE=/run/dcos/pki/tls/private/metronome.key
-      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts_metronome.jks
+      TLS_TRUSTSTORE=/run/dcos/pki/CA/certs/cacerts.jks
 {% endswitch %}
 {% switch dcos_audit_logging %}
 {% case "true" %}

@@ -55,16 +55,16 @@ def main():
 
     exhibitor.wait(opts.master_count)
 
-    bootstrap.make_run_dirs(opts)
+    bootstrap.make_run_dirs()
 
-    b = bootstrap.Bootstrapper(opts)
+    bootstrapper = bootstrap.Bootstrapper(opts)
     for service in opts.services:
-        if service not in bootstrap.bootstrappers:
+        if service not in bootstrap.service_bootstrap_functions:
             log.error('Unknown service: {}'.format(service))
             sys.exit(1)
         log.debug('bootstrapping {}'.format(service))
         apply_service_configuration(service)
-        bootstrap.bootstrappers[service](b, opts)
+        bootstrap.service_bootstrap_functions[service](bootstrapper)
 
 
 if __name__ == '__main__':

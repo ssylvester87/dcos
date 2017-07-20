@@ -14,8 +14,8 @@ ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-ca
 ExecStart=/opt/mesosphere/bin/dcos-ca \
     -loglevel 0 serve \
     -address=127.0.0.1 -port=8888 \
-    -ca /run/dcos/pki/CA/certs/ca.crt \
-    -ca-key /run/dcos/pki/CA/private/ca.key \
+    -ca /run/dcos/pki/CA/certs/signing-ca.crt \
+    -ca-key /run/dcos/pki/CA/private/signing-ca.key \
     -ca-bundle /run/dcos/pki/CA/ca-bundle.crt \
     -int-bundle /run/dcos/pki/CA/ca-chain.crt \
     -config /opt/mesosphere/etc/dcos-ca/config.json

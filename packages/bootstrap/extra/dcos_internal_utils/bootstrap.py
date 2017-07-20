@@ -21,6 +21,7 @@ import gen
 from dcos_internal_utils import ca
 from dcos_internal_utils import iam
 from dcos_internal_utils import utils
+from dcos_internal_utils import DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
 
 log = logging.getLogger(__name__)
@@ -73,9 +74,6 @@ class Bootstrapper(object):
         self.iam_url = opts.iam_url
         self.ca_url = opts.ca_url
         self.secrets = {}
-
-        self.CA_certificate = None
-        self.CA_certificate_path = None
 
         self.agent_services = [
             'dcos_diagnostics_agent',
@@ -173,25 +171,38 @@ class Bootstrapper(object):
 
         return secrets
 
-    def write_CA_key(self, path):
-        key = self.secrets['CA']['RootCA']['key']
-        key = key.encode('utf-8')
-        log.info('Writing CA key to {}'.format(path))
-        _write_file(path, key, 0o600)
-        return key
+    def write_signing_CA_key(self):
+        """
+        Write PEM-encoded private key corresponding to the "signing CA
+        certificate" to /run/dcos/pki/CA/private/signing-ca.key. Set file owner
+        to the unix user that runs the DC/OS CA process and set the file access
+        permissions down to 0o600.
+        """
+        # This file must not be read by any component besides the DC/OS CA.
+        path = '/run/dcos/pki/CA/private/signing-ca.key'
+        key = self.secrets['CA']['RootCA']['key'].encode('utf-8')
+        log.info('Writing signing CA cert private key to {}'.format(path))
+        _write_file_bytes(path, key, 0o600)
+        shutil.chown(path, user=self.opts.dcos_ca_user)
 
-    def write_CA_certificate(self, path='/run/dcos/pki/CA/certs/ca.crt'):
+    def write_signing_CA_certificate(self):
         """
-        Write the PEM-encoded "signing CA certificate" to a file. The signing
-        CA certificate is either a custom CA certificate (root or intermediate)
-        or an auto-generated root CA certificate.
+        Write the PEM-encoded "signing CA certificate" to a file located at
+        '/run/dcos/pki/CA/certs/signing-ca.crt'. Set file owner to the unix user
+        that runs the DC/OS CA process and set the file access permissions to
+        0o600: while certificates are non-sensitive data in general, this file
+        is intended to be accessed exclusively by the DC/OS CA (cfssl) process.
+        The signing CA certificate is either a custom CA certificate (root or
+        intermediate) or an auto-generated root CA certificate.
         """
+        # This file should not be read by any component besides the DC/OS CA.
+        path = '/run/dcos/pki/CA/certs/signing-ca.crt'
         certbytes = self.secrets['CA']['RootCA']['certificate'].encode('utf-8')
         log.info('Writing signing CA cert to {}'.format(path))
-        _write_file(path, certbytes, 0o644)
-        return certbytes
+        _write_file_bytes(path, certbytes, 0o644)
+        shutil.chown(path, user=self.opts.dcos_ca_user)
 
-    def write_CA_certificate_chain(self, path):
+    def write_CA_certificate_chain(self, path='/run/dcos/pki/CA/ca-chain.crt'):
         """
         Write the CA certificate chain (comprised of exclusively intermediate
         CA certificates) to a file.
@@ -201,11 +212,12 @@ class Bootstrapper(object):
         if 'CA' in self.secrets:
             chainbytes = self.secrets['CA']['RootCA']['chain'].encode('utf-8')
 
+        # Note(JP): Is this the fallback for agent nodes (where
+        # `create_master_secrets()` has not been called?
         chainbytes = self._consensus('/dcos/CAChain', chainbytes, ANYONE_READ)
         log.info('Writing CA cert chain (of intermediate certs) to {}'.format(path))
 
-        _write_file(path, chainbytes, 0o644)
-        return chainbytes
+        _write_file_bytes(path, chainbytes, 0o644)
 
     def write_CA_certificate_chain_with_root_cert(
             self, path='/run/dcos/pki/CA/ca-chain-inclroot.crt'):
@@ -225,50 +237,83 @@ class Bootstrapper(object):
             '/dcos/CAChainInclRoot', chainbytes, ANYONE_READ)
 
         log.info('Writing CA cert chain (including root) to {}'.format(path))
-        _write_file(path, chainbytes, 0o644)
-        return chainbytes
+        _write_file_bytes(path, chainbytes, 0o644)
 
-    def write_CA_trust_bundle(
-            self, path='/run/dcos/pki/CA/ca-bundle.crt'):
+    def write_CA_trust_bundle(self):
         """
-        Writes root CA certificate to the trust bundle file (intended to be used
-        for certificate verification).
+        Write the DC/OS CA trust bundle file. It is intended to contain the
+        trust anchor(s) to be used for certificate verification by various
+        DC/OS-internal components. That is, for security reasons it is important
+        that this bundle contains the smallest set of trust anchors that is
+        conceptually required.
+
+        The file is written to `DCOS_CA_TRUST_BUNDLE_FILE_PATH`, where other
+        DC/OS-internal components but also readers of the public-facing docs
+        expect the DC/OS CA trust bundle file to exist.
+
+        Note(JP): For now, the DC/OS CA trust bundle file only contains a single
+        item; the root CA certificate corresponding to the DC/OS Certificate
+        Authority. In the future we might allow operators to inject their own
+        trust anchors (via the DC/OS configuration), in which case this method
+        here must be amended correspondingly.
         """
-        certbytes = None
 
         if 'CA' in self.secrets:
-            certbytes = self.secrets['CA']['RootCA']['root'].encode('utf-8')
+            certbytes_proposal = self.secrets['CA']['RootCA']['root'].encode('utf-8')
+        else:
+            # On agents the `'CA'` key does not exist in `self.secrets`. A
+            # proposed value of `None` in the consensus procedure invoked below
+            # reads out the result of the consensus procedure between the master
+            # nodes.
+            certbytes_proposal = None
 
-        certbytes = self._consensus('/dcos/RootCA', certbytes, ANYONE_READ)
+        certbytes = self._consensus('/dcos/RootCA', certbytes_proposal, ANYONE_READ)
 
-        log.info('Writing CA trust bundle (root CA certificate) to {}'.format(path))
-        _write_file(path, certbytes, 0o644)
+        log.info(
+            'Writing CA trust bundle (root CA certificate) to %s',
+            DCOS_CA_TRUST_BUNDLE_FILE_PATH)
 
-        self.CA_certificate = certbytes
-        self.CA_certificate_path = path
-
-        return certbytes
+        _write_file_bytes(DCOS_CA_TRUST_BUNDLE_FILE_PATH, certbytes, 0o644)
 
     def write_CA_trust_bundle_for_libcurl(self):
         """
-        Writes a root CA certificate that can be picked up by curl from well
-        known location.
+        Write the DC/OS CA trust bundle (currently expected to contain just
+        a single root CA certificate) to a known location that is picked up
+        by DC/OS' curl/libcurl.
+
+        Note(JP): In the moment we allow customization of the DC/OS CA trust
+        bundle (e.g. via dcos-config.yaml) this routine needs to be amended.
+
+        /var/lib/dcos/pki/tls/certs is the directory of trusted CA certificates
+        that curl/libcurl is configured to pick up. Certificates are looked up
+        by subject hash which is why modification of directory contents usually
+        requires a subsequent OpenSSL certificate directory rehash procedure:
+        https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/tools/c_rehash.in#L150
+
+        The curl/libcurl trusted certificates directory path is set via:
+        https://github.com/dcos/dcos/blob/4f5f15e363025327139b313737ab4d7fbb0b389d/packages/curl/build#L43-L44
         """
-        # Hardcoded libcurl trusted certificates path
-        # https://github.com/dcos/dcos/blob/4f5f15e363025327139b313737ab4d7fbb0b389d/packages/curl/build#L43-L44
-        basepath = '/var/lib/dcos/pki/tls/certs'
-        os.makedirs(basepath, exist_ok=True)
-        # Allow anybody to read certs
-        os.chmod(basepath, 0o755)
+        curl_trusted_certs_dir_path = '/var/lib/dcos/pki/tls/certs'
 
-        # Write root CA certificate
-        path = os.path.join(basepath, 'dcos-root-ca-cert.crt')
-        self.write_CA_trust_bundle(path=path)
+        # Create directory if not yet existing. Allow anyone to list / traverse
+        # directory, but only allow root to write new trust anchors.
+        os.makedirs(curl_trusted_certs_dir_path, exist_ok=True)
+        os.chmod(curl_trusted_certs_dir_path, 0o755)
 
-        # Hash the certificate subject so it is recognised by libcurl and openssl
-        # https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/tools/c_rehash.in#L150
+        # Make sure that the DC/OS CA trust bundle file is written to the file
+        # system (to `DCOS_CA_TRUST_BUNDLE_FILE_PATH`).
+        self.write_CA_trust_bundle()
+
+        # Copy that file to curl's trust bundle directory, with a new filename.
+        # Set file permissions to 0o644 (same as for the original file).
+        certfilepath = os.path.join(
+            curl_trusted_certs_dir_path, 'dcos-root-ca-cert.crt')
+        shutil.copy2(DCOS_CA_TRUST_BUNDLE_FILE_PATH, certfilepath)
+        os.chmod(certfilepath, 0o644)
+
+        # Hash the certificate subject.
         p = subprocess.Popen(
-            ['openssl', 'x509', '-hash', '-noout', '-in', path],
+            ['openssl', 'x509', '-hash', '-noout', '-in', certfilepath],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             )
@@ -276,16 +321,14 @@ class Bootstrapper(object):
 
         if p.returncode != 0:
             log.error('OpenSSL error: `{}`'.format(stderr_bytes.decode('utf-8', errors='backslashreplace')))
-            raise Exception(
-                'Failed to hash certificate subject due to openssl error')
+            raise Exception('Failed to hash certificate subject')
 
-        cert_hash = stdout_bytes.decode('ascii').strip()
-        cert_hash = cert_hash + '.0'
-        cert_hash_path = os.path.join(basepath, cert_hash)
-
-        # Create a symlink if doesn't exists yet
+        # Create a symlink with the subject hash in its name (following OpenSSL
+        # convention, for it to discover the file knowing the subject).
+        cert_hash = stdout_bytes.decode('ascii').strip() + '.0'
+        cert_hash_path = os.path.join(curl_trusted_certs_dir_path, cert_hash)
         if not os.path.islink(cert_hash_path):
-            os.symlink(path, cert_hash_path)
+            os.symlink(certfilepath, cert_hash_path)
             os.chmod(cert_hash_path, 0o644)
 
     def get_CA_private_key_type(self):
@@ -555,14 +598,14 @@ class Bootstrapper(object):
 
         log.info('Writing {} service account credentials to {}'.format(uid, filename))
         # credentials file that service can read, but not overwrite
-        _write_file(filename, creds, 0o400)
+        _write_file_bytes(filename, creds, 0o400)
 
     def write_private_key(self, name, filename):
         private_key = self.secrets['private_keys'][name]
         private_key = bytes(private_key, 'ascii')
         log.info('Writing {} private key to {}'.format(name, filename))
         # private key that service can read, but not overwrite
-        _write_file(filename, private_key, 0o400)
+        _write_file_bytes(filename, private_key, 0o400)
 
     def create_service_account(self, uid, superuser, zk_secret=True):
         if zk_secret:
@@ -582,7 +625,7 @@ class Bootstrapper(object):
         pubkey_pem = utils.public_key_pem(private_key)
         account['public_key'] = pubkey_pem
 
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iamcli = iam.IAMClient(self.iam_url)
         iamcli.create_service_account(uid, public_key=pubkey_pem, exist_ok=True)
 
         # TODO fine-grained permissions for all service accounts
@@ -631,9 +674,9 @@ class Bootstrapper(object):
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_marathon', all=True)]
         self.ensure_zk_path('/marathon', acl=acl)
 
-    def marathon_iam_acls(self):
+    def marathon_iam_permissions(self):
         if self.opts.config['security'] == 'permissive':
-            permissive_acls = [
+            permissive_rid_action_pairs = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:reservation', 'create'),
                 ('dcos:mesos:master:reservation', 'delete'),
@@ -643,8 +686,8 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(permissive_acls, 'dcos_marathon')
+            iamcli = iam.IAMClient(self.iam_url)
+            iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_marathon')
 
         elif self.opts.config['security'] == 'strict':
             # Can only register with 'slave_public' role,
@@ -652,7 +695,7 @@ class Bootstrapper(object):
             # only destroy volumes/reservations created by 'dcos_marathon',
             # only run tasks as linux user 'nobody',
             # but can create apps in any folder/namespace.
-            strict_acls = [
+            strict_rid_action_pairs = [
                 ('dcos:mesos:master:framework:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:role:slave_public', 'create'),
                 ('dcos:mesos:master:reservation:principal:dcos_marathon', 'delete'),
@@ -664,8 +707,8 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(strict_acls, 'dcos_marathon')
+            iamcli = iam.IAMClient(self.iam_url)
+            iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_marathon')
 
     def metronome_zk_acls(self):
         acl = None
@@ -673,22 +716,22 @@ class Bootstrapper(object):
             acl = ANYONE_READ + LOCALHOST_ALL + [self.make_service_acl('dcos_metronome', all=True)]
         self.ensure_zk_path('/metronome', acl=acl)
 
-    def metronome_iam_acls(self):
+    def metronome_iam_permissions(self):
         if self.opts.config['security'] == 'permissive':
-            permissive_acls = [
+            permissive_rid_action_pairs = [
                 ('dcos:mesos:master:framework', 'create'),
                 ('dcos:mesos:master:task', 'create'),
                 ('dcos:mesos:agent:task', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(permissive_acls, 'dcos_metronome')
+            iamcli = iam.IAMClient(self.iam_url)
+            iamcli.grant_permissions(permissive_rid_action_pairs, 'dcos_metronome')
 
         elif self.opts.config['security'] == 'strict':
             # Can only register with '*' role,
             # only run tasks as linux user 'nobody',
             # but can create jobs in any folder/namespace.
-            strict_acls = [
+            strict_rid_action_pairs = [
                 ('dcos:mesos:master:framework:role:*', 'create'),
                 ('dcos:mesos:master:task:app_id', 'create'),
                 ('dcos:mesos:master:task:user:nobody', 'create'),
@@ -696,8 +739,8 @@ class Bootstrapper(object):
                 ('dcos:mesos:agent:task:app_id', 'create')
             ]
 
-            iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
-            iamcli.create_acls(strict_acls, 'dcos_metronome')
+            iamcli = iam.IAMClient(self.iam_url)
+            iamcli.grant_permissions(strict_rid_action_pairs, 'dcos_metronome')
 
     def cosmos_acls(self):
         acl = None
@@ -753,7 +796,7 @@ class Bootstrapper(object):
             )
 
         blob = json.dumps(ca_conf, sort_keys=True, indent=True, ensure_ascii=False).encode('utf-8')
-        _write_file(dst, blob, 0o400)
+        _write_file_bytes(dst, blob, 0o400)
         shutil.chown(dst, user=self.opts.dcos_ca_user)
 
     def write_bouncer_env(self, filename):
@@ -768,7 +811,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Bouncer environment and credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_cockroach_env(self, filename):
         """Write CockroachDB's Zookeeper credentials to a dedicated environment file."""
@@ -781,7 +824,7 @@ class Bootstrapper(object):
         env = bytes(env.format_map(zk_creds), 'ascii')
 
         log.info('Writing CockroachDB ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_vault_config(self, filename):
         if self.opts.config['zk_acls_enabled']:
@@ -814,7 +857,7 @@ class Bootstrapper(object):
         cfg = cfg.encode('ascii')
 
         log.info('Writing Vault config to {}'.format(filename))
-        _write_file(filename, cfg, 0o400)
+        _write_file_bytes(filename, cfg, 0o400)
         shutil.chown(filename, user=self.opts.dcos_vault_user)
 
     def write_secrets_env(self, filename):
@@ -832,7 +875,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Secrets ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
     def write_executor_secret_key(self, path):
         if os.path.isfile(path):
@@ -843,7 +886,7 @@ class Bootstrapper(object):
                             'but is not a regular file'.format(path))
 
         key = utils.generate_executor_secret_key()
-        _write_file(path, key, 0o600)
+        _write_file_bytes(path, key, 0o600)
 
     def write_mesos_master_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
@@ -857,20 +900,22 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Mesos Master ZK credentials to {}'.format(filename))
-        _write_file(filename, env, 0o600)
+        _write_file_bytes(filename, env, 0o600)
 
-    def write_cosmos_env(self, key_fn, crt_fn, ca_fn, env_fn):
+    def write_cosmos_env(self):
         if not self.opts.config['zk_acls_enabled']:
             return
+
+        env_filepath = '/run/dcos/etc/cosmos.env'
 
         zk_creds = self.secrets['zk']['dcos_cosmos']
         env = 'ZOOKEEPER_USER={username}\nZOOKEEPER_SECRET={password}\n'
         env = env.format_map(zk_creds)
         env = bytes(env, 'ascii')
 
-        log.info('Writing Cosmos environment to {}'.format(env_fn))
+        log.info('Writing Cosmos environment to {}'.format(env_filepath))
         # environment file is owned by root because systemd reads it
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_filepath, env, 0o600)
 
     def write_metronome_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -893,7 +938,7 @@ class Bootstrapper(object):
         env = bytes(env1 + env2, 'ascii')
 
         log.info('Writing Metronome environment to {}'.format(env_fn))
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
         service_name = 'metronome'
 
@@ -946,7 +991,7 @@ class Bootstrapper(object):
         env = bytes(env, 'ascii')
 
         log.info('Writing Marathon ZK environment to {}'.format(env_fn))
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
     def write_marathon_tls_env(self, key_fn, crt_fn, ca_fn, env_fn):
         pfx_fn = os.path.splitext(key_fn)[0] + '.pfx'
@@ -961,7 +1006,7 @@ class Bootstrapper(object):
         env = 'SSL_KEYSTORE_PASSWORD={}\n'.format(password)
         env = bytes(env, 'ascii')
 
-        _write_file(env_fn, env, 0o600)
+        _write_file_bytes(env_fn, env, 0o600)
 
         service_name = 'marathon'
 
@@ -1006,16 +1051,32 @@ class Bootstrapper(object):
         subprocess.check_call(cmd, preexec_fn=_set_umask)
         os.remove(pfx_fn)
 
-    def write_truststore(self, ts_fn, ca_fn):
+    def write_java_truststore_with_dcos_ca_bundle(self):
+        """
+        Write Java TrustStore to file located at
+        `/run/dcos/pki/CA/certs/cacerts.jks` which is expected by e.g. Marathon,
+        Cosmos, Metronome, but also by Admin Router for exposing the
+        `/ca/cacerts.jks` HTTP endpoint).
+
+        Note(JP): We copy Java's default trust database into the new TrustStore,
+        but it's unclear to me why we do so. I am not sure if we actually want
+        Marathon and Metronome to trust "the Internet". In addition, we copy the
+        trust anchors (certificates) from the DC/OS CA bundle file located at
+        `DCOS_CA_TRUST_BUNDLE_FILE_PATH` which is the canonical DC/OS CA bundle
+        location.
+        """
+        ts_filepath = '/run/dcos/pki/CA/certs/cacerts.jks'
+        ca_bundle_filepath = DCOS_CA_TRUST_BUNDLE_FILE_PATH
+
         keytool = shutil.which('keytool')
         if not keytool:
             raise Exception('keytool not found')
 
         try:
-            os.remove(ts_fn)
-            log.info("Removed existing TrustStore file: %s", ts_fn)
+            os.remove(ts_filepath)
+            log.info("Removed existing TrustStore file: %s", ts_filepath)
         except FileNotFoundError:
-            log.info("TrustStore file does not yet exist: %s", ts_fn)
+            log.info("TrustStore file does not yet exist: %s", ts_filepath)
 
         cmd = [
             keytool,
@@ -1025,10 +1086,10 @@ class Bootstrapper(object):
             '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
             '-srcstorepass', 'changeit',
             '-deststorepass', 'changeit',
-            '-destkeystore', ts_fn
+            '-destkeystore', ts_filepath
         ]
 
-        log.info('Copying system TrustStore: {}'.format(' '.join(cmd)))
+        log.info('Copying Java TrustStore: {}'.format(' '.join(cmd)))
         proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
@@ -1039,19 +1100,19 @@ class Bootstrapper(object):
             '-noprompt',
             '-trustcacerts',
             '-alias', 'dcos_root_ca',
-            '-file', ca_fn,
-            '-keystore', ts_fn,
+            '-file', ca_bundle_filepath,
+            '-keystore', ts_filepath,
             '-storepass', 'changeit',
         ]
-        log.info('Importing CA into TrustStore: {}'.format(' '.join(cmd)))
+        log.info('Importing CA bundle into TrustStore: {}'.format(' '.join(cmd)))
         proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
         if proc.wait() != 0:
             raise Exception('keytool failed')
 
-        os.chmod(ts_fn, 0o644)
+        os.chmod(ts_filepath, 0o644)
 
     def service_auth_token(self, uid, exp=None):
-        iam_cli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iam_cli = iam.IAMClient(self.iam_url)
         acc = self.secrets['services'][uid]
         log.info('Service account login as service {}'.format(uid))
         token = iam_cli.service_account_login(uid, private_key=acc['private_key'], exp=exp)
@@ -1074,7 +1135,7 @@ class Bootstrapper(object):
         token = self.service_auth_token(uid, exp)
         env = bytes('SERVICE_AUTH_TOKEN={}\n'.format(token), 'ascii')
         if filename is not None:
-            _write_file(filename, env, 0o600)
+            _write_file_bytes(filename, env, 0o600)
         return env
 
     def create_key_certificate(self, cn, key_filename, crt_filename,
@@ -1133,7 +1194,7 @@ class Bootstrapper(object):
         if service_account:
             token = self.service_auth_token(service_account)
             headers = {'Authorization': 'token=' + token}
-        cacli = ca.CAClient(self.ca_url, headers, self.CA_certificate_path)
+        cacli = ca.CAClient(self.ca_url, headers)
 
         msg_fmt = 'Signing CSR at {} with service account {}'
         log.info(msg_fmt.format(self.ca_url, service_account))
@@ -1141,8 +1202,8 @@ class Bootstrapper(object):
 
         crt = self._append_ca_chain_to_certificate(crt)
 
-        _write_file(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
-        _write_file(crt_filename, bytes(crt, 'ascii'), 0o644)
+        _write_file_bytes(key_filename, bytes(privkey_pem, 'ascii'), key_mode)
+        _write_file_bytes(crt_filename, bytes(crt, 'ascii'), 0o644)
 
     def _append_ca_chain_to_certificate(self, crt):
         """
@@ -1236,10 +1297,10 @@ class Bootstrapper(object):
             log.debug('Certificate {} already exists'.format(crt_filename))
 
     def write_jwks_public_keys(self, filename):
-        iamcli = iam.IAMClient(self.iam_url, self.CA_certificate_path)
+        iamcli = iam.IAMClient(self.iam_url)
         jwks = iamcli.jwks()
         output = utils.jwks_to_public_keys(jwks)
-        _write_file(filename, bytes(output, 'ascii'), 0o644)
+        _write_file_bytes(filename, bytes(output, 'ascii'), 0o644)
 
     def upgrade_19_to_110_secret_root_ca(self, acl=None):
         """
@@ -1294,7 +1355,12 @@ class Bootstrapper(object):
             self.zk.set_acls(zk_path, acl)
 
 
-def _write_file(path, data, mode):
+def _write_file_bytes(path, data, mode):
+    """Write byte sequence `data` to regular file located at `path`.
+
+    Set file permissions to `mode` (given in octal notation such as
+    `0o600`). Use canonical umask when applying mode.
+    """
     dirpath = os.path.dirname(os.path.abspath(path))
     with utils.Directory(dirpath) as d:
         with d.lock():
@@ -1318,10 +1384,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('services', nargs='+')
-    parser.add_argument(
-        '--rundir',
-        default='/run/dcos',
-        help='Runtime directory')
     parser.add_argument(
         '--statedir',
         default='/var/lib/dcos',
@@ -1430,63 +1492,67 @@ def parse_args():
     return opts
 
 
-def make_run_dirs(opts):
-    dirs = [
-        opts.rundir,
-        opts.rundir + '/etc',
-        opts.rundir + '/etc/dcos-diagnostics',
-        opts.rundir + '/etc/dcos-checks',
-        opts.rundir + '/etc/dcos-backup',
-        opts.rundir + '/etc/dcos-ca',
-        opts.rundir + '/etc/dcos-metrics',
-        opts.rundir + '/etc/history-service',
-        opts.rundir + '/etc/marathon',
-        opts.rundir + '/etc/mesos',
-        opts.rundir + '/etc/mesos-dns',
-        opts.rundir + '/etc/metronome',
-        opts.rundir + '/etc/signal-service',
-        opts.rundir + '/pki/CA/certs',
-        opts.rundir + '/pki/CA/private',
-        opts.rundir + '/pki/tls/certs',
-        opts.rundir + '/pki/tls/private',
+def make_run_dirs():
+    rundir_abspath = '/run/dcos/'
+    subdirs_relpaths = [
+        'etc',
+        'etc/dcos-diagnostics',
+        'etc/dcos-checks',
+        'etc/dcos-backup',
+        'etc/dcos-ca',
+        'etc/dcos-metrics',
+        'etc/history-service',
+        'etc/marathon',
+        'etc/mesos',
+        'etc/mesos-dns',
+        'etc/metronome',
+        'etc/signal-service',
+        'pki/CA/certs',
+        'pki/CA/private',
+        'pki/tls/certs',
+        'pki/tls/private',
         # cockroachdb 1.0 expects the CA and end entity certs and keys in the same directory.
         # See https://github.com/cockroachdb/cockroach/issues/15760
-        opts.rundir + '/pki/cockroach'
+        'pki/cockroach'
     ]
 
-    for d in dirs:
-        log.info('Preparing directory {}'.format(d))
-        os.makedirs(d, exist_ok=True)
+    # Build all absolute directory paths.
+    dirpaths = [rundir_abspath + sd for sd in subdirs_relpaths]
+
+    # Create directories with the `mkdir -p` equivalent.
+    for path in dirpaths:
+        log.info('Make sure directory exists: %s', path)
+        os.makedirs(path, exist_ok=True)
 
 
-def dcos_bouncer(b, opts):
+def dcos_bouncer(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.bouncer_acls()
 
-    keypath = opts.rundir + '/pki/tls/private/bouncer.key'
+    keypath = '/run/dcos/pki/tls/private/bouncer.key'
     b.write_private_key('dcos_bouncer', keypath)
-    shutil.chown(keypath, user=opts.bouncer_user)
+    shutil.chown(keypath, user=b.opts.bouncer_user)
 
-    path = opts.rundir + '/etc/bouncer'
+    path = '/run/dcos/etc/bouncer'
     b.write_bouncer_env(path)
 
 
-def dcos_cockroach(b, opts):
+def dcos_cockroach(b):
     """Prepare the Zookeeper ACLs, environment, run directory and ceritificates for the dcos-cockroach service."""
     b.init_zk_acls()
     b.create_master_secrets()
     b.cockroach_acls()
 
-    path = opts.rundir + '/etc/cockroach'
+    path = '/run/dcos/etc/cockroach'
     b.write_cockroach_env(path)
 
-    cockroachdir = opts.rundir + '/pki/cockroach'
+    cockroachdir = '/run/dcos/pki/cockroach'
     # Copy CA cert to cockroach cert dir. They don't support specifying separate
-    # cert paths in v1.0. CockroachDB requires the CA certificate chain to be
+    # cert paths in v1.0. CockroachDB requires the CA bundle to be
     # named `ca.crt`.
     capath = cockroachdir + '/ca.crt'
-    shutil.copy2(opts.rundir + '/pki/CA/ca-bundle.crt', capath)
+    shutil.copy2('/run/dcos/pki/CA/ca-bundle.crt', capath)
 
     # Create the TLS key pair for this CockroachDB instance.
     keypath = cockroachdir + '/node.key'
@@ -1512,276 +1578,260 @@ def dcos_cockroach(b, opts):
     shutil.chown(crtpath, user='dcos_bouncer')
 
 
-def dcos_secrets(b, opts):
+def dcos_secrets(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.dcos_secrets_acls()
 
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/dcos-secrets.key'
-        crtpath = opts.rundir + '/pki/tls/certs/dcos-secrets.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/dcos-secrets.key'
+        crtpath = '/run/dcos/pki/tls/certs/dcos-secrets.crt'
         b.ensure_key_certificate('Secrets', keypath, crtpath, master=True)
-        shutil.chown(keypath, user=opts.dcos_secrets_user)
-        shutil.chown(crtpath, user=opts.dcos_secrets_user)
+        shutil.chown(keypath, user=b.opts.dcos_secrets_user)
+        shutil.chown(crtpath, user=b.opts.dcos_secrets_user)
 
-    path = opts.rundir + '/etc/dcos-secrets.env'
+    path = '/run/dcos/etc/dcos-secrets.env'
     b.write_secrets_env(path)
 
-    secrets_dir = opts.statedir + '/secrets'
+    secrets_dir = b.opts.statedir + '/secrets'
     try:
         os.makedirs(secrets_dir)
     except FileExistsError:
         pass
-    shutil.chown(secrets_dir, user=opts.dcos_secrets_user)
+    shutil.chown(secrets_dir, user=b.opts.dcos_secrets_user)
 
 
-def dcos_vault_default(b, opts):
+def dcos_vault_default(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.dcos_vault_default_acls()
 
-    vault_dir = opts.statedir + '/secrets/vault'
+    vault_dir = b.opts.statedir + '/secrets/vault'
     try:
         os.makedirs(vault_dir, exist_ok=True)
     except FileExistsError:
         pass
 
-    vault_default_dir = opts.statedir + '/secrets/vault/default'
+    vault_default_dir = b.opts.statedir + '/secrets/vault/default'
     try:
         os.makedirs(vault_default_dir, exist_ok=True)
     except FileExistsError:
         pass
     # secrets writes keys into this directory
-    shutil.chown(vault_default_dir, user=opts.dcos_secrets_user)
+    shutil.chown(vault_default_dir, user=b.opts.dcos_secrets_user)
 
-    hcl = opts.rundir + '/etc/vault.hcl'
+    hcl = '/run/dcos/etc/vault.hcl'
     b.write_vault_config(hcl)
 
 
-def dcos_ca(b, opts):
+def dcos_ca(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.dcos_ca_acls()
 
-    path = opts.rundir + '/etc/dcos-ca/dbconfig.json'
+    path = '/run/dcos/etc/dcos-ca/dbconfig.json'
     b.write_dcos_ca_creds(src='/opt/mesosphere/etc/dcos-ca/dbconfig.json', dst=path)
 
-    path = opts.rundir + '/pki/CA/certs/ca.crt'
-    b.write_CA_certificate(path=path)
-    shutil.chown(path, user=opts.dcos_ca_user)
-
-    path = opts.rundir + '/pki/CA/private/ca.key'
-    b.write_CA_key(path)
-    shutil.chown(path, user=opts.dcos_ca_user)
-
-    path = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(path=path)
-
-    path = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(path=path)
-
+    b.write_signing_CA_certificate()
+    b.write_signing_CA_key()
+    b.write_CA_certificate_chain()
+    b.write_CA_trust_bundle()
     b.write_CA_trust_bundle_for_libcurl()
 
 
-def dcos_mesos_master(b, opts):
+def dcos_mesos_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.mesos_zk_acls()
 
-    b.write_mesos_master_env(opts.rundir + '/etc/mesos-master')
+    b.write_mesos_master_env('/run/dcos/etc/mesos-master')
 
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/mesos-master.key'
-        crtpath = opts.rundir + '/pki/tls/certs/mesos-master.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/mesos-master.key'
+        crtpath = '/run/dcos/pki/tls/certs/mesos-master.crt'
         b.ensure_key_certificate('Mesos Master', keypath, crtpath, master=True)
 
     # Service account needed to retrieve ACLs from bouncer.
     # As a result, we always create this account.
     b.create_service_account('dcos_mesos_master', superuser=True)
-    svc_acc_creds_fn = opts.rundir + '/etc/mesos/master_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/mesos/master_service_account.json'
     b.write_service_account_credentials('dcos_mesos_master', svc_acc_creds_fn)
 
     # agent secrets are needed for it to contact the master
-    b.create_agent_secrets(opts.zk_agent_digest)
+    b.create_agent_secrets(b.opts.zk_agent_digest)
 
     b.create_agent_service_accounts()
 
     # If permissive security is enabled, create the 'dcos_anonymous' account.
-    if opts.config['security'] == 'permissive':
+    if b.opts.config['security'] == 'permissive':
         # TODO(greggomann): add proper ACLs for 'dcos_anonymous'.
         # For now, we make dcos_anonymous a superuser, so security-ignorant scripts/frameworks
         # can still access Mesos endpoints and register however they like.
         b.create_service_account('dcos_anonymous', superuser=True)
 
 
-def dcos_mesos_slave(b, opts):
+def dcos_mesos_slave(b):
     b.read_agent_secrets()
     b.write_CA_trust_bundle()
     b.write_CA_trust_bundle_for_libcurl()
 
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
-        crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/mesos-slave.key'
+        crtpath = '/run/dcos/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Agent', keypath, crtpath, service_account='dcos_agent')
 
-    if opts.config['executor_secret_generation_enabled']:
-        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
+    if b.opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(b.opts.config['executor_secret_key_path'])
 
     # Service account needed to
     # a) authenticate with master, and/or
     # b) retrieve ACLs from bouncer, and/or
     # c) fetch secrets
     # As a result, we always create this account.
-    svc_acc_creds_fn = opts.rundir + '/etc/mesos/agent_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
     b.write_service_account_credentials('dcos_mesos_agent', svc_acc_creds_fn)
 
     # TODO(adam): orchestration API should handle this in the future
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/scheduler.key'
-        crtpath = opts.rundir + '/pki/tls/certs/scheduler.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/scheduler.key'
+        crtpath = '/run/dcos/pki/tls/certs/scheduler.crt'
         b.ensure_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
 
 
-def dcos_mesos_slave_public(b, opts):
+def dcos_mesos_slave_public(b):
     b.read_agent_secrets()
 
-    if opts.config['ssl_enabled']:
+    if b.opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
 
-        keypath = opts.rundir + '/pki/tls/private/mesos-slave.key'
-        crtpath = opts.rundir + '/pki/tls/certs/mesos-slave.crt'
+        keypath = '/run/dcos/pki/tls/private/mesos-slave.key'
+        crtpath = '/run/dcos/pki/tls/certs/mesos-slave.crt'
         b.ensure_key_certificate('Mesos Public Agent', keypath, crtpath, service_account='dcos_agent')
 
-    if opts.config['executor_secret_generation_enabled']:
-        b.write_executor_secret_key(opts.config['executor_secret_key_path'])
+    if b.opts.config['executor_secret_generation_enabled']:
+        b.write_executor_secret_key(b.opts.config['executor_secret_key_path'])
 
     # Service account needed to
     # a) authenticate with master, and/or
     # b) retrieve ACLs from bouncer, and/or
     # c) fetch secrets
     # As a result, we always create this account.
-    svc_acc_creds_fn = opts.rundir + '/etc/mesos/agent_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/mesos/agent_service_account.json'
     b.write_service_account_credentials('dcos_mesos_agent_public', svc_acc_creds_fn)
 
     # TODO(adam): orchestration API should handle this in the future
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/scheduler.key'
-        crtpath = opts.rundir + '/pki/tls/certs/scheduler.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/scheduler.key'
+        crtpath = '/run/dcos/pki/tls/certs/scheduler.crt'
         b.ensure_key_certificate('Mesos Schedulers', keypath, crtpath, service_account='dcos_agent', key_mode=0o644)
 
 
-def dcos_marathon(b, opts):
+def dcos_marathon(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.marathon_zk_acls()
 
-    if opts.config['zk_acls_enabled']:
+    if b.opts.config['zk_acls_enabled']:
         # Must be run after create_master_secrets.
-        env = opts.rundir + '/etc/marathon/zk.env'
+        env = '/run/dcos/etc/marathon/zk.env'
         b.write_marathon_zk_env(env)
         shutil.chown(env, user='dcos_marathon')
 
     # For libmesos scheduler SSL or Marathon UI/API SSL.
-    if opts.config['ssl_enabled'] or opts.config['marathon_https_enabled']:
-        key = opts.rundir + '/pki/tls/private/marathon.key'
-        crt = opts.rundir + '/pki/tls/certs/marathon.crt'
+    if b.opts.config['ssl_enabled'] or b.opts.config['marathon_https_enabled']:
+        key = '/run/dcos/pki/tls/private/marathon.key'
+        crt = '/run/dcos/pki/tls/certs/marathon.crt'
         b.ensure_key_certificate('Marathon', key, crt, master=True, marathon=True)
         shutil.chown(key, user='dcos_marathon')
         shutil.chown(crt, user='dcos_marathon')
 
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+        b.write_CA_trust_bundle()
 
-        ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
+        ca_chain_with_root_cert = '/run/dcos/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
     # For Marathon UI/API SSL.
-    if opts.config['marathon_https_enabled']:
-        # file also used by the adminrouter /ca/cacerts.jks endpoint
-        ts = opts.rundir + '/pki/CA/certs/cacerts.jks'
-        b.write_truststore(ts, ca_chain_with_root_cert)
+    if b.opts.config['marathon_https_enabled']:
 
-        env = opts.rundir + '/etc/marathon/tls.env'
+        b.write_java_truststore_with_dcos_ca_bundle()
+
+        env = '/run/dcos/etc/marathon/tls.env'
         b.write_marathon_tls_env(key, crt, ca_chain_with_root_cert, env)
         shutil.chown(env, user='dcos_marathon')
-        shutil.chown(opts.rundir + '/pki/tls/private/marathon.jks', user='dcos_marathon')
+        shutil.chown('/run/dcos/pki/tls/private/marathon.jks', user='dcos_marathon')
 
     # For framework authentication.
-    if opts.config['framework_authentication_enabled']:
+    if b.opts.config['framework_authentication_enabled']:
         b.create_service_account('dcos_marathon', superuser=False)
-        svc_acc_creds_fn = opts.rundir + '/etc/marathon/service_account.json'
+        svc_acc_creds_fn = '/run/dcos/etc/marathon/service_account.json'
         b.write_service_account_credentials('dcos_marathon', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_marathon')
 
-    # IAM ACLs must be created after the service account.
-    b.marathon_iam_acls()
+    # Permissions in the IAM must be granted after creating the service account.
+    b.marathon_iam_permissions()
 
 
-def dcos_metronome(b, opts):
+def dcos_metronome(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.metronome_zk_acls()
 
     # For libmesos scheduler SSL.
-    if opts.config['ssl_enabled']:
-        key = opts.rundir + '/pki/tls/private/metronome.key'
-        crt = opts.rundir + '/pki/tls/certs/metronome.crt'
+    if b.opts.config['ssl_enabled']:
+        key = '/run/dcos/pki/tls/private/metronome.key'
+        crt = '/run/dcos/pki/tls/certs/metronome.crt'
         b.ensure_key_certificate('Metronome', key, crt, master=True)
         shutil.chown(key, user='dcos_metronome')
         shutil.chown(crt, user='dcos_metronome')
         # ca-bundle.crt also only for libmesos SSL.
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+        b.write_CA_trust_bundle()
 
-        ca_chain_with_root_cert = opts.rundir + '/pki/CA/ca-chain-inclroot.crt'
+        ca_chain_with_root_cert = '/run/dcos/pki/CA/ca-chain-inclroot.crt'
         b.write_CA_certificate_chain_with_root_cert(ca_chain_with_root_cert)
 
-        # For Metronome UI/API SSL.
-        ts = opts.rundir + '/pki/CA/certs/cacerts_metronome.jks'
-        b.write_truststore(ts, ca_chain_with_root_cert)
+        b.write_java_truststore_with_dcos_ca_bundle()
 
-        env = opts.rundir + '/etc/metronome/tls.env'
+        env = '/run/dcos/etc/metronome/tls.env'
         b.write_metronome_env(key, crt, ca_chain_with_root_cert, env)
         shutil.chown(env, user='dcos_metronome')
-        shutil.chown(opts.rundir + '/pki/tls/private/metronome.jks', user='dcos_metronome')
+        shutil.chown('/run/dcos/pki/tls/private/metronome.jks', user='dcos_metronome')
 
     # For framework authentication.
-    if opts.config['framework_authentication_enabled']:
+    if b.opts.config['framework_authentication_enabled']:
         b.create_service_account('dcos_metronome', superuser=False)
-        svc_acc_creds_fn = opts.rundir + '/etc/metronome/service_account.json'
+        svc_acc_creds_fn = '/run/dcos/etc/metronome/service_account.json'
         b.write_service_account_credentials('dcos_metronome', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_metronome')
 
-    shutil.chown(opts.rundir + '/etc/metronome', user='dcos_metronome')
+    shutil.chown('/run/dcos/etc/metronome', user='dcos_metronome')
 
     # IAM ACLs must be created after the service account.
-    b.metronome_iam_acls()
+    b.metronome_iam_permissions()
 
 
-def dcos_mesos_dns(b, opts):
+def dcos_mesos_dns(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.create_service_account('dcos_mesos_dns', superuser=True)
 
-    if opts.config['ssl_enabled']:
-        path = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(path)
+    if b.opts.config['ssl_enabled']:
+        b.write_CA_trust_bundle()
 
         # Generate client certificate (In strict security mode, Mesos-DNS is
         # required to present this to the Mesos master during the TLS handshake).
-        keypath = opts.rundir + '/pki/tls/private/mesos-dns.key'
-        crtpath = opts.rundir + '/pki/tls/certs/mesos-dns.crt'
+        keypath = '/run/dcos/pki/tls/private/mesos-dns.key'
+        crtpath = '/run/dcos/pki/tls/certs/mesos-dns.crt'
         b.ensure_key_certificate('Mesos DNS', keypath, crtpath, master=True)
-        shutil.chown(keypath, user=opts.dcos_mesos_dns_user)
-        shutil.chown(crtpath, user=opts.dcos_mesos_dns_user)
+        shutil.chown(keypath, user=b.opts.dcos_mesos_dns_user)
+        shutil.chown(crtpath, user=b.opts.dcos_mesos_dns_user)
 
-    if opts.config['mesos_authenticate_http']:
-        svc_acc_creds_fn = opts.rundir + '/etc/mesos-dns/iam.json'
+    if b.opts.config['mesos_authenticate_http']:
+        svc_acc_creds_fn = '/run/dcos/etc/mesos-dns/iam.json'
         b.write_service_account_credentials('dcos_mesos_dns', svc_acc_creds_fn)
         shutil.chown(svc_acc_creds_fn, user='dcos_mesos_dns')
 
 
-def dcos_adminrouter(b, opts):
+def dcos_adminrouter(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.create_service_account('dcos_adminrouter', superuser=True)
@@ -1803,12 +1853,12 @@ def dcos_adminrouter(b, opts):
     extra_san.append(utils.SanEntry('dns', machine_pub_ip))
     extra_san.append(utils.SanEntry('ip', machine_pub_ip))
 
-    if opts.config['ssl_enabled']:
-        keypath = opts.rundir + '/pki/tls/private/adminrouter.key'
-        crtpath = opts.rundir + '/pki/tls/certs/adminrouter.crt'
+    if b.opts.config['ssl_enabled']:
+        keypath = '/run/dcos/pki/tls/private/adminrouter.key'
+        crtpath = '/run/dcos/pki/tls/certs/adminrouter.crt'
         b.ensure_key_certificate('AdminRouter', keypath, crtpath, master=True, extra_san=extra_san)
 
-    b.write_jwks_public_keys(opts.rundir + '/etc/jwks.pub')
+    b.write_jwks_public_keys('/run/dcos/etc/jwks.pub')
 
     # Generate SERVICE_AUTH_TOKEN=<authtoken> env var declaration.
     # Strip trailing newline returned by  `write_service_auth_token()`.
@@ -1820,8 +1870,8 @@ def dcos_adminrouter(b, opts):
     env_file_lines = [service_auth_token_env_declaration]
 
     # Optionally generate EXHIBITOR_ADMIN_HTTPBASICAUTH_CREDS=<creds> declaration.
-    if opts.config['exhibitor_admin_password_enabled'] is True:
-        pw = opts.config['exhibitor_admin_password']
+    if b.opts.config['exhibitor_admin_password_enabled'] is True:
+        pw = b.opts.config['exhibitor_admin_password']
 
         # Build HTTP Basic auth credential string.
         exhibitor_admin_basic_auth_creds = base64.b64encode(
@@ -1832,39 +1882,39 @@ def dcos_adminrouter(b, opts):
                 exhibitor_admin_basic_auth_creds))
 
     env_file_contents_bytes = '\n'.join(env_file_lines).encode('ascii')
-    env_file_path = opts.rundir + '/etc/adminrouter.env'
-    _write_file(env_file_path, env_file_contents_bytes, 0o600)
+    env_file_path = '/run/dcos/etc/adminrouter.env'
+    _write_file_bytes(env_file_path, env_file_contents_bytes, 0o600)
 
 
-def dcos_adminrouter_agent(b, opts):
+def dcos_adminrouter_agent(b):
     b.read_agent_secrets()
 
-    if opts.config['ssl_enabled']:
+    if b.opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
 
-        keypath = opts.rundir + '/pki/tls/private/adminrouter-agent.key'
-        crtpath = opts.rundir + '/pki/tls/certs/adminrouter-agent.crt'
+        keypath = '/run/dcos/pki/tls/private/adminrouter-agent.key'
+        crtpath = '/run/dcos/pki/tls/certs/adminrouter-agent.crt'
         b.ensure_key_certificate('Adminrouter Agent', keypath, crtpath, service_account='dcos_agent')
 
-    b.write_jwks_public_keys(opts.rundir + '/etc/jwks.pub')
+    b.write_jwks_public_keys('/run/dcos/etc/jwks.pub')
 
     # write_service_auth_token must follow
     # write_CA_certificate on agents to allow
     # for a verified HTTPS connection on login
-    b.write_service_auth_token('dcos_adminrouter_agent', opts.rundir + '/etc/adminrouter.env', exp=0)
+    b.write_service_auth_token('dcos_adminrouter_agent', '/run/dcos/etc/adminrouter.env', exp=0)
 
 
-def dcos_backup_master(b, opts):
+def dcos_backup_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
 
     b.create_service_account('dcos_backup_master', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-backup/master_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-backup/master_service_account.json'
     b.write_service_account_credentials('dcos_backup_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_backup')
 
-    backup_dir = opts.statedir + '/backup'
+    backup_dir = b.opts.statedir + '/backup'
     try:
         os.makedirs(backup_dir)
     except FileExistsError:
@@ -1872,45 +1922,44 @@ def dcos_backup_master(b, opts):
     shutil.chown(backup_dir, user='dcos_backup')
 
 
-def dcos_spartan(b, opts):
+def dcos_spartan(b):
     if os.path.exists('/opt/mesosphere/etc/roles/master'):
-        return dcos_spartan_master(b, opts)
+        return dcos_spartan_master(b)
     else:
-        return dcos_spartan_agent(b, opts)
+        return dcos_spartan_agent(b)
 
 
-def dcos_spartan_master(b, opts):
+def dcos_spartan_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
 
-    if opts.config['ssl_enabled']:
+    if b.opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
         b.write_CA_certificate_chain_with_root_cert()
 
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
+        b.write_CA_certificate_chain()
 
-        key = opts.rundir + '/pki/tls/private/spartan.key'
-        crt = opts.rundir + '/pki/tls/certs/spartan.crt'
+        key = '/run/dcos/pki/tls/private/spartan.key'
+        crt = '/run/dcos/pki/tls/certs/spartan.crt'
         b.ensure_key_certificate('Spartan Master', key, crt, master=True)
 
 
-def dcos_spartan_agent(b, opts):
+def dcos_spartan_agent(b):
     b.read_agent_secrets()
 
-    if opts.config['ssl_enabled']:
+    if b.opts.config['ssl_enabled']:
         b.write_CA_trust_bundle()
+
+        # Note(JP): Do we really need both?
         b.write_CA_certificate_chain_with_root_cert()
+        b.write_CA_certificate_chain()
 
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
-
-        keypath = opts.rundir + '/pki/tls/private/spartan.key'
-        crtpath = opts.rundir + '/pki/tls/certs/spartan.crt'
+        keypath = '/run/dcos/pki/tls/private/spartan.key'
+        crtpath = '/run/dcos/pki/tls/certs/spartan.crt'
         b.ensure_key_certificate('Spartan Agent', keypath, crtpath, service_account='dcos_agent')
 
 
-def dcos_erlang_service(servicename, b, opts):
+def dcos_erlang_service(servicename, b):
     if servicename == 'networking_api':
         for file in ['/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/vm.args.2.config',
                      '/opt/mesosphere/active/networking_api/networking_api/releases/0.0.1/sys.config.2.config']:
@@ -1921,150 +1970,142 @@ def dcos_erlang_service(servicename, b, opts):
         shutil.chown('/opt/mesosphere/active/networking_api/networking_api/log', user='dcos_networking_api')
     if os.path.exists('/opt/mesosphere/etc/roles/master'):
         log.info('%s master bootstrap', servicename)
-        return dcos_erlang_service_master(servicename, b, opts)
+        return dcos_erlang_service_master(servicename, b)
     else:
         log.info('%s agent bootstrap', servicename)
-        return dcos_erlang_service_agent(servicename, b, opts)
+        return dcos_erlang_service_agent(servicename, b)
 
 
-def dcos_erlang_service_master(servicename, b, opts):
+def dcos_erlang_service_master(servicename, b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.create_service_account('dcos_{}_master'.format(servicename), superuser=True)
 
     user = 'dcos_' + servicename
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
+    b.write_CA_trust_bundle()
 
+    # Note(JP): do we really need both? I believe we should be able to get rid of
+    # `write_CA_certificate_chain()`.
     b.write_CA_certificate_chain_with_root_cert()
-
-    ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-    b.write_CA_certificate_chain(ca_chain)
+    b.write_CA_certificate_chain()
 
     friendly_name = servicename[0].upper() + servicename[1:]
-    key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
-    crt = opts.rundir + '/pki/tls/certs/{}.crt'.format(servicename)
+    key = '/run/dcos/pki/tls/private/{}.key'.format(servicename)
+    crt = '/run/dcos/pki/tls/certs/{}.crt'.format(servicename)
     b.ensure_key_certificate(friendly_name, key, crt)
     if servicename == 'networking_api':
         shutil.chown(key, user=user)
         shutil.chown(crt, user=user)
 
-    auth_env = opts.rundir + '/etc/{}_auth.env'.format(servicename)
+    auth_env = '/run/dcos/etc/{}_auth.env'.format(servicename)
     b.write_service_auth_token('dcos_{}_master'.format(servicename), auth_env, exp=0)
     if servicename == 'networking_api':
         shutil.chown(auth_env, user=user)
 
 
-def dcos_erlang_service_agent(servicename, b, opts):
+def dcos_erlang_service_agent(servicename, b):
     b.read_agent_secrets()
 
     user = 'dcos_' + servicename
 
-    if opts.config['ssl_enabled']:
-        ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-        b.write_CA_trust_bundle(ca)
+    if b.opts.config['ssl_enabled']:
+        b.write_CA_trust_bundle()
 
+        # Note(JP): do we really need both?
         b.write_CA_certificate_chain_with_root_cert()
-
-        ca_chain = opts.rundir + '/pki/CA/ca-chain.crt'
-        b.write_CA_certificate_chain(ca_chain)
+        b.write_CA_certificate_chain()
 
         friendly_name = servicename[0].upper() + servicename[1:]
-        key = opts.rundir + '/pki/tls/private/{}.key'.format(servicename)
-        crt = opts.rundir + '/pki/tls/certs/{}.crt'.format(servicename)
+        key = '/run/dcos/pki/tls/private/{}.key'.format(servicename)
+        crt = '/run/dcos/pki/tls/certs/{}.crt'.format(servicename)
         b.ensure_key_certificate(friendly_name, key, crt, service_account='dcos_agent')
 
     if servicename == 'networking_api':
         shutil.chown(key, user=user)
         shutil.chown(crt, user=user)
 
-    auth_env = opts.rundir + '/etc/{}_auth.env'.format(servicename)
+    auth_env = '/run/dcos/etc/{}_auth.env'.format(servicename)
     b.write_service_auth_token('dcos_{}_agent'.format(servicename), auth_env, exp=0)
     if servicename == 'networking_api':
         shutil.chown(auth_env, user=user)
 
 
-def dcos_cosmos(b, opts):
+def dcos_cosmos(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.cosmos_acls()
 
-    key = opts.rundir + '/pki/tls/private/cosmos.key'
-    crt = opts.rundir + '/pki/tls/certs/cosmos.crt'
+    key = '/run/dcos/pki/tls/private/cosmos.key'
+    crt = '/run/dcos/pki/tls/certs/cosmos.crt'
     b.ensure_key_certificate('Cosmos', key, crt, master=True)
     shutil.chown(key, user='dcos_cosmos')
     shutil.chown(crt, user='dcos_cosmos')
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
-
-    ts = opts.rundir + '/pki/CA/certs/cacerts_cosmos.jks'
-    b.write_truststore(ts, ca)
-
-    env = opts.rundir + '/etc/cosmos.env'
-    b.write_cosmos_env(key, crt, ca, env)
+    b.write_CA_trust_bundle()
+    b.write_java_truststore_with_dcos_ca_bundle()
+    b.write_cosmos_env()
 
 
-def dcos_signal(b, opts):
+def dcos_signal(b):
     b.init_zk_acls()
     b.create_master_secrets()
     b.create_service_account('dcos_signal_service', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/signal-service/service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/signal-service/service_account.json'
     b.write_service_account_credentials('dcos_signal_service', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_signal')
 
 
-def dcos_metrics_master(b, opts):
+def dcos_metrics_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
 
     b.create_service_account('dcos_metrics_master', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-metrics/service_account.json'
     b.write_service_account_credentials('dcos_metrics_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
 
 
-def dcos_metrics_agent(b, opts):
+def dcos_metrics_agent(b):
     b.read_agent_secrets()
 
     b.cluster_id(readonly=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-metrics/service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-metrics/service_account.json'
     b.write_service_account_credentials('dcos_metrics_agent', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_metrics')
 
 
-def dcos_diagnostics_master(b, opts):
+def dcos_diagnostics_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
 
     b.create_service_account('dcos_diagnostics_master', superuser=True)
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-diagnostics/master_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-diagnostics/master_service_account.json'
     b.write_service_account_credentials('dcos_diagnostics_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
     # dcos-diagnostics agent secrets are needed for it to contact the
-    b.create_agent_secrets(opts.zk_agent_digest)
+    b.create_agent_secrets(b.opts.zk_agent_digest)
     b.create_service_account('dcos_diagnostics_agent', superuser=True)
 
 
-def dcos_diagnostics_agent(b, opts):
+def dcos_diagnostics_agent(b):
     b.read_dcos_diagnostics_agent_secrets()
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-diagnostics/agent_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-diagnostics/agent_service_account.json'
     b.write_service_account_credentials('dcos_diagnostics_agent', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
 
-def dcos_checks_master(b, opts):
+def dcos_checks_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
 
     b.create_service_account('dcos_checks_master', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-checks/checks_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-checks/checks_service_account.json'
     b.write_service_account_credentials('dcos_checks_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
@@ -2072,35 +2113,34 @@ def dcos_checks_master(b, opts):
     # Checks does not require two service accounts. We needed to create two,
     # since the login endpoints for master and agent are different. This will
     # get cleaned up as part of cleaning up this file.
-    b.create_agent_secrets(opts.zk_agent_digest)
+    b.create_agent_secrets(b.opts.zk_agent_digest)
     b.create_service_account('dcos_checks_agent', superuser=True)
 
 
-def dcos_checks_agent(b, opts):
+def dcos_checks_agent(b):
     b.read_agent_secrets()
 
-    svc_acc_creds_fn = opts.rundir + '/etc/dcos-checks/checks_service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/dcos-checks/checks_service_account.json'
     b.write_service_account_credentials('dcos_checks_agent', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_diagnostics')
 
 
-def dcos_history(b, opts):
+def dcos_history(b):
     b.create_master_secrets()
 
     b.create_service_account('dcos_history_service', superuser=True)
 
-    svc_acc_creds_fn = opts.rundir + '/etc/history-service/service_account.json'
+    svc_acc_creds_fn = '/run/dcos/etc/history-service/service_account.json'
     b.write_service_account_credentials('dcos_history_service', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_history')
 
-    ca = opts.rundir + '/pki/CA/ca-bundle.crt'
-    b.write_CA_trust_bundle(ca)
+    b.write_CA_trust_bundle()
 
-    os.makedirs(opts.statedir + '/dcos-history', exist_ok=True)
-    shutil.chown(opts.statedir + '/dcos-history', user='dcos_history')
+    os.makedirs(b.opts.statedir + '/dcos-history', exist_ok=True)
+    shutil.chown(b.opts.statedir + '/dcos-history', user='dcos_history')
 
 
-bootstrappers = {
+service_bootstrap_functions = {
     'dcos-adminrouter': dcos_adminrouter,
     'dcos-adminrouter-agent': dcos_adminrouter_agent,
     'dcos-backup-master': dcos_backup_master,
@@ -2121,9 +2161,9 @@ bootstrappers = {
     'dcos-metrics-agent': dcos_metrics_agent,
     'dcos-metrics-master': dcos_metrics_master,
     'dcos-metronome': dcos_metronome,
-    'dcos-minuteman': (lambda b, opts: dcos_erlang_service('minuteman', b, opts)),
-    'dcos-navstar': (lambda b, opts: dcos_erlang_service('navstar', b, opts)),
-    'dcos-networking_api': (lambda b, opts: dcos_erlang_service('networking_api', b, opts)),
+    'dcos-minuteman': (lambda b: dcos_erlang_service('minuteman', b)),
+    'dcos-navstar': (lambda b: dcos_erlang_service('navstar', b)),
+    'dcos-networking_api': (lambda b: dcos_erlang_service('networking_api', b)),
     'dcos-secrets': dcos_secrets,
     'dcos-signal': dcos_signal,
     'dcos-spartan': dcos_spartan,
