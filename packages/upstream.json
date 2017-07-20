@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "305d266b7fed58b41e8cbcb1276902f60e9a3d9b",
-  "ref_origin": "master"
+  "ref": "229ca6082d09b02c9665fa4c3bb0e46204473f6c",
+  "ref_origin": "prozlach/DCOS-5809_remove_ar_reload_add_dynamic_dns"
 }
