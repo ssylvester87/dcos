@@ -133,8 +133,3 @@ class Configuration:
 
     def __setitem__(self, key, value):
         self.set(key, value)
-
-
-class TestDCOSCLI:
-    def test_cli(self, dcoscli):
-        dcoscli.setup()
