@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "00ed88812bedce02e4b3ad347217367d7bb207ff",
+    "ref" : "87b71b906fc18db06ae237bcc04945f573b3aede",
     "ref_origin": "master"
   }
 }
