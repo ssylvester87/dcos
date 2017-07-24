@@ -9,12 +9,13 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
+
 STATUS_READY = "STATUS_READY"
 STATUS_UNKNOWN = "STATUS_UNKNOWN"
 STATUS_BACKING_UP = "STATUS_BACKING_UP"
 STATUS_RESTORING = "STATUS_RESTORING"
 STATUS_ERROR = "STATUS_ERROR"
-COMPONENT_NAMES = []  # should eventually contain 'marathon', 'secrets', etc
+COMPONENT_NAMES = ['marathon']
 BACKUP_READY_TIMEOUT = timedelta(seconds=120)
 RESTORE_READY_TIMEOUT = timedelta(seconds=120)
 POLL_SLEEP = 5  # seconds
@@ -44,31 +45,33 @@ class TestDCOSBackupGeneralBehavior:
         logging.info("Verified no backups exist")
 
         # setup the cluster before the backup
-        self.before_any_backup(superuser_api_session)
-
-        # sleeper1 should now be running
+        self.destroy_marathon_apps(superuser_api_session)
+        self.create_marathon_sleeper(superuser_api_session, "sleeper1")
 
         # create a backup. this backup should only have sleeper1 as running.
         backup_id_1 = self.create_backup(superuser_api_session, label='foo')
         logging.info("Created first backup {}".format(backup_id_1))
 
         # verify behavior after first backup
-        self.after_first_backup(superuser_api_session)
+        self.verify_apps_in_marathon(superuser_api_session, ['sleeper1'])
 
-        # sleeper1 and sleeper2 should now be running
+        # now create a second marathon app (sleeper2)
+        self.create_marathon_sleeper(superuser_api_session, "sleeper2")
+
+        # NB: sleeper1 and sleeper2 should now be running
 
         # create a second backup
         backup_id_2 = self.create_backup(superuser_api_session, label='bar')
         logging.info("Created second backup {}".format(backup_id_2))
 
         # verify behavior after second backup
-        self.after_second_backup(superuser_api_session)
+        self.verify_apps_in_marathon(superuser_api_session, ['sleeper1', 'sleeper2'])
 
         # perform a restore
         restore_id = self.restore_backup(superuser_api_session, backup_id_1)
 
-        # verify cluster after the restore
-        self.after_restore(superuser_api_session)
+        # verify cluster after the restore. should only include the sleeper1 app.
+        self.verify_apps_in_marathon(superuser_api_session, ['sleeper1'])
 
         # delete the backup using the restore id -- should not work
         r = superuser_api_session.delete('/system/v1/backup/v1/delete', json={'id': restore_id})
@@ -120,30 +123,12 @@ class TestDCOSBackupGeneralBehavior:
         assert completed, "The restore did not complete in time"
         return restore_id
 
-    # preps the cluster before the backup. component setup should go here.
-    def before_any_backup(self, api):
-        self.destroy_marathon_apps(api)
-        self.create_marathon_sleeper(api, "sleeper1")
-
-    # verify cluster after the first backup
-    def after_first_backup(self, api):
-        self.verify_apps_in_marathon(api, ['sleeper1'])
-        self.create_marathon_sleeper(api, "sleeper2")
-
-    # verify cluster after the second backup
-    def after_second_backup(self, api):
-        self.verify_apps_in_marathon(api, ['sleeper1', 'sleeper2'])
-
-    # verify cluster after the last backup was restored. only the sleeper1 task
-    # should be in marathon
-    def after_restore(self, api):
-        self.verify_apps_in_marathon(api, ['sleeper1'])
-        pass
-
-    def verify_apps_in_marathon(self, api, ids=[]):
+    def verify_apps_in_marathon(self, api, ids=None):
+        if ids is None:
+            ids = []
         apps = self.get_marathon_apps(api)
         for app_id in ids:
-            assert apps.get('/' + app_id), "app " + app_id + \
+            assert ('/' + app_id) in apps, "app " + app_id + \
                 " was not found in marathon. existing apps: " + json.dumps(apps)
         if len(apps) != len(ids):
             raise Exception("Expected app ids: {} but found {}".format(ids, apps.keys()))
@@ -151,7 +136,10 @@ class TestDCOSBackupGeneralBehavior:
     def get_marathon_apps(self, api):
         r = api.get('/service/marathon/v2/apps')
         assert r.status_code == 200
-        return dict((x['id'], True) for x in r.json().get('apps', []))
+        s = set()
+        for x in r.json().get('apps', []):
+            s.add(x['id'])
+        return s
 
     def destroy_marathon_apps(self, api):
         apps = self.get_marathon_apps(api)
