@@ -5,8 +5,8 @@
   ],
   "single_source": {
     "kind": "url",
-    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.0-SNAPSHOT-58-master-84c6279db0/cosmos-enterprise-0.4.0-SNAPSHOT-58-master-84c6279db0-one-jar.jar",
-    "sha1": "7c8cf66deb9a19d6bc21d767c46a9d220f552d9e"
+    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.0-5/cosmos-enterprise-0.4.0-5-one-jar.jar",
+    "sha1": "185e723bf602e667187575a5ce3f73d725e4ab98"
   },
   "username": "dcos_cosmos",
   "state_directory": true
