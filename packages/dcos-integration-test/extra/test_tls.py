@@ -274,7 +274,6 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
                 'netloc': netloc.description}))
 
     except ssl.SSLError as exc:
-
         expected_error_codes = ('TLSV1_ALERT_PROTOCOL_VERSION', )
         for ecode in expected_error_codes:
             if ecode in str(exc):
@@ -284,15 +283,24 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
             # 'nobreak' case: unexpected `SSLError`, re-raise.
             raise
 
-    except ConnectionResetError as exc:
-        # Make sure that the ConnectionResetError was raised within the
-        # `do_handshake` method:
+    except (ssl.SSLEOFError, ConnectionResetError) as exc:
+        # Make sure that the exception was raised within the `do_handshake`
+        # method. Examples of the last traceback lines of uncaught exceptions:
+        #
         # >    self._sslobj.do_handshake()
         # E    ConnectionResetError: [Errno 104] Connection reset by peer
+        #
+        # >    self._sslobj.do_handshake()
+        # E    ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:645)
         #
         # Background: https://hg.python.org/cpython/rev/69f737f410f0 "What
         #    probably happens is that OpenSSL versions, instead of answering
         #    'sorry, I can't talk to you', brutally reset the connections."
+        #
+        # (I am not sure how the peer TLS implementation is different between
+        # the two cases. At the time of writing the SSLEOFError is triggered
+        # when testing the Java services Marathon and Metronome, and the
+        # ConnectionResetError is triggered when testing Mesos).
         #
         # Extract only the last stack trace entry / line
         tb = traceback.format_exc(limit=-1)
