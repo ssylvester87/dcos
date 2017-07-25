@@ -256,8 +256,10 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
     """
 
     if 'Admin Router (master)' in netloc.description:
-        log.info('Skip test for the master Admin Router %r', netloc)
-        return
+        pytest.skip('Skip test for the master Admin Router %s' % netloc)
+
+    if 'Admin Router (agent)' in netloc.description:
+        pytest.xfail('Fails as of DCOS-16633' % netloc)
 
     log.info('Verify that %r does not support %s', netloc, unsupported_tls_version)
 
