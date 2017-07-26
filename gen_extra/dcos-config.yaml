@@ -186,7 +186,7 @@ package:
         "GUNICORN_WORKER_PROCESSES": 1,
         "GUNICORN_THREADS_PER_WORKER": 10,
         "GUNICORN_BIND_ADDRESS": "127.0.0.1:8101",
-        "GUNICORN_WORKER_TIMEOUT_SECONDS": 10,
+        "GUNICORN_WORKER_TIMEOUT_SECONDS": 30,
         "SQLALCHEMY_CONNECT_ARGS": {
           "sslmode": "verify-full",
           "sslcert": "/run/dcos/pki/cockroach/client.root.crt",
