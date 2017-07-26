@@ -15,7 +15,7 @@ from util import LineBufferFilter, SearchCriteria, iam_denies_all_requests
 acl_endpoints = [
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
     ('/system/v1/metrics/foo/bar', 'dcos:adminrouter:ops:system-metrics'),
-    ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
+    ('/system/v1/logs/foo/bar', 'dcos:adminrouter:ops:system-logs'),
     ('/pkgpanda/foo/bar', 'dcos:adminrouter:ops:pkgpanda'),
 ]
 
