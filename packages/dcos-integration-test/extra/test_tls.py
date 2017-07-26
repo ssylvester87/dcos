@@ -256,10 +256,10 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
     """
 
     if 'Admin Router (master)' in netloc.description:
-        pytest.skip('Skip test for the master Admin Router %s' % netloc)
+        pytest.skip('Skip test for the master Admin Router')
 
     if 'Admin Router (agent)' in netloc.description:
-        pytest.xfail('Fails as of DCOS-16633' % netloc)
+        pytest.xfail('Fails as of DCOS-16633')
 
     log.info('Verify that %r does not support %s', netloc, unsupported_tls_version)
 
@@ -274,16 +274,6 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
             'succeed'.format_map({
                 'tls_version': unsupported_tls_version,
                 'netloc': netloc.description}))
-
-    except ssl.SSLError as exc:
-        expected_error_codes = ('TLSV1_ALERT_PROTOCOL_VERSION', )
-        for ecode in expected_error_codes:
-            if ecode in str(exc):
-                log.info('Exception is presumed to be expected: %s', exc)
-                break
-        else:
-            # 'nobreak' case: unexpected `SSLError`, re-raise.
-            raise
 
     except (ssl.SSLEOFError, ConnectionResetError) as exc:
         # Make sure that the exception was raised within the `do_handshake`
@@ -312,3 +302,15 @@ def test_internal_components_only_support_tls12(netloc, unsupported_tls_version)
 
         # Re-raise what's unexpected.
         raise
+
+    # ssl.SSLEOFError inherits from SSLError, so this exception handler must
+    # be defined after the handler for ssl.SSLEOFError above.
+    except ssl.SSLError as exc:
+        expected_error_codes = ('TLSV1_ALERT_PROTOCOL_VERSION', )
+        for ecode in expected_error_codes:
+            if ecode in str(exc):
+                log.info('Exception is presumed to be expected: %s', exc)
+                break
+        else:
+            # 'nobreak' case: unexpected `SSLError`, re-raise.
+            raise
