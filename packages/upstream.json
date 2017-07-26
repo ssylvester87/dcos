@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/darkonie/dcos",
   "kind": "git",
-  "ref": "f349e0e6f8a3b6559f9e1d870417e8b21a657128",
-  "ref_origin": "master"
+  "ref": "5cc05481c1e87eafc614f5c5097ade3447bef234",
+  "ref_origin": "mnaboka/bump-dcos-log"
 }
