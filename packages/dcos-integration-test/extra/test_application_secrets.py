@@ -4,20 +4,16 @@ import uuid
 import pytest
 
 
-@pytest.mark.usefixtures("secrets_verify_and_reset")
-def test_enterprise_if_file_based_secrets(superuser_api_session, service_accounts_fixture):
-    # creating a secret
-    r = superuser_api_session.secrets.put('/secret/default/hello/mysecret', json={'value': 'anewpassword'})
-    assert r.status_code == 201
+secret_password = 'anewpassword'
 
-    test_uuid = uuid.uuid4().hex
 
-    # app definition
-    app_definition = {
-        'id': '/hello/world/integration-test-file-based-secret{}'.format(test_uuid),
+def app_with_fb_secrets(app_id, secret_source):
+    return {
+        'id': app_id,
         'cpus': 0.1,
         'mem': 128,
-        'cmd': 'test "`cat path`" = "anewpassword" && sleep 1000',
+        'disk': 128,
+        'cmd': 'test "`cat path`" = "' + secret_password + '" && sleep 1000',
         'instances': 1,
         'container': {
             'type': 'MESOS',
@@ -31,36 +27,57 @@ def test_enterprise_if_file_based_secrets(superuser_api_session, service_account
         },
         'secrets': {
             'secretpassword': {
-                'source': '/hello/mysecret'
+                'source': secret_source
             }
         }
     }
 
-    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
-        pass
 
-    # creating a secret
-    r = superuser_api_session.secrets.put('/secret/default/some/unauthorized/path/mysecret',
-                                          json={'value': 'anewpassword'})
+# The following are valid because our task space (/some/app/app-with-secrets-<uuid>) is a
+# subspace of '/', '/some', '/some/app', and '/some/app/app-with-secrets-<uuid>'.
+# Note that '/some/app/<app-id>/secret' will be accessible only from our
+# task because the secret space is the same as our task-id.
+valid_secret_params = [
+    # (app-id, secret_path, is_valid)
+    ('/some/app/app-with-valid-secrets-1', '/secret', True),
+    ('/some/app/app-with-valid-secrets-2', '/some/secret', True),
+    ('/some/app/app-with-valid-secrets-3', '/some/app/secret', True),
+    ('/some/app/app-with-valid-secrets-4', '/some/app/app-with-valid-secrets-4/secret', True)
+]
+
+
+# The following are not accessible and should always fail.
+invalid_secret_params = [
+    # (app-id, secret_path, is_valid)
+    ('/some/app/app-with-invalid-secrets-1', '/some/other/app/secret', False),
+    ('/some/app/app-with-invalid-secrets-2', '/admin/secret', False),
+    ('/some/app/app-with-invalid-secrets-3', '/admin/super/secret', False),
+    ('/some/app/app-with-invalid-secrets-4', '/some/app/app-with-invalid-secrets-4/other/secret', False)
+]
+
+
+@pytest.mark.parametrize(('app_id', 'secret_path', 'is_valid'),
+                         valid_secret_params + invalid_secret_params)
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets(superuser_api_session, service_accounts_fixture,
+                                          app_id, secret_path, is_valid):
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
     assert r.status_code == 201
 
-    # wrong path app definition, current secret is not nested under the same path as the app
-    bad_definition = app_definition
-    bad_definition['id'] = '/hello/world/integration-test-wrong-file-based-secret{}'.format(test_uuid)
-    bad_definition['secrets'] = {
-        'secretpassword': {
-            # unauthorized secret path
-            'source': '/some/unauthorized/path/mysecret'
-        }
-    }
+    app_definition = app_with_fb_secrets(app_id, secret_path)
 
-    r = superuser_api_session.marathon.post('v2/apps', json=bad_definition)
+    if is_valid:
+        with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+            pass
+    else:
+        r = superuser_api_session.marathon.post('v2/apps', json=app_definition)
+        assert r.status_code == 422
 
-    assert r.status_code == 422
-
-    data = json.loads(r.text)
-    assert data['details'][0]['errors'][0] == \
-        'Secret /some/unauthorized/path/mysecret is not accessible'
+        data = json.loads(r.text)
+        assert data['details'][0]['errors'][0] == \
+            'Secret ' + secret_path + ' is not accessible'
 
 
 @pytest.mark.usefixtures("secrets_verify_and_reset")
@@ -124,7 +141,8 @@ def test_enterprise_if_application_run_with_secrets(superuser_api_session, servi
     r = superuser_api_session.post('/package/uninstall', json=marathon_lb, headers=headers)
 
     # creating a secret
-    r = superuser_api_session.secrets.put('/secret/default/testpassword', json={'value': 'anewpassword'})
+    r = superuser_api_session.secrets.put('/secret/default/testpassword',
+                                          json={'value': secret_password})
     assert r.status_code == 201
 
     test_uuid = uuid.uuid4().hex
