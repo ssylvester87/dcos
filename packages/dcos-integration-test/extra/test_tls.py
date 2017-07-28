@@ -101,6 +101,12 @@ tls_netlocs_ids = [n.description for n in tls_netlocs]
 
 @pytest.fixture
 def signing_ca_cert(superuser_api_session):
+    """
+    Retrieve the "signing CA certificate" straight from the DC/OS CA, via its
+    JSON API. The signing CA certificate is the CA certificate that the DC/OS CA
+    uses to sign end-entity certificates (that may be an intermediate CA
+    certificate or a root CA certificate).
+    """
     r = superuser_api_session.ca.post('/info', json={'profile': ''})
     assert r.status_code == 200
 
