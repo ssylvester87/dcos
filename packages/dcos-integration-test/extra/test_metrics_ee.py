@@ -38,7 +38,8 @@ def test_framework_principal_present(superuser_api_session):
         return True
 
     app = ee_helpers.sleep_app_definition("dcos-metrics-%s" % str(uuid.uuid4()))
-    with superuser_api_session.marathon.deploy_and_cleanup(app, check_health=False) as endpoints:
+    with superuser_api_session.marathon.deploy_and_cleanup(app, check_health=False):
+        endpoints = superuser_api_session.marathon.get_app_service_endpoints(app['id'])
         time.sleep(60)  # dcos-metrics has a poll interval of 60 seconds so we have to wait until cache is filled
         for node in endpoints:
             framework_principal_present(node)

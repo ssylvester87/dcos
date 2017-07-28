@@ -760,6 +760,8 @@ class TestMesosAuthz:
                 return (None, None)
             return (container_id, agent_location)
 
+        default_os_user = 'nobody' if bootstrap_config.get('security') == 'strict' else 'root'
+
         app_uid = 'mesos-authz-{}'.format(str(uuid.uuid4()))
         sleep_app = sleep_app_definition(app_uid)
         app_id = sleep_app['id']
@@ -768,7 +770,7 @@ class TestMesosAuthz:
             peter.uid,
             [
                 {
-                    'rid': 'dcos:mesos:master:task:user:{}'.format(peter_api_session.default_os_user),
+                    'rid': 'dcos:mesos:master:task:user:{}'.format(default_os_user),
                     'actions': ['create']
                 },
                 {
@@ -813,8 +815,7 @@ class TestMesosAuthz:
                         'actions': ['full']
                     },
                     {
-                        'rid': 'dcos:mesos:agent:nested_container:user:{}'.format(
-                            peter_api_session.default_os_user),
+                        'rid': 'dcos:mesos:agent:nested_container:user:{}'.format(default_os_user),
                         'actions': ['full']
                     }
                 ])
@@ -885,8 +886,7 @@ class TestMesosAuthz:
                         'actions': ['full']
                     },
                     {
-                        'rid': 'dcos:mesos:agent:nested_container_session:user:{}'.format(
-                            peter_api_session.default_os_user),
+                        'rid': 'dcos:mesos:agent:nested_container_session:user:{}'.format(default_os_user),
                         'actions': ['full']
                     },
                     {

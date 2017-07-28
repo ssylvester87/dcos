@@ -69,7 +69,8 @@ def test_network_api_vips(superuser_api_session):
     def is_vip(x):
         return x.get('ip', '') == app_ip and x.get('port', '') == app_port
 
-    with superuser_api_session.marathon.deploy_and_cleanup(app_def) as endpoints:
+    with superuser_api_session.marathon.deploy_and_cleanup(app_def):
+        endpoints = superuser_api_session.marathon.get_app_service_endpoints(app_def['id'])
         logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
         wait_for_networking_api_up(app_ip, app_port, is_vip, superuser_api_session)
 
@@ -99,7 +100,8 @@ def test_network_api_named_vips(superuser_api_session):
         logging.info('{} ip {}'.format(app_host, ip))
         return ip
 
-    with superuser_api_session.marathon.deploy_and_cleanup(app_def) as endpoints:
+    with superuser_api_session.marathon.deploy_and_cleanup(app_def):
+        endpoints = superuser_api_session.marathon.get_app_service_endpoints(app_def['id'])
         logging.info('endpoint is {}:{}'.format(endpoints[0].host, endpoints[0].port))
         app_ip = wait_for_addr()
 

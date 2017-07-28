@@ -9,9 +9,6 @@ def make_session_fixture():
     if bootstrap_config['ssl_enabled']:
         cluster_args['dcos_url'] = cluster_args['dcos_url'].replace('http', 'https')
 
-    if bootstrap_config['security'] == 'strict':
-        cluster_args['default_os_user'] = 'nobody'
-
     cluster_api = enterprise.EnterpriseApiSession(**cluster_args)
 
     # If SSL enabled and no CA cert is given, then grab it
