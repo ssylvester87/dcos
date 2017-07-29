@@ -364,7 +364,7 @@ function _M.init(use_auth)
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:system-health");
     end
 
-    -- /system/logs/v1
+    -- /system/logs
     res.access_system_logs_endpoint = function()
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:system-logs");
     end
