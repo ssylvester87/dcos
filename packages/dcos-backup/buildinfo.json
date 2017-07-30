@@ -2,7 +2,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/dcos-backup.git",
-    "ref": "aff35caab3d26eee68e332c31140265037ca5185",
+    "ref": "cb7988f6f203ec2e4f6333c88cc0f1e18981ff78",
     "ref_origin": "dcos/1.10"
   },
   "username": "dcos_backup"

@@ -40,7 +40,7 @@ acl_endpoints = [
         'dcos:adminrouter:service:nest2/nest1/scheduler-alwaysthere'),
     ('/slave/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1', 'dcos:adminrouter:ops:slave'),
     ('/system/health/v1/foo/bar', 'dcos:adminrouter:ops:system-health'),
-    ('/system/v1/logs/v1/foo/bar', 'dcos:adminrouter:ops:system-logs'),
+    ('/system/v1/logs/foo/bar', 'dcos:adminrouter:ops:system-logs'),
     ('/system/v1/metrics/foo/bar', 'dcos:adminrouter:ops:system-metrics'),
     ('/system/v1/backup/foo/bar', 'dcos:adminrouter:ops:system-backup'),
 ]
@@ -49,7 +49,7 @@ authed_endpoints = [
     ('/capabilities', 'dcos:adminrouter:capabilities'),
     ('/navstar/lashup/key', 'dcos:adminrouter:navstar-lashup-key'),
     ('/secrets/v1', 'dcos:adminrouter:secrets'),
-    ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/logs/v1',
+    ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/logs',
         'dcos:adminrouter:system:agent'),
     ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/metrics/v0',
         'dcos:adminrouter:system:agent'),
