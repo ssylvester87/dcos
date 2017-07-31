@@ -1,8 +1,18 @@
+"""
+A set of utilities that is used in the dcos-intergration-test test modules in
+the dcos-enterprise repository.
+"""
+
+
 import cryptography.hazmat.backends
+# Note(JP): isort is not well-configured. Import of custom code should be below
+# import of third party modules.
+import dcos_test_utils
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from pkgpanda.util import load_json
+
 
 CRYPTOGRAPHY_BACKEND = cryptography.hazmat.backends.default_backend()
 
@@ -21,6 +31,57 @@ OPS_ENDPOINTS = [
     '/secrets/v1/store',
     '/system/health/v1',
     'pkgpanda/active/']
+
+
+class _DCOSNodes:
+    """
+    Meant to be instantiated as a singleton during module import. That singleton
+    then represents the nodes in the test cluster and can be used in other
+    modules at import time. This assumes that the DC/OS cluster has
+
+    - at least one master node
+    - at least one (private) agent node
+    - at least one public agent node
+
+    This code also assumes that the corresponding data is available at import
+    time without performing networked I/O. That is, the node information must be
+    readily available to the test runner process through e.g. the process
+    environment, file input, or command line arguments.
+
+    The public (and intended to be stable) interface of this class is comprised
+    of the following attributes:
+
+        - `masters`: a list of strings, the master node hostnames/IP addresses
+        - `agents`: a list of strings, the (private) agent node hostnames/IP
+          addresses
+        - `public_agents`: a list of strings, the public agent node hostnames/IP
+          addresses
+        - `all_agents`: a list of strings, the node hostnames/IP addresses for
+          all agent nodes
+
+    As of now this uses the same environment-based interface as the dcos_api_session:
+    https://github.com/mesosphere/dcos-test-utils/blob/c4b660991995f20a8e6d3ed08bdb1e691374530f/dcos_test_utils/dcos_api_session.py#L123
+    """
+    def __init__(self):
+
+        cluster_args = dcos_test_utils.enterprise.EnterpriseApiSession.get_args_from_env()
+
+        self.masters = sorted(cluster_args['masters'])
+        self.agents = sorted(cluster_args['slaves'])
+        self.public_agents = sorted(cluster_args['public_slaves'])
+
+        assert self.agents is not None
+        assert self.public_agents is not None
+
+        self.all_agents = self.agents + self.public_agents
+
+
+# This singleton creation during module import is required for tests that need
+# to be (pytest-)parametrized with / based on the set of nodes. In pytest,
+# parametrization is performed during the collection phase which is about the
+# same as during module import. That is, this data must be available through
+# Python's import system and not be provided through a pytest fixture.
+DCOS_NODES = _DCOSNodes()
 
 
 def sleep_app_definition(uid):
