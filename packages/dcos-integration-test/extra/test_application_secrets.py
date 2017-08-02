@@ -1,3 +1,4 @@
+import base64
 import json
 import uuid
 
@@ -290,3 +291,27 @@ def test_enterprise_if_application_run_with_secrets(superuser_api_session, servi
         with superuser_api_session.marathon.deploy_and_cleanup(redis_client_definition, check_health=False):
             pass
         pass
+
+
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_accounts_fixture):
+    # Mesos module expect '__dcos_base64__' prefixed to secret basename to
+    # indicate a base64-encoded data.
+    secret_path = '/some/__dcos_base64__secret'
+
+    # Create the secret.
+    base64_secret = base64.b64encode(secret_password.encode()).decode()
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': base64_secret})
+    assert r.status_code == 201
+
+    # Create an app with the base64-decorated secret path. The secret-resolver
+    # module will fetch and base64-decode the secret before writing it in the
+    # file volume.
+    app_definition = app_with_fb_secrets('/some/app/app-with-base64-secrets', secret_path)
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
+
+    # TODO(Kapil): Create negative tests:
+    #  - App receives base64-encoded string and fails.
+    #  - A secret with '__dcos_base64__' is invalid (i.e., not base64-encoded).
