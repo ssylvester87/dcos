@@ -1065,21 +1065,22 @@ class Bootstrapper(object):
         `DCOS_CA_TRUST_BUNDLE_FILE_PATH` which is the canonical DC/OS CA bundle
         location.
 
-        Note(JP): Recreate the truststore file if it is already there so that
-        updates propagate through the system upon every systemd unit start.
-        Recreation cannot be cleanly performed by simply repeating `keytool`
-        invocation. For the truststore recreation it is important to consider
-        that the process of recreation can be triggered from multiple systemd
-        units at the same time, leading to concurrent file system access. Ensure
-        a proper refresh procedure during which consumers *always* find an
-        existing as well as a complete truststore file:
+        Recreate the truststore file if it is already there so that updates
+        propagate through the system upon every systemd unit start. Recreation
+        cannot be cleanly performed by simply repeating `keytool` invocation.
+        For the truststore recreation it is important to consider that the
+        process of recreation can be triggered from multiple systemd units at
+        the same time, leading to concurrent file system access. Ensure a proper
+        refresh procedure during which consumers *always* find an existing as
+        well as a complete truststore file:
 
             1) Initially write the new truststore file to a temporary location,
                on the same file system as the consumed location.
 
-            2) move the truststore file *atomically* to the consumed location (use
-               the rename syscall under the hood which only works for files in the
-               same file system).
+            2) Atomically move the truststore file to the consumed location. Use
+               the rename() system call for that so that even during an update
+               other processes are guaranteed to never find the target path to
+               be missing (that only works for files in the same file system).
         """
 
         def _create_new_truststore(keytool_path, ts_tmp_filepath, ts_filepath):
@@ -1114,12 +1115,12 @@ class Bootstrapper(object):
             if proc.wait() != 0:
                 raise Exception('keytool failed')
 
-            # Rename, atomically. Then set file permissions.
+            # Set file permissions and rename atomically.
             log.info(
                 'Expose new truststore file: rename %s -> %s',
                 ts_tmp_filepath, ts_filepath)
+            os.chmod(ts_tmp_filepath, 0o644)
             os.rename(ts_tmp_filepath, ts_filepath)
-            os.chmod(ts_filepath, 0o644)
 
         ts_filepath = '/run/dcos/pki/CA/certs/cacerts.jks'
 
@@ -1136,9 +1137,9 @@ class Bootstrapper(object):
         ts_tmp_filepath = os.path.join(ts_dirpath, ts_tmp_basename)
 
         # Attempt to create new truststore file. That involves creation of a
-        # temporary file. After the creation attempt try to delete that
-        # temporary file in a best-effort fashion and ignore errors that happen
-        # during that deletion attempt.
+        # temporary file. After the creation try to delete that temporary file
+        # in a best-effort fashion and ignore errors that happen during that
+        # deletion attempt.
         try:
             _create_new_truststore(keytool_path, ts_tmp_filepath, ts_filepath)
         finally:
