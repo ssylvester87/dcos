@@ -1054,7 +1054,7 @@ class Bootstrapper(object):
     def write_java_truststore_with_dcos_ca_bundle(self):
         """
         Write Java TrustStore to file located at
-        `/run/dcos/pki/CA/certs/cacerts.jks` which is expected by e.g. Marathon,
+        `/run/dcos/pki/CA/certs/cacerts.jks` which is consumed by e.g. Marathon,
         Cosmos, Metronome, but also by Admin Router for exposing the
         `/ca/cacerts.jks` HTTP endpoint).
 
@@ -1064,52 +1064,88 @@ class Bootstrapper(object):
         trust anchors (certificates) from the DC/OS CA bundle file located at
         `DCOS_CA_TRUST_BUNDLE_FILE_PATH` which is the canonical DC/OS CA bundle
         location.
-        """
-        ts_filepath = '/run/dcos/pki/CA/certs/cacerts.jks'
-        ca_bundle_filepath = DCOS_CA_TRUST_BUNDLE_FILE_PATH
 
-        keytool = shutil.which('keytool')
-        if not keytool:
+        Note(JP): Recreate the truststore file if it is already there so that
+        updates propagate through the system upon every systemd unit start.
+        Recreation cannot be cleanly performed by simply repeating `keytool`
+        invocation. For the truststore recreation it is important to consider
+        that the process of recreation can be triggered from multiple systemd
+        units at the same time, leading to concurrent file system access. Ensure
+        a proper refresh procedure during which consumers *always* find an
+        existing as well as a complete truststore file:
+
+            1) Initially write the new truststore file to a temporary location,
+               on the same file system as the consumed location.
+
+            2) move the truststore file *atomically* to the consumed location (use
+               the rename syscall under the hood which only works for files in the
+               same file system).
+        """
+
+        def _create_new_truststore(keytool_path, ts_tmp_filepath, ts_filepath):
+            cmd = [
+                keytool_path,
+                '-importkeystore',
+                '-noprompt',
+                '-srckeystore',
+                '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
+                '-srcstorepass', 'changeit',
+                '-deststorepass', 'changeit',
+                '-destkeystore', ts_tmp_filepath
+            ]
+
+            log.info('Copying Java TrustStore: {}'.format(' '.join(cmd)))
+            proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+            if proc.wait() != 0:
+                raise Exception('keytool failed')
+
+            cmd = [
+                keytool_path,
+                '-import',
+                '-noprompt',
+                '-trustcacerts',
+                '-alias', 'dcos_root_ca',
+                '-file', DCOS_CA_TRUST_BUNDLE_FILE_PATH,
+                '-keystore', ts_tmp_filepath,
+                '-storepass', 'changeit',
+            ]
+            log.info('Importing CA bundle into TrustStore: {}'.format(' '.join(cmd)))
+            proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
+            if proc.wait() != 0:
+                raise Exception('keytool failed')
+
+            # Rename, atomically. Then set file permissions.
+            log.info(
+                'Expose new truststore file: rename %s -> %s',
+                ts_tmp_filepath, ts_filepath)
+            os.rename(ts_tmp_filepath, ts_filepath)
+            os.chmod(ts_filepath, 0o644)
+
+        ts_filepath = '/run/dcos/pki/CA/certs/cacerts.jks'
+
+        keytool_path = shutil.which('keytool')
+        if not keytool_path:
             raise Exception('keytool not found')
 
+        # Construct path to temporary truststore file in the same directory that
+        # eventually must contain the truststore file (same directory means same
+        # file system).
+        ts_dirpath = os.path.dirname(ts_filepath)
+        ts_basename = os.path.basename(ts_filepath)
+        ts_tmp_basename = ts_basename + '.tmp.' + utils.random_string(10)
+        ts_tmp_filepath = os.path.join(ts_dirpath, ts_tmp_basename)
+
+        # Attempt to create new truststore file. That involves creation of a
+        # temporary file. After the creation attempt try to delete that
+        # temporary file in a best-effort fashion and ignore errors that happen
+        # during that deletion attempt.
         try:
-            os.remove(ts_filepath)
-            log.info("Removed existing TrustStore file: %s", ts_filepath)
-        except FileNotFoundError:
-            log.info("TrustStore file does not yet exist: %s", ts_filepath)
-
-        cmd = [
-            keytool,
-            '-importkeystore',
-            '-noprompt',
-            '-srckeystore',
-            '/opt/mesosphere/active/java/usr/java/jre/lib/security/cacerts',
-            '-srcstorepass', 'changeit',
-            '-deststorepass', 'changeit',
-            '-destkeystore', ts_filepath
-        ]
-
-        log.info('Copying Java TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-        if proc.wait() != 0:
-            raise Exception('keytool failed')
-
-        cmd = [
-            keytool,
-            '-import',
-            '-noprompt',
-            '-trustcacerts',
-            '-alias', 'dcos_root_ca',
-            '-file', ca_bundle_filepath,
-            '-keystore', ts_filepath,
-            '-storepass', 'changeit',
-        ]
-        log.info('Importing CA bundle into TrustStore: {}'.format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, shell=False, preexec_fn=_set_umask)
-        if proc.wait() != 0:
-            raise Exception('keytool failed')
-
-        os.chmod(ts_filepath, 0o644)
+            _create_new_truststore(keytool_path, ts_tmp_filepath, ts_filepath)
+        finally:
+            try:
+                os.remove(ts_tmp_filepath)
+            except OSError:
+                pass
 
     def service_auth_token(self, uid, exp=None):
         iam_cli = iam.IAMClient(self.iam_url)
