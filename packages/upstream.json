@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "5b9d2b8bce9249de4afab6ec441f1c705bca889e",
-  "ref_origin": "master"
+  "ref": "3d3934599d0057f37af312bc840a7fa0a14e46e2",
+  "ref_origin": "prozlach/DCOS_OSS-1014_document_service_endpoint"
 }
