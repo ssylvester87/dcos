@@ -33,6 +33,40 @@ def app_with_fb_secrets(app_id, secret_source):
     }
 
 
+def pod_with_fb_secrets(app_id, secret_source):
+    return {
+        'id': app_id,
+        'containers': [
+            {
+                'name': 'container-1',
+                'resources': {'cpus': 0.1, 'mem': 128, 'disk': 128, 'gpus': 0},
+                'exec': {
+                    'command': {
+                        'shell': 'test "`cat my/path`" = "' + secret_password + '" && sleep 1000',
+                    }
+                },
+                'volumeMounts': [
+                    {
+                        'name': 'secretvolume',
+                        'mountPath': 'my/path'
+                    }
+                ]
+            }
+        ],
+        'volumes': [
+            {
+                'name': 'secretvolume',
+                'secret': 'secretpassword'
+            }
+        ],
+        'secrets': {
+            'secretpassword': {
+                'source': secret_source
+            }
+        }
+    }
+
+
 # The following are valid because our task space (/some/app/app-with-secrets-<uuid>) is a
 # subspace of '/', '/some', '/some/app', and '/some/app/app-with-secrets-<uuid>'.
 # Note that '/some/app/<app-id>/secret' will be accessible only from our
@@ -78,6 +112,27 @@ def test_enterprise_if_file_based_secrets(superuser_api_session, service_account
         data = json.loads(r.text)
         assert data['details'][0]['errors'][0] == \
             'Secret ' + secret_path + ' is not accessible'
+
+
+@pytest.mark.parametrize(('app_id', 'secret_path', 'is_valid'),
+                         valid_secret_params)
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets_for_pods(superuser_api_session, service_accounts_fixture,
+                                                   app_id, secret_path, is_valid):
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
+    assert r.status_code == 201
+
+    pod_definition = pod_with_fb_secrets(app_id, secret_path)
+
+    if is_valid:
+        with superuser_api_session.marathon.deploy_pod_and_cleanup(pod_definition):
+            pass
+
+    # TODO(Kapil): (DCOS-17596) Enable negative tests for pods using
+    # invalid_secret_params once Marathon starts to reject invalid pod
+    # definitions (MARATHON_EE-1588).
 
 
 @pytest.mark.usefixtures("secrets_verify_and_reset")
