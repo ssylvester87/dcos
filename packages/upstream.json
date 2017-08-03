@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mellenburg/dcos",
   "kind": "git",
-  "ref": "e2da3c7abf02d258b5b3292338f69dc4d59d34c5",
-  "ref_origin": "master"
+  "ref": "d5075cd1c77992efe322ca79a731b2edb23da7a3",
+  "ref_origin": "marathon_test_utils"
 }
