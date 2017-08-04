@@ -1,8 +1,9 @@
 import logging
+import uuid
 
 import pytest
 
-from dcos_test_utils.marathon import Container, get_test_app
+from dcos_test_utils import marathon
 
 
 def _create_secret(superuser_api_session, path, value):
@@ -38,35 +39,36 @@ def secret(superuser_api_session):
 
 
 @pytest.mark.parametrize('containerizer,image', [
-    (Container.MESOS, None),            # Mesos containerizer.
-    (Container.MESOS, "alpine"),        # Mesos containerizer (UCR).
-    (Container.DOCKER, "alpine")        # Docker containerizer.
+    (marathon.Container.MESOS, None),            # Mesos containerizer.
+    (marathon.Container.MESOS, "alpine"),        # Mesos containerizer (UCR).
+    (marathon.Container.DOCKER, "alpine")        # Docker containerizer.
 ])
 def test_application_secret_leakage(superuser_api_session, secret, containerizer, image):
     """Marathon app deployment integration test validating if tasks using
     a secret reference their value in clear text in the sandbox log files
     (stdout & stderr).
     """
-    app, test_uuid = get_test_app(container_type=containerizer)
+    app = {
+        'id': '/test-secret-leakage-' + str(uuid.uuid4().hex),
+        'cpus': 0.1,
+        'mem': 32,
+        'instances': 1,
+        'cmd': 'pwd && sleep 1000',
+        'container': {
+            'type': containerizer.value,
+        },
+        'secrets': {'secret0': {'source': secret['name']}},
+        'env': {
+            'TEST_SECRET_VARIABLE': {
+                'secret': 'secret0'
+            }
+        }
+    }
 
     if image is not None:
         app['container']['docker'] = {
             'image': image
         }
-
-    app['secrets'] = {
-        'secret0': {
-            'source': secret['name']
-        }
-    }
-
-    app['env'] = {
-        'TEST_SECRET_VARIABLE': {
-            'secret': 'secret0'
-        }
-    }
-
-    app['cmd'] = 'pwd && sleep 1000'
 
     with superuser_api_session.marathon.deploy_and_cleanup(app, check_health=False):
         marathon_framework_id = superuser_api_session.marathon.get('/v2/info').json()['frameworkId']
