@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/lingmann/dcos",
   "kind": "git",
-  "ref": "4a0c4678523c763e365719deba5826ba00cc882f",
-  "ref_origin": "master"
+  "ref": "a6d25ae359e7b219cb2e6b59160b555158ae06d0",
+  "ref_origin": "jeremy/revert-navstar-bump"
 }
