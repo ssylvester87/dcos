@@ -61,8 +61,8 @@ builders['adminrouter'] = {
                     sh 'make check-api-docs'
                 }
 
-                stage('Admin Router: make flake8') {
-                    sh 'make flake8'
+                stage('Admin Router: make lint') {
+                    sh 'make lint'
                 }
 
                 stage('Admin Router: make test') {
