@@ -60,7 +60,7 @@
     "ldap3": {
       "kind": "git",
       "git": "git@github.com:cannatag/ldap3.git",
-      "ref": "0d30d3a6376f6fd095e40ae0e03ee4c293a0d703",
+      "ref": "58aa16f442beca4faa0bd8d14a1445e83ab491a0",
       "ref_origin": "master"
     },
     "isodate": {
