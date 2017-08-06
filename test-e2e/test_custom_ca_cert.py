@@ -124,16 +124,9 @@ class TestCustomCACert:
             cluster_backend=dcos_docker_backend,
             generate_config_path=artifact_path,
         ) as cluster:
-            # Inject node network locations via environment so that
-            # `DcosApiSession.set_node_lists_if_unset()` is not required to be
-            # called by the test runner (this enables pytest test
-            # parametrization during integration test package import time).
             environment_variables = {
                 'DCOS_LOGIN_UNAME': superuser_username,
                 'DCOS_LOGIN_PW': superuser_password,
-                'MASTER_HOSTS': ','.join(str(m.ip_address) for m in cluster.masters),
-                'SLAVE_HOSTS': ','.join(str(m.ip_address) for m in cluster.agents),
-                'PUBLIC_SLAVE_HOSTS': ','.join(str(m.ip_address) for m in cluster.public_agents),
             }
             pytest_command = ['pytest', '-vvv', '-s', '-x', ' '.join(test_filenames)]
             cluster.run_integration_tests(
