@@ -4,7 +4,6 @@ endpoint_tests:
 # hence the tests separation
   - tests:
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /system/health/v1/foo/bar
         upstream: http:///run/dcos/dcos-diagnostics.sock
@@ -14,12 +13,10 @@ endpoint_tests:
 ######### /ca/
   - tests:
       is_unauthed_access_permitted:
-        enabled: true
         locations:
           - /ca/dcos-ca.crt
           - /ca/cacerts.jks
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: false
         test_paths:
           - /ca/api/v2/info
@@ -29,7 +26,6 @@ endpoint_tests:
           - /ca/api/v2/newkey
           - /ca/api/v2/sign
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /ca/api/v2/info
           - /ca/api/v2/bundle
@@ -39,7 +35,6 @@ endpoint_tests:
           - /ca/api/v2/sign
         upstream: http://127.0.0.1:8888
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           - expected: /ca/api/v2/certificates
@@ -63,7 +58,6 @@ endpoint_tests:
 # d) ^/acs/api/v1/users/(?<uid_path>.*)/permissions$
   - tests:
       is_unauthed_access_permitted:
-        enabled: true
         locations:
           # b) + c)
           - /acs/api/v1/auth/jwks
@@ -75,13 +69,11 @@ endpoint_tests:
           - /acs/api/v1/auth/saml/providers/
           - /acs/api/v1/auth/saml/providers/foobar-provider/acs-callback
       are_response_headers_ok:
-        enabled: true
         nocaching_headers_are_sent: true
         test_paths:
           # d)
           - /acs/api/v1/users/reflecting-user/permissions
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: true
         test_paths:
           # b) + c)
@@ -96,7 +88,6 @@ endpoint_tests:
           # d)
           - /acs/api/v1/users/reflecting-user/permissions
       is_upstream_correct:
-        enabled: true
         test_paths:
           # b) + c)
           - /acs/api/v1/auth/jwks
@@ -111,7 +102,6 @@ endpoint_tests:
           - /acs/api/v1/users/reflecting-user/permissions
         upstream: http://127.0.0.1:8101
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           # b) + c)
@@ -139,17 +129,14 @@ endpoint_tests:
 ######### /secrets
   - tests:
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: true
         test_paths:
           - /secrets/v1/foo/bar
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /secrets/v1/foo/bar
         upstream: http://127.0.0.1:1337
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           - expected: /secrets/v1/foo/bar
@@ -159,17 +146,14 @@ endpoint_tests:
 ######### /vault
   - tests:
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: false
         test_paths:
           - /vault/default/foo/bar
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /vault/default/foo/bar
         upstream: http://127.0.0.1:8200
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           - expected: /foo/bar
@@ -179,23 +163,19 @@ endpoint_tests:
 ######### /networking
   - tests:
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: skip
         test_paths:
           - /networking/api/v1/foo/bar
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /networking/api/v1/foo/bar
         upstream: http://127.0.0.1:61430
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           - expected: /foo/bar
             sent: /networking/api/v1/foo/bar
       are_response_headers_ok:
-        enabled: true
         nocaching_headers_are_sent: true
         test_paths:
           - /networking/api/v1/foo/bar
@@ -203,7 +183,6 @@ endpoint_tests:
       - master
   - tests:
       is_unauthed_access_permitted:
-        enabled: true
         locations:
           - /dcos-metadata/ui-config.json
     type:
@@ -211,12 +190,10 @@ endpoint_tests:
 ######### /system/v1/backup endpoint
   - tests:
       are_upstream_req_headers_ok:
-        enabled: true
         jwt_should_be_forwarded: skip
         test_paths:
           - /system/v1/backup/foo/bar
       is_upstream_req_ok:
-        enabled: true
         expected_http_ver: HTTP/1.0
         test_paths:
           - expected: /foo/bar
@@ -224,7 +201,6 @@ endpoint_tests:
           - expected: /
             sent: /system/v1/backup/
       is_upstream_correct:
-        enabled: true
         test_paths:
           - /system/v1/backup/foo/bar
           - /system/v1/backup/
