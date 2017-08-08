@@ -917,6 +917,68 @@ package:
 {% case "false" %}
       STATE_SUMMARY_URI=http://leader.mesos/mesos/state-summary
 {% endswitch %}
+  - path: /etc/mesos-master-modules/master_dcos_security_modules.json
+    content: |
+      {
+        "libraries": [
+          {
+            "file": "/opt/mesosphere/lib/mesos/libdcos_security.so",
+            "modules": [
+              {
+                "name": "com_mesosphere_dcos_http_Authenticator",
+                "parameters": [
+                  {
+                    "key": "host",
+                    "value": "master"
+                  },
+                  {
+                    "key": "iam",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://localhost"
+{% case "true" %}
+                    "value": "https://localhost:443"
+{% endswitch %}
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_Authorizer",
+                "parameters": [
+                  {
+                    "key": "host",
+                    "value": "master"
+                  },
+                  {
+                    "key": "iam",
+{% switch ssl_enabled %}
+{% case "false" %}
+                    "value": "http://localhost"
+{% case "true" %}
+                    "value": "https://localhost:443"
+{% endswitch %}
+                  },
+                  {
+                    "key": "cache_timeout",
+                    "value": "5secs"
+                  },
+                  {
+                    "key": "service_account_credential",
+                    "value": "file:///run/dcos/etc/mesos/master_service_account.json"
+                  },
+                  {
+                    "key": "dcos_space_label",
+                    "value": "DCOS_SPACE"
+                  }
+                ]
+              },
+              {
+                "name": "com_mesosphere_dcos_ClassicRPCAuthenticator"
+              }
+            ]
+          }
+        ]
+      }
   - path: /etc/mesos-slave-modules/agent_dcos_security_modules.json
     content: |
       {
