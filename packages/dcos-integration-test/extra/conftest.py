@@ -14,17 +14,14 @@ from urllib.parse import urlparse
 import pytest
 import requests
 from api_session_fixture import make_session_fixture
-from dcos_test_utils.dcos_api_session import DcosAuth, DcosUser
+from dcos_test_utils import dcos_api, logger
 from dcoscli import DCOS_CLI_URL, DCOSCLI
 from jwt.utils import base64url_decode, base64url_encode
 
 from dcos_internal_utils import utils
 
-
-logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("botocore").setLevel(logging.WARNING)
-log = logging.getLogger(__name__)
+logger.setup(os.getenv('TEST_LOG_LEVEL', 'INFO'))
+log = logging.getLogger('setup')
 
 
 def path_only(url):
@@ -49,7 +46,7 @@ def peter_api_session(superuser_api_session):
     """
     uid = 'peter'
     password = 'peterpan'
-    peter = DcosUser({'uid': uid, 'password': password})
+    peter = dcos_api.DcosUser({'uid': uid, 'password': password})
     peter.uid = uid
     peter.password = password
     description = 'An ordinarily weak Peter'
@@ -261,7 +258,7 @@ def forged_superuser_session(peter, superuser, noauth_api_session):
             header_bytes, forged_payload_bytes, signature_bytes)
         )
     forged_session = noauth_api_session.copy()
-    forged_session.session.auth = DcosAuth(forged_token)
+    forged_session.session.auth = dcos_api.DcosAuth(forged_token)
     return forged_session
 
 
