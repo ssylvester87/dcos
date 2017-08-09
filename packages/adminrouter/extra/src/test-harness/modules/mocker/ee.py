@@ -25,6 +25,9 @@ class Mocker(MockerBase):
             ReflectingTcpIpEndpoint(ip='127.0.0.1', port=1337))
         # IAM
         ee_endpoints.append(IamEndpoint(ip='127.0.0.1', port=8101))
+        # Secondary IAM instance, used for testing DNS re-resolving in
+        # ee/test_dns.py
+        ee_endpoints.append(IamEndpoint(ip='127.0.0.2', port=8101))
         # Networking API
         ee_endpoints.append(ReflectingTcpIpEndpoint(ip='127.0.0.1', port=61430))
         # Backup service

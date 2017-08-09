@@ -72,8 +72,6 @@ def test_ee_signal_service(superuser_api_session):
     # Insert all the diagnostics data programmatically
     master_units = [
         'adminrouter-service',
-        'adminrouter-reload-service',
-        'adminrouter-reload-timer',
         'backup-master-service',
         'backup-master-socket',
         'bouncer-service',
@@ -116,8 +114,6 @@ def test_ee_signal_service(superuser_api_session):
         'mesos-slave-public-service']
     all_slave_units = [
         'adminrouter-agent-service',
-        'adminrouter-agent-reload-service',
-        'adminrouter-agent-reload-timer',
         'docker-gc-service',
         'docker-gc-timer',
         'log-agent-service',

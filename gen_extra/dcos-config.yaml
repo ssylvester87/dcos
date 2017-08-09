@@ -72,13 +72,11 @@ package:
 {% case "false" %}
       proxy_ssl_verify off;
       set $upstream_mesos http://leader.mesos:5050;
-      set $upstream_marathon http://127.0.0.1:8080;
 {% case "true" %}
       proxy_ssl_trusted_certificate /run/dcos/pki/CA/ca-bundle.crt;
       proxy_ssl_verify on;
       proxy_ssl_verify_depth 5;
       set $upstream_mesos https://leader.mesos:5050;
-      set $upstream_marathon https://127.0.0.1:8443;
 {% endswitch %}
   - path: /etc_slave/adminrouter-upstreams-ee.conf
     content: |
