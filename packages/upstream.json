@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/rdeliallisi/dcos",
   "kind": "git",
-  "ref": "48730a69dfe91c7f424e6f800b2921bad634b723",
-  "ref_origin": "1.9"
+  "ref": "c875de9ace78b6b42a56a5aa0d4e09888315aa3e",
+  "ref_origin": "rdeliallisi/1.9/exhibitor-log"
 }
