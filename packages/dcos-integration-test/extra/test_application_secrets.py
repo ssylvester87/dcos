@@ -1,4 +1,7 @@
+import base64
+import hashlib
 import json
+import os
 import uuid
 
 import pytest
@@ -290,3 +293,38 @@ def test_enterprise_if_application_run_with_secrets(superuser_api_session, servi
         with superuser_api_session.marathon.deploy_and_cleanup(redis_client_definition, check_health=False):
             pass
         pass
+
+
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_accounts_fixture):
+    binary_data = os.urandom(2048)
+    base64_secret_text = base64.b64encode(binary_data).decode('ascii')
+    hexdigest = hashlib.sha1(binary_data).hexdigest()
+
+    # Mesos module expect '__dcos_base64__' prefixed to secret basename to
+    # indicate base64-encoded data.
+    secret_path = '/some/__dcos_base64__binary_data'
+
+    # Create secrets.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': base64_secret_text})
+    assert r.status_code == 201
+
+    # Create an app with the base64-decorated secret path. The secret-resolver
+    # module will fetch and base64-decode the secret before writing it in the
+    # file volume.
+    app_definition = app_with_fb_secrets('/some/app/app-with-base64-secrets', secret_path)
+
+    # `sha1sum -c <file>` reads SHA1 sums from <file> and verifies them.
+    # Each line in <filename> is expected to be in the format:
+    #   <hex-digest> <filepath>
+    # It then compute SHA1 sum of the contents of <filepath> and validates it
+    # against <hex-digest>.
+    app_definition['cmd'] = 'echo "' + hexdigest + ' path" > path.sha1sum && sha1sum -c path.sha1sum && sleep 1000'
+
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
+
+    # TODO(Kapil): Create negative tests:
+    #  - App receives base64-encoded string and fails.
+    #  - A secret with '__dcos_base64__' is invalid (i.e., not base64-encoded).
