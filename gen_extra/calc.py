@@ -412,7 +412,7 @@ def get_ui_auth_json(
     ui_secrets,
     ui_auth_providers,
     ui_bootstrap_config,
-    ui_service_upgrades
+    ui_sdk_services
 ):
     # Hacky. Use '%' rather than .format() to avoid dealing with escaping '{'
     return '"authentication":{"enabled":true},"oauth":{"enabled":false}, ' \
@@ -421,8 +421,8 @@ def get_ui_auth_json(
         '"secrets":{"enabled":%s},' \
         '"auth-providers":{"enabled":%s},' \
         '"bootstrap-config":{"enabled":%s},' \
-        '"service-upgrades":{"enabled":%s},' \
-        % (ui_organization, ui_networking, ui_secrets, ui_auth_providers, ui_bootstrap_config, ui_service_upgrades)
+        '"sdk-services":{"enabled":%s},' \
+        % (ui_organization, ui_networking, ui_secrets, ui_auth_providers, ui_bootstrap_config, ui_sdk_services)
 
 
 def calculate_mesos_enterprise_hooks(dcos_remove_dockercfg_enable, ssl_enabled):
@@ -697,7 +697,7 @@ entry = {
         'ui_organization': 'true',
         'ui_external_links': 'true',
         'ui_branding': 'true',
-        'ui_service_upgrades': 'true',
+        'ui_sdk_services': 'true',
         'ui_telemetry_metadata': '{"openBuild": false}',
         'minuteman_forward_metrics': 'true',
         'custom_auth': 'true',
