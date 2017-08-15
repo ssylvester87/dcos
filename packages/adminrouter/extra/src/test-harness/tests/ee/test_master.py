@@ -5,7 +5,7 @@ import requests
 
 from generic_test_code.common import (
     assert_endpoint_response,
-    overriden_file_content,
+    overridden_file_content,
     verify_header,
 )
 from generic_test_code.ee import assert_iam_queried_for_uid_and_rid
@@ -352,7 +352,7 @@ class TestMisc:
             self, master_ar_process, valid_user_header, content):
         url = master_ar_process.make_url_from_path('/acs/acl-schema.json')
 
-        with overriden_file_content(
+        with overridden_file_content(
                 '/opt/mesosphere/active/acl-schema/etc/acl-schema.json',
                 content):
             resp = requests.get(
@@ -369,7 +369,7 @@ class TestMisc:
             self, master_ar_process, valid_user_header, content):
         url = master_ar_process.make_url_from_path('/dcos-metadata/ui-config.json')
 
-        with overriden_file_content(
+        with overridden_file_content(
                 '/opt/mesosphere/etc/ui-config.json',
                 content):
             resp = requests.get(
@@ -386,7 +386,7 @@ class TestMisc:
             self, master_ar_process, valid_user_header, content):
         url = master_ar_process.make_url_from_path('/dcos-metadata/bootstrap-config.json')
 
-        with overriden_file_content(
+        with overridden_file_content(
                 '/opt/mesosphere/etc/bootstrap-config.json',
                 content):
             resp = requests.get(
