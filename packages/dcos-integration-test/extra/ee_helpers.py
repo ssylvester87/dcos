@@ -70,9 +70,6 @@ class _DCOSNodes:
         self.agents = sorted(cluster_args['slaves'])
         self.public_agents = sorted(cluster_args['public_slaves'])
 
-        assert self.agents is not None
-        assert self.public_agents is not None
-
         self.all_agents = self.agents + self.public_agents
 
 
