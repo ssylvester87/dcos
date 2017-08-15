@@ -297,11 +297,13 @@ class TestAuthEnforcementEE:
             func_name='get_recorded_requests',
             )
 
-        last_request = requests[-1]
-        # In case of /acs/api/v1 two requests will be sent to the iam mock
-        # endpoint so work with first request that was issued by auth.lua
+        assert len(requests) > 0, "IAM was not queried!"
         if path.startswith('/acs/api/v1/'):
+            # In case of /acs/api/v1 two requests will be sent to the iam mock
+            # endpoint so work with first request that was issued by auth.lua
             last_request = requests[-2]
+        else:
+            last_request = requests[-1]
 
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names
