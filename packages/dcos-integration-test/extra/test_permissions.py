@@ -16,6 +16,7 @@ pytestmark = [pytest.mark.security]
 
 AUTHENTICATED_USERS_ENDPOINTS = [
     '/capabilities',
+    '/metadata',
     '/navstar/lashup/key']
 
 

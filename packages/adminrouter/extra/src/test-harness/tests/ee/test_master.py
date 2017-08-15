@@ -27,7 +27,6 @@ acl_endpoints = [
     ('/mesos/master/state-summary', 'dcos:adminrouter:ops:mesos'),
     ('/mesos_dns/v1/services/_scheduler-alwaysthere._tcp.marathon.mesos',
      'dcos:adminrouter:ops:mesos-dns'),
-    ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
     ('/package/foo/bar', 'dcos:adminrouter:package'),
     ('/pkgpanda/foo/bar', "dcos:adminrouter:ops:pkgpanda"),
@@ -47,6 +46,7 @@ acl_endpoints = [
 
 authed_endpoints = [
     ('/capabilities', 'dcos:adminrouter:capabilities'),
+    ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/navstar/lashup/key', 'dcos:adminrouter:navstar-lashup-key'),
     ('/secrets/v1', 'dcos:adminrouter:secrets'),
     ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/logs',

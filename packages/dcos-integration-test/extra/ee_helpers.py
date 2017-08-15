@@ -25,7 +25,6 @@ OPS_ENDPOINTS = [
     '/exhibitor',
     '/mesos',
     '/mesos_dns/v1/config',
-    '/metadata',
     '/networking/api/v1/vips',
     '/pkgpanda/active.buildinfo.full.json',
     '/secrets/v1/store',
