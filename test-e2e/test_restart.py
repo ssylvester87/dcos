@@ -56,10 +56,7 @@ class TestServiceStopStart:
             cluster.wait_for_dcos()
             # Stop CockroachDB on all master nodes.
             stop_cmd = ['systemctl', 'stop', 'dcos-cockroach']
-            diagnostics_args = [
-                '/opt/mesosphere/bin/dcos-diagnostics', '--diag',
-                '||',
-                '/opt/mesosphere/bin/3dt', '--diag']
+            diagnostics_args = ['/opt/mesosphere/bin/dcos-diagnostics', '--diag']
             for master in cluster.masters:
                 log.info("Stopping cockroachdb on master `{}`.".format(master.ip_address))
                 master.run_as_root(args=stop_cmd)
