@@ -34,6 +34,51 @@ class TestDCOSBackupUnauthorized:
 
 class TestDCOSBackupGeneralBehavior:
 
+    # this test ensures that only one backup may happen at a time.
+    def test_cluster_lock(self, superuser_api_session):
+        self.delete_existing_backups(superuser_api_session)
+        self.destroy_marathon_apps(superuser_api_session)
+
+        # verify no backups exist
+        r = superuser_api_session.get('/system/v1/backup/v1/list')
+        assert r.status_code == 200
+        assert r.text == '{}'
+        logging.info("Verified no backups exist")
+
+        # start the first backup
+        r = superuser_api_session.post('/system/v1/backup/v1/create', json={"label": "foo"})
+        assert r.status_code == 200
+        data = r.json()
+        info = data.get('backup_info')
+        backup_id = info.get('id')
+        assert backup_id is not None
+        assert info.get('status') == STATUS_BACKING_UP
+
+        # NB: the first backup is now happening in the background
+
+        # now, try to create a second backup immediately and verify it fails
+        r2 = superuser_api_session.post('/system/v1/backup/v1/create', json={"label": "bar"})
+        assert r2.status_code == 500
+        data = r2.json()
+        errors = data.get("errors", [])
+        assert len(errors) == 1
+        assert "Could not backup bar: " + \
+               "backup label=bar failed: backup/restore is currently busy: " + \
+               "lock is already held" == errors[0]
+
+        # then, wait for the original backup to finish
+        deadline = datetime.now() + BACKUP_READY_TIMEOUT
+        completed = False
+        while datetime.now() < deadline:
+            time.sleep(POLL_SLEEP)
+            if self.is_backup_ready(superuser_api_session, backup_id):
+                completed = True
+                break
+        assert completed, "The backup did not complete in time"
+
+        # after the original backup has finished, ensure that the second backup can then proceed
+        self.create_backup(superuser_api_session, label='bar')
+
     # this test exercises the expected behavior of dcos-backup
     def test_expected_behavior(self, superuser_api_session):
         self.delete_existing_backups(superuser_api_session)

@@ -9,6 +9,7 @@ User=dcos_backup
 SupplementaryGroups=dcos_adminrouter
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=/opt/mesosphere/etc/dcos-backup-master.env
+EnvironmentFile=-/run/dcos/etc/dcos-backup-master.env
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-backup-master
 ExecStart=/opt/mesosphere/bin/dcos-backup --config ${DCOS_BACKUP_CONFIG_PATH}
 Sockets=dcos-backup-master.socket
