@@ -50,7 +50,6 @@ class TestServiceStopStart:
             cluster_backend=dcos_docker_backend,
             generate_config_path=artifact_path,
             masters=3,
-            destroy_on_error=False
         ) as cluster:
             # Wait for the cluster to become healthy initially.
             log.info("Waiting for cluster to become healthy.")
