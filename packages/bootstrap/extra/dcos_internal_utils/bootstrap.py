@@ -367,6 +367,7 @@ class Bootstrapper(object):
         zk_creds = {}
         if self.opts.config['zk_acls_enabled']:
             service_account_zk_creds = [
+                'dcos_backup_master',
                 'dcos_bouncer',
                 'dcos_ca',
                 'dcos_cockroach',
@@ -763,6 +764,12 @@ class Bootstrapper(object):
         self.ensure_zk_path('/cockroach/nodes', acl=acl)
         self.ensure_zk_path('/cockroach/locking', acl=acl)
 
+    def dcos_backup_master_acls(self):
+        acl = None
+        if self.opts.config['zk_acls_enabled']:
+            acl = LOCALHOST_ALL + [self.make_service_acl('dcos_backup_master', all=True)]
+        self.ensure_zk_path('/dcos/backup', acl=acl)
+
     def dcos_ca_acls(self):
         acl = None
         if self.opts.config['zk_acls_enabled']:
@@ -859,6 +866,23 @@ class Bootstrapper(object):
         log.info('Writing Vault config to {}'.format(filename))
         _write_file_bytes(filename, cfg, 0o400)
         shutil.chown(filename, user=self.opts.dcos_vault_user)
+
+    def write_dcos_backup_master_env(self, filename):
+        if not self.opts.config['zk_acls_enabled']:
+            return
+
+        zk_creds = self.secrets['zk']['dcos_backup_master']
+        user = zk_creds['username']
+        pw = zk_creds['password']
+
+        acl = make_digest_acl(user, pw, all=True)
+
+        env = 'DCOS_BACKUP_ZK_AUTH_INFO=digest:{}:{}\nDCOS_BACKUP_ZK_ZNODE_OWNER=digest:{}\n'
+        env = env.format(user, pw, acl.id.id)
+        env = bytes(env, 'ascii')
+
+        log.info('Writing DC/OS Backup Master ZK credentials to {}'.format(filename))
+        _write_file_bytes(filename, env, 0o600)
 
     def write_secrets_env(self, filename):
         if not self.opts.config['zk_acls_enabled']:
@@ -1944,9 +1968,10 @@ def dcos_adminrouter_agent(b):
 def dcos_backup_master(b):
     b.init_zk_acls()
     b.create_master_secrets()
+    b.dcos_backup_master_acls()
 
+    b.write_dcos_backup_master_env('/run/dcos/etc/dcos-backup-master.env')
     b.create_service_account('dcos_backup_master', superuser=True)
-
     svc_acc_creds_fn = '/run/dcos/etc/dcos-backup/master_service_account.json'
     b.write_service_account_credentials('dcos_backup_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_backup')
