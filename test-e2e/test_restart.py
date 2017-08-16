@@ -58,6 +58,8 @@ class TestServiceStopStart:
             stop_cmd = ['systemctl', 'stop', 'dcos-cockroach']
             diagnostics_args = ['/opt/mesosphere/bin/dcos-diagnostics', '--diag']
             for master in cluster.masters:
+                # Confirm that the master is healthy by running diagnostics.
+                master.run_as_root(args=diagnostics_args)
                 log.info("Stopping cockroachdb on master `{}`.".format(master.ip_address))
                 master.run_as_root(args=stop_cmd)
                 # Confirm that the master is unhealthy by asserting
