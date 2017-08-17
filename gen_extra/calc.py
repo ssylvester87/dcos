@@ -614,6 +614,11 @@ def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master
                     'timeout': '3s',
                     'roles': ['master']
                 },
+                'journald_dir_permissions': {
+                    'description': 'Journald directory has the right owners and permissions',
+                    'cmd': ['/opt/mesosphere/bin/dcos-checks', 'journald'],
+                    'timeout': '1s',
+                },
             },
             'prestart': [],
             'poststart': [
@@ -627,6 +632,7 @@ def calculate_check_config(check_time, security, ssl_enabled, adminrouter_master
                 'mesos_master_replog_synchronized',
                 'mesos_agent_registered_with_masters',
                 'zookeeper_serving',
+                'journald_dir_permissions',
             ],
         },
     }
