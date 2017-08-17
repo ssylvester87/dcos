@@ -73,7 +73,7 @@ class TestServiceStopStart:
 
 
 @retrying.retry(
-    stop_max_delay=2*60*1000,
+    stop_max_delay=2 * 60 * 1000,
     retry_on_exception=lambda x: isinstance(x, CalledProcessError))
 def _wait_for_cockroachdb_cluster_healthy(masters):
     """Wait for cockroachdb to be running on the master."""
