@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/jeschkies/dcos",
+  "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "19d731433bd2100dcafc480c200c21c150189b3d",
+  "ref": "f4f1af75632d4c55f6c2c6fceaea148e395b4c59",
   "ref_origin": "master"
 }
