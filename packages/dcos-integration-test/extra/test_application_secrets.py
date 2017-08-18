@@ -364,8 +364,7 @@ def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, servic
         assert r.status_code == 422
 
         data = json.loads(r.text)
-        print (data)
-        #assert data['details'][0]['errors'][0] == 'Secret ' + secret_path + ' is not accessible'
+        print(data)
 
 
 def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/file'):
@@ -379,7 +378,7 @@ def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/
         'container': {
             'type': 'MESOS',
             'docker': {
-                'image': 'alpine'
+                'image': 'alpine',
                 'forcePullImage': False,
                 'priviledged': False,
             },
