@@ -332,3 +332,87 @@ def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_acc
     # TODO(Kapil): Create negative tests:
     #  - App receives base64-encoded string and fails.
     #  - A secret with '__dcos_base64__' is invalid (i.e., not base64-encoded).
+
+
+container_paths = [
+    # (app_id, container_path, is_valid)
+    ('/some/app-with-abs-container-path-1', '/etc/passwd', True),
+    ('/some/app-with-abs-container-path-2', '/some/random/abs/path', False)
+]
+
+
+# Test that a file-based secret can be mounted at absolute path inside the
+# container without rootfs.
+@pytest.mark.parametrize(('app_id', 'container_path', 'is_valid'),
+                         container_paths)
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, service_accounts_fixture,
+                                                   app_id, container_path, is_valid):
+    secret_path = '/some/secret'
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
+    assert r.status_code == 201
+
+    app_definition = app_with_fb_secrets(app_id, secret_path, container_path)
+
+    if is_valid:
+        with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+            pass
+    else:
+        r = superuser_api_session.marathon.post('v2/apps', json=app_definition)
+        assert r.status_code == 422
+
+        data = json.loads(r.text)
+        print (data)
+        #assert data['details'][0]['errors'][0] == 'Secret ' + secret_path + ' is not accessible'
+
+
+def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/file'):
+    return {
+        'id': app_id,
+        'cpus': 0.1,
+        'mem': 128,
+        'disk': 128,
+        'cmd': 'test "`cat ' + container_path + '`" = "' + secret_password + '" && sleep 1000',
+        'instances': 1,
+        'container': {
+            'type': 'MESOS',
+            'docker': {
+                'image': 'alpine'
+                'forcePullImage': False,
+                'priviledged': False,
+            },
+            'volumes': [
+                {
+                    'mode': 'RO',
+                    'containerPath': container_path,
+                    'secret': 'secretpassword'
+                }
+            ]
+        },
+        'secrets': {
+            'secretpassword': {
+                'source': secret_source
+            }
+        }
+    }
+
+
+# Test that a file-based secret can be mounted at absolute path inside the
+# container with rootfs.
+@pytest.mark.parametrize(('app_id', 'container_path', 'is_valid'),
+                         container_paths)
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets_abs_path_with_rootfs(superuser_api_session, service_accounts_fixture,
+                                                               app_id, container_path, is_valid):
+    secret_path = '/some/secret'
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
+    assert r.status_code == 201
+
+    app_definition = app_with_fb_secrets_apline(app_id, secret_path, container_path)
+
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
