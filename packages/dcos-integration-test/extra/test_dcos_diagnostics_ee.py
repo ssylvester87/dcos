@@ -3,6 +3,7 @@ import uuid
 import pytest
 
 from ee_helpers import bootstrap_config
+from test_mesos_authn_authz import reset_mesos_acls_cache
 
 
 def create_and_grant_user_permission(superuser_api_session, uid, action, rid, description):
@@ -28,6 +29,9 @@ def test_ee_dcos_diagnostics_runner_poststart(superuser_api_session):
             'dcos:mesos:agent:task:user:dcos_diagnostics',
             'Grants marathon access to start task as dcos_diagnostics user'
         )
+
+    # Invalidating mesos acl cache
+    reset_mesos_acls_cache()
 
     cmd = [
         "/opt/mesosphere/bin/dcos-diagnostics",
@@ -70,6 +74,9 @@ def test_ee_dcos_diagnostics_runner_cluster(superuser_api_session):
             'dcos:mesos:agent:task:user:dcos_diagnostics',
             'Grants marathon access to start task as dcos_diagnostics user'
         )
+
+    # Invalidating mesos acl cache
+    reset_mesos_acls_cache()
 
     cmd = [
         "/opt/mesosphere/bin/dcos-diagnostics",
