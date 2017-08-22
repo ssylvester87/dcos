@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mesosphere/dcos",
   "kind": "git",
-  "ref": "0aa8e84db3d7aa85d30b447011a2e911da663994",
-  "ref_origin": "master"
+  "ref": "48cd93d340712d7fef310a02d04f18a03d797dbc",
+  "ref_origin": "logger-nested-check"
 }
