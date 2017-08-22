@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/jeschkies/dcos",
   "kind": "git",
-  "ref": "99f5e666e47789cc3bbd4354c42c0d5de84c64a9",
-  "ref_origin": "1.9"
+  "ref": "3a231adc0a3b2fb0cfc5bb5ab619d67de6216583",
+  "ref_origin": "karsten/bump-marathon-1.4.7"
 }
