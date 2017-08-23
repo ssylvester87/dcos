@@ -411,7 +411,7 @@ def test_enterprise_if_file_based_secrets_abs_path_with_rootfs(superuser_api_ses
                                           json={'value': secret_password})
     assert r.status_code == 201
 
-    app_definition = app_with_fb_secrets_apline(app_id, secret_path, container_path)
+    app_definition = app_with_fb_secrets_apline(app_id + '-rootfs', secret_path, container_path)
 
     with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
         pass
