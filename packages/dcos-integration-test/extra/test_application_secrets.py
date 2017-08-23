@@ -361,7 +361,10 @@ def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, servic
             pass
     else:
         # TODO(kapil): Handle negative test.
-        pass
+        r = superuser_api_session.marathon.post('v2/apps', json=app_definition)
+        assert r.status_code == 201
+
+        # sleep for some time here and make sure that the app doesn't become healthy
 
 
 def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/file'):
