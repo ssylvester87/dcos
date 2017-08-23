@@ -346,6 +346,7 @@ container_paths = [
 @pytest.mark.parametrize(('app_id', 'container_path', 'is_valid'),
                          container_paths)
 @pytest.mark.usefixtures("secrets_verify_and_reset")
+@pytest.mark.skip(reason="Disabled until further investigation")
 def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, service_accounts_fixture,
                                                    app_id, container_path, is_valid):
     secret_path = '/some/secret'
