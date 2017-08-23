@@ -17,6 +17,7 @@ endpoint_tests:
           - /ca/dcos-ca.crt
           - /ca/cacerts.jks
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: false
         test_paths:
           - /ca/api/v2/info
@@ -74,6 +75,7 @@ endpoint_tests:
           # d)
           - /acs/api/v1/users/reflecting-user/permissions
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: true
         test_paths:
           # b) + c)
@@ -129,6 +131,7 @@ endpoint_tests:
 ######### /secrets
   - tests:
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: true
         test_paths:
           - /secrets/v1/foo/bar
@@ -146,6 +149,7 @@ endpoint_tests:
 ######### /vault
   - tests:
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: false
         test_paths:
           - /vault/default/foo/bar
@@ -163,6 +167,7 @@ endpoint_tests:
 ######### /networking
   - tests:
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: skip
         test_paths:
           - /networking/api/v1/foo/bar
@@ -190,6 +195,7 @@ endpoint_tests:
 ######### /system/v1/backup endpoint
   - tests:
       are_upstream_req_headers_ok:
+        skip_authcookie_filtering_test: false
         jwt_should_be_forwarded: skip
         test_paths:
           - /system/v1/backup/foo/bar
