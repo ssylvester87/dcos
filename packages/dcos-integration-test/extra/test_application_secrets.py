@@ -360,11 +360,8 @@ def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, servic
         with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
             pass
     else:
-        r = superuser_api_session.marathon.post('v2/apps', json=app_definition)
-        assert r.status_code == 422
-
-        data = json.loads(r.text)
-        print(data)
+        # TODO(kapil): Handle negative test.
+        pass
 
 
 def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/file'):
