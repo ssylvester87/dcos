@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/GoelDeepak/dcos",
   "kind": "git",
-  "ref": "109587eeb213cf2bdb9f75725f758d767fc4caec",
-  "ref_origin": "master"
+  "ref": "ce82be0543d7e4f2e0c708b02079dc480d03b456",
+  "ref_origin": "dcos-17837"
 }
