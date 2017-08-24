@@ -10,20 +10,20 @@ import pytest
 secret_password = 'anewpassword'
 
 
-def app_with_fb_secrets(app_id, secret_source):
+def app_with_fb_secrets(app_id, secret_source, container_path='my/secret/file'):
     return {
         'id': app_id,
         'cpus': 0.1,
         'mem': 128,
         'disk': 128,
-        'cmd': 'test "`cat path`" = "' + secret_password + '" && sleep 1000',
+        'cmd': 'test "`cat ' + container_path + '`" = "' + secret_password + '" && sleep 1000',
         'instances': 1,
         'container': {
             'type': 'MESOS',
             'volumes': [
                 {
                     'mode': 'RO',
-                    'containerPath': 'path',
+                    'containerPath': container_path,
                     'secret': 'secretpassword'
                 }
             ]
@@ -36,7 +36,7 @@ def app_with_fb_secrets(app_id, secret_source):
     }
 
 
-def pod_with_fb_secrets(app_id, secret_source):
+def pod_with_fb_secrets(app_id, secret_source, container_path='my/secret/file'):
     return {
         'id': app_id,
         'containers': [
@@ -45,13 +45,13 @@ def pod_with_fb_secrets(app_id, secret_source):
                 'resources': {'cpus': 0.1, 'mem': 128, 'disk': 128, 'gpus': 0},
                 'exec': {
                     'command': {
-                        'shell': 'test "`cat my/path`" = "' + secret_password + '" && sleep 1000',
+                        'shell': 'test "`cat ' + container_path + '`" = "' + secret_password + '" && sleep 1000',
                     }
                 },
                 'volumeMounts': [
                     {
                         'name': 'secretvolume',
-                        'mountPath': 'my/path'
+                        'mountPath': container_path
                     }
                 ]
             }
@@ -304,6 +304,7 @@ def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_acc
     # Mesos module expect '__dcos_base64__' prefixed to secret basename to
     # indicate base64-encoded data.
     secret_path = '/some/__dcos_base64__binary_data'
+    container_path = 'my/secret/path'
 
     # Create secrets.
     r = superuser_api_session.secrets.put('/secret/default' + secret_path,
@@ -313,14 +314,17 @@ def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_acc
     # Create an app with the base64-decorated secret path. The secret-resolver
     # module will fetch and base64-decode the secret before writing it in the
     # file volume.
-    app_definition = app_with_fb_secrets('/some/app/app-with-base64-secrets', secret_path)
+    app_definition = app_with_fb_secrets('/some/app/app-with-base64-secrets',
+                                         secret_path,
+                                         container_path)
 
     # `sha1sum -c <file>` reads SHA1 sums from <file> and verifies them.
     # Each line in <filename> is expected to be in the format:
     #   <hex-digest> <filepath>
     # It then compute SHA1 sum of the contents of <filepath> and validates it
     # against <hex-digest>.
-    app_definition['cmd'] = 'echo "' + hexdigest + ' path" > path.sha1sum && sha1sum -c path.sha1sum && sleep 1000'
+    app_definition['cmd'] = 'echo "' + hexdigest + ' ' + container_path + \
+        '" > secret.sha1sum && sha1sum -c secret.sha1sum && sleep 1000'
 
     with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
         pass
@@ -328,3 +332,80 @@ def test_enterprise_if_base64_encoded_secrets(superuser_api_session, service_acc
     # TODO(Kapil): Create negative tests:
     #  - App receives base64-encoded string and fails.
     #  - A secret with '__dcos_base64__' is invalid (i.e., not base64-encoded).
+
+
+# Test that a file-based secret can be mounted at absolute path inside the
+# container without rootfs.
+# TODO(kapil): Add negative test case with some random non-existent path.
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets_abs_path(superuser_api_session, service_accounts_fixture):
+    app_id = '/some/app-with-abs-container-path-without-rootfs'
+    container_path = '/etc/shadow'
+
+    secret_path = '/some/secret'
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
+    assert r.status_code == 201
+
+    app_definition = app_with_fb_secrets(app_id, secret_path, container_path)
+
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
+
+
+def app_with_fb_secrets_apline(app_id, secret_source, container_path='my/secret/file'):
+    return {
+        'id': app_id,
+        'cpus': 0.1,
+        'mem': 128,
+        'disk': 128,
+        'cmd': 'test "`cat ' + container_path + '`" = "' + secret_password + '" && sleep 1000',
+        'instances': 1,
+        'container': {
+            'type': 'MESOS',
+            'docker': {
+                'image': 'alpine',
+                'forcePullImage': False,
+                'priviledged': False,
+            },
+            'volumes': [
+                {
+                    'mode': 'RO',
+                    'containerPath': container_path,
+                    'secret': 'secretpassword'
+                }
+            ]
+        },
+        'secrets': {
+            'secretpassword': {
+                'source': secret_source
+            }
+        }
+    }
+
+
+container_paths = [
+    # (app_id, container_path, is_valid)
+    ('/some/app-with-abs-container-path-1', '/etc/shadow', True),
+    ('/some/app-with-abs-container-path-2', '/some/random/abs/path', False)
+]
+
+
+# Test that a file-based secret can be mounted at absolute path inside the
+# container with rootfs.
+@pytest.mark.parametrize(('app_id', 'container_path', 'is_valid'),
+                         container_paths)
+@pytest.mark.usefixtures("secrets_verify_and_reset")
+def test_enterprise_if_file_based_secrets_abs_path_with_rootfs(superuser_api_session, service_accounts_fixture,
+                                                               app_id, container_path, is_valid):
+    secret_path = '/some/secret'
+    # Create the secret.
+    r = superuser_api_session.secrets.put('/secret/default' + secret_path,
+                                          json={'value': secret_password})
+    assert r.status_code == 201
+
+    app_definition = app_with_fb_secrets_apline(app_id + '-rootfs', secret_path, container_path)
+
+    with superuser_api_session.marathon.deploy_and_cleanup(app_definition, check_health=False):
+        pass
