@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/orsenthil/dcos",
   "kind": "git",
-  "ref": "99f5e666e47789cc3bbd4354c42c0d5de84c64a9",
-  "ref_origin": "1.9"
+  "ref": "85d642a07b430ebba86a34e53c61b74fd7f6fd27",
+  "ref_origin": "cherry_pick_marathon_1.4.7"
 }
