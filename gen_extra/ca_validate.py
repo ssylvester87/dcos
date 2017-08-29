@@ -5,30 +5,30 @@ Validate the custom CA certificate and its related data.
 
 Relevant parameters and their corresponding high-level description:
 
-ca_certificate:
+ca_certificate_path:
 
     A single X.509 CA certificate in the OpenSSL PEM format. Can be a root
     (self-issued) certificate or an intermediate (cross-certificate)
     certificate.
 
 
-ca_certificate_key:
+ca_certificate_key_path:
 
     The private key (either RSA or ECC) corresponding to the CA certificate,
     encoded in the PKCS#8 PEM format.
 
 
-ca_certificate_chain:
+ca_certificate_chain_path:
 
     The complete CA certification chain required for end-entity certificate
     verification, in the OpenSSL PEM format.
 
-    Must be left undefined if ca_certificate is a root CA certificate.
+    Must be left undefined if ca_certificate_path is a root CA certificate.
 
     If the CA certificate is an intermediate CA certificate, this needs to
     contain all CA certificates comprising the complete sequence starting
     precisely with the CA certificate that was used to sign the certificate in
-    ca_certificate and ending with a root CA certificate (where issuer and
+    ca_certificate_path and ending with a root CA certificate (where issuer and
     subject are the same entity), yielding a gapless certification path. The
     order is significant and the list must contain at least one certificate.
 """
