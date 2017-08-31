@@ -652,6 +652,16 @@ class Bootstrapper(object):
         self.zk.sync(path)
         return self.zk.get(path)[0]
 
+    def dcos_backup_iam_permissions(self):
+        action_pairs = [
+            ('dcos:adminrouter:service:marathon', 'full'),
+            ('dcos:adminrouter:ops:system-backup', 'full'),
+            ('dcos:service:marathon:marathon:admin:leader', 'read'),
+            ('dcos:service:marathon:marathon:admin:leader', 'update')
+        ]
+        iamcli = iam.IAMClient(self.iam_url)
+        iamcli.grant_permissions(action_pairs, 'dcos_backup_master')
+
     def make_service_acl(self, service, **kwargs):
         u = self.secrets['zk'][service]['username']
         p = self.secrets['zk'][service]['password']
@@ -1971,7 +1981,9 @@ def dcos_backup_master(b):
     b.dcos_backup_master_acls()
 
     b.write_dcos_backup_master_env('/run/dcos/etc/dcos-backup-master.env')
-    b.create_service_account('dcos_backup_master', superuser=True)
+    b.create_service_account('dcos_backup_master', superuser=False)
+    b.dcos_backup_iam_permissions()
+
     svc_acc_creds_fn = '/run/dcos/etc/dcos-backup/master_service_account.json'
     b.write_service_account_credentials('dcos_backup_master', svc_acc_creds_fn)
     shutil.chown(svc_acc_creds_fn, user='dcos_backup')
