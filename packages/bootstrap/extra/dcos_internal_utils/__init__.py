@@ -7,6 +7,7 @@ DCOS_CA_TRUST_BUNDLE_FILE_PATH = '/run/dcos/pki/CA/ca-bundle.crt'
 
 from . import bootstrap  # noqa
 from . import ca  # noqa
+from . import exception # noqa
 from . import exhibitor  # noqa
 from . import iam  # noqa
 from . import utils  # noqa

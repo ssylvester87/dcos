@@ -9,6 +9,7 @@ import subprocess
 
 from dcos_internal_utils import bootstrap
 from dcos_internal_utils import exhibitor
+from dcos_internal_utils.exception import CustomCAPrivateKeyMissingError
 from pkgpanda.actions import apply_service_configuration
 from pkgpanda.util import load_string
 
@@ -64,7 +65,11 @@ def main():
             sys.exit(1)
         log.debug('bootstrapping {}'.format(service))
         apply_service_configuration(service)
-        bootstrap.service_bootstrap_functions[service](bootstrapper)
+        try:
+            bootstrap.service_bootstrap_functions[service](bootstrapper)
+        except CustomCAPrivateKeyMissingError as error:
+            log.error(str(error))
+            sys.exit(1)
 
 
 if __name__ == '__main__':
