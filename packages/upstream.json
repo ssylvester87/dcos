@@ -1,6 +1,6 @@
 {
   "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "c43ca612255519e70bc5679debe7bfefe00b1e5d",
-  "ref_origin": "1.10"
+  "ref": "33fa46c35c9e209f12bb3a41b79e413d48bc97d5",
+  "ref_origin": "version-update"
 }
