@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/ichernetsky/dcos",
   "kind": "git",
-  "ref": "d0cb085a18ce0ae4ca93fdf1221ba72636e5f290",
-  "ref_origin": "1.8.10"
+  "ref": "911079c4611e102ba59583c8bb452c66bd7d2e7e",
+  "ref_origin": "ic/marathon-1-3-13"
 }
