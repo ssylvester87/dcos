@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/margaret/dcos",
+  "git": "https://github.com/dcos/dcos",
   "kind": "git",
-  "ref": "a740fe9c528b2b57772febe7bf104bc8e1d36000",
-  "ref_origin": "update_package_install_api_usage_1-10"
+  "ref": "6211c1bc3f4ef52856fec2be82ebffe93c4d47cf",
+  "ref_origin": "1.10"
 }
