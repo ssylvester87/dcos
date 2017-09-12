@@ -22,6 +22,7 @@ from dcos_internal_utils import ca
 from dcos_internal_utils import iam
 from dcos_internal_utils import utils
 from dcos_internal_utils import DCOS_CA_TRUST_BUNDLE_FILE_PATH
+from dcos_internal_utils.exception import CustomCAPrivateKeyMissingError
 
 
 log = logging.getLogger(__name__)
@@ -527,15 +528,15 @@ class Bootstrapper(object):
                 ca_chain = ''.join(all_ca_certs[:-1])
 
             # Expect private key file at pre-defined location, read key.
-            with open(custom_ca_priv_key_path, 'rb') as custom_ca_key_file:
-                try:
+            try:
+                with open(custom_ca_priv_key_path, 'rb') as custom_ca_key_file:
                     ca_key = custom_ca_key_file.read().decode('utf-8')
-                except OSError as err:
-                    raise Exception(
-                        'Failed to read custom CA certificate private key '
-                        'from file `%s`. Error: %s' % (
-                            custom_ca_priv_key_path, err)
-                        )
+            except OSError as err:
+                raise CustomCAPrivateKeyMissingError(
+                    'Failed to read custom CA certificate private key '
+                    'from file `%s`. Error: %s' % (
+                        custom_ca_priv_key_path, err)
+                    )
 
         # Handle the case where no custom CA certificate data was provided:
         # generate a new globally unique root CA certificate plus its
