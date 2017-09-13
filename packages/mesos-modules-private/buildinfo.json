@@ -3,7 +3,7 @@
   "single_source" : {
     "kind": "git",
     "git": "git@github.com:mesosphere/mesos-modules-private.git",
-    "ref" : "2b2fb9921a13c17d632940a6d93c617346fecc82",
-    "ref_origin": "1.9.4"
+    "ref" : "c2355931b682f0c9f1b2cca99c2d5fe65b5b61d3",
+    "ref_origin": "till/key-cache-and-logging-1.9"
   }
 }
