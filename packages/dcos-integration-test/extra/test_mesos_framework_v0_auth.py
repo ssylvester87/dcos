@@ -174,7 +174,7 @@ def run_framework(service_accounts, request):
         cmd.append(principal)
 
     log.info('Starting framework...')
-    p = subprocess.Popen(cmd, env=env)
+    p = subprocess.Popen(cmd, env=env, preexec_fn=os.setpgrp)
 
     yield p, test_framework_name
 
