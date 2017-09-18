@@ -174,6 +174,9 @@ def run_framework(service_accounts, request):
         cmd.append(principal)
 
     log.info('Starting framework...')
+
+    # NOTE: Puts the child process `sudo` into its own process group to
+    # allow it being terminated via SIGTERM. See DCOS-18770.
     p = subprocess.Popen(cmd, env=env, preexec_fn=os.setpgrp)
 
     yield p, test_framework_name
