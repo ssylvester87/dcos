@@ -1084,6 +1084,20 @@ def dcos_bouncer(b, opts):
     path = opts.rundir + '/etc/bouncer'
     b.write_bouncer_env(path)
 
+    # Create bouncer TMPDIR. This directory must be outside /tmp to support
+    # environments where /tmp is mounted noexec. Permissions are restricted to
+    # the dcos_bouncer user as this directory contains sensitive data.
+    # See https://jira.mesosphere.com/browse/DCOS-18350
+
+    # We expect /var/lib/dcos/bouncer to exist as the
+    # ./packages/bouncer/buildinfo.json file specifies
+    #       "state_directory": true
+    # The '/var/lib/dcos/bouncer/tmp' directory path corresponds to the
+    # TMPDIR environment variable configured in the dcos-bouncer.service file.
+    bouncer_tmpdir = '/var/lib/dcos/bouncer/tmp'
+    os.makedirs(bouncer_tmpdir, mode=0o700, exist_ok=True)
+    shutil.chown(bouncer_tmpdir, user='dcos_bouncer')
+
 
 def dcos_secrets(b, opts):
     b.init_zk_acls()
