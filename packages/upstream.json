@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/rukletsov/dcos",
   "kind": "git",
-  "ref": "86ef66f108a5edea3fb83ac61d918bb217e72b8b",
-  "ref_origin": "1.8.10"
+  "ref": "52b99f1138ce679dcc267beae372eae90435d08b",
+  "ref_origin": "patch-2"
 }
