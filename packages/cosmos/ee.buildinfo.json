@@ -5,8 +5,8 @@
   ],
   "single_source": {
     "kind": "url",
-    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.1-6/cosmos-enterprise-0.4.1-6-one-jar.jar",
-    "sha1": "6757c95e301fc1ec8029cd30de2c478e20355f4f"
+    "url": "https://downloads.mesosphere.com/cosmos-enterprise/0.4.2-10/cosmos-enterprise-0.4.2-10-one-jar.jar",
+    "sha1": "05dee1bc920c3c760424162335e3ffa9f14b5dbd"
   },
   "username": "dcos_cosmos",
   "state_directory": true
