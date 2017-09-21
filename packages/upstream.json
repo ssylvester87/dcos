@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/takirala/dcos",
   "kind": "git",
-  "ref": "6211c1bc3f4ef52856fec2be82ebffe93c4d47cf",
-  "ref_origin": "1.10"
+  "ref": "f5e22a5ee55322f2609e2fd703a724f33ec5bad1",
+  "ref_origin": "release-cosmos-0.4.2"
 }
