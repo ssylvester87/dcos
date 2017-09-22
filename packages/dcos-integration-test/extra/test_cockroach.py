@@ -47,3 +47,18 @@ class TestCockroach:
         # subtly.
         number_of_nodes = len([l for l in out.splitlines() if l]) - 2
         assert number_of_nodes == _master_count()
+
+    def test_diagnostics_disabled(self):
+        """Test that CockroachDB's diagnostic reporting is disabled.
+
+        This test reads the value of `diagnostics.reporting.enabled` and checks
+        that it is 'false'.
+        """
+        # Note: `sudo` is required to read client.root.key.
+        my_ip = detect_ip()
+        opts = "--certs-dir=/run/dcos/pki/cockroach --host={}".format(my_ip)
+        cmd = "SHOW CLUSTER SETTING diagnostics.reporting.enabled;"
+        out = subprocess.check_output(
+            "sudo /opt/mesosphere/bin/cockroach sql {opts} -e '{cmd}'".format(opts=opts, cmd=cmd),
+            shell=True).decode('utf-8')
+        assert "false" in out
