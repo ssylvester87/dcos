@@ -20,6 +20,6 @@ mkdir -p "$PKG_PATH/dcos.target.wants_master"
 cp /pkg/extra/dcos-cockroach.service "$PKG_PATH/dcos.target.wants_master/dcos-cockroach.service"
 
 # Auto-start the dcos-cockroach-disable-diagnostics-reporting service
-# on the masters. This is a oneshot service so it will become inactive
+# on the masters. This is a service that will become inactive
 # once it executes and terminates successfully.
 cp /pkg/extra/dcos-cockroach-disable-diagnostics-reporting.service "$PKG_PATH/dcos.target.wants_master/dcos-cockroach-disable-diagnostics-reporting.service"
