@@ -1,0 +1,17 @@
+[Unit]
+Description=CockroachDB Disable Diagnostics: Disable CockroachDB diagnostic reporting
+Documentation=https://docs.mesosphere.com
+
+[Service]
+Type=oneshot
+# To disable diagnostics this process needs access to the client.root.key file.
+# That file is currently owned by the dcos_bouncer user.
+User=dcos_bouncer
+StartLimitInterval=0
+RestartSec=5
+LimitNOFILE=16384
+EnvironmentFile=/opt/mesosphere/environment
+ExecStart=/opt/mesosphere/active/cockroach/bin/disable_diagnostics.py
+
+[Install]
+WantedBy=multi-user.target
