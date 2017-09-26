@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/kensipe/dcos",
   "kind": "git",
-  "ref": "d45aabf1171b475cee0d1d1c726fc2d20ab72fad",
-  "ref_origin": "1.10"
+  "ref": "a118ca01a686426f0b6287d66c2777353bcd7aec",
+  "ref_origin": "marathon-1.5.1-bump"
 }
