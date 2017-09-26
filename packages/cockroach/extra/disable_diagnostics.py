@@ -32,7 +32,6 @@ https://jira.mesosphere.com/browse/DCOS-18833
 
 import logging
 import subprocess
-import sys
 
 from dcos_internal_utils import utils
 
