@@ -54,7 +54,7 @@ def _disable_diagnostics_reporting(ip):
         'SET CLUSTER SETTING diagnostics.reporting.enabled = false;',
         ]
     log.info("Disabling diagnostic reporting: {}".format(' '.join(cockroach_args)))
-    subprocess.check_call(cockroach_args, stderr=sys.stderr, stdout=sys.stdout)
+    subprocess.check_call(cockroach_args)
     log.info("Disabled diagnostic reporting.")
 
 
