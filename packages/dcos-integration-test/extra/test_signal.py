@@ -78,6 +78,7 @@ def test_ee_signal_service(superuser_api_session):
         'bouncer-legacy-service',
         'ca-service',
         'cosmos-service',
+        'cockroach-disable-diagnostics-reporting-service',
         'cockroach-service',
         'log-master-service',
         'log-master-socket',
