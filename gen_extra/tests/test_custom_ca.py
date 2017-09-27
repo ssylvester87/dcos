@@ -239,6 +239,19 @@ class TestCustomCACertificate:
                 'when setting up a custom CA certificate'
             })
 
+    def test_invalid_configuration_does_not_produces_user_warning(self, capfd):
+        """
+        When a validation runs with invalid configuration end user doesn't see
+        the private key placement warning.
+        """
+        arguments = make_arguments({
+            'ca_certificate_chain_path': '/',
+            })
+        gen.validate(arguments)
+
+        (stdout, _stderr) = capfd.readouterr()
+        assert "Note: You are using a custom CA certificate" not in stdout
+
     def test_adding_non_existing_paths_fails_validation(self):
         """
         Non-existing certificate paths should result in validation error
@@ -253,7 +266,7 @@ class TestCustomCACertificate:
         self._assert_result_errors(result, ca_arguments.keys())
 
     def test_configuring_valid_rsa_root_ca(
-            self, rsa_root_only_certificate):
+            self, rsa_root_only_certificate, caplog):
         """
         Valid file paths for certificate, key and chain validates config
         and generates `dcos-config.yaml` file with Custom CA certificate.
@@ -263,8 +276,6 @@ class TestCustomCACertificate:
             'ca_certificate_key_path': rsa_root_only_certificate.key.path,
             'ca_certificate_chain_path': '',
         })
-        result = gen.validate(arguments)
-        assert result['status'] == 'ok'
 
         generated = gen.generate(arguments)
         config = self._find_ca_cert_config(generated)
@@ -273,8 +284,12 @@ class TestCustomCACertificate:
             ('ca_certificate_chain', ''),
             )))
 
+        expected_message = 'Note: You are using a custom CA certificate.'
+        ca_notes = [rec for rec in caplog.records if expected_message in rec.message]
+        assert len(ca_notes) == 1
+
     def test_configuring_valid_rsa_intermediate_ca(
-            self, rsa_intermediate_certificate):
+            self, rsa_intermediate_certificate, caplog):
         """
         Valid file paths for certificate, key and chain validates config
         and generates `dcos-config.yaml` file with Custom CA certificate.
@@ -284,8 +299,6 @@ class TestCustomCACertificate:
             'ca_certificate_key_path': rsa_intermediate_certificate.key.path,
             'ca_certificate_chain_path': rsa_intermediate_certificate.chain.path,
         })
-        result = gen.validate(arguments)
-        assert result['status'] == 'ok'
 
         generated = gen.generate(arguments)
         config = self._find_ca_cert_config(generated)
@@ -293,3 +306,7 @@ class TestCustomCACertificate:
             ('ca_certificate', rsa_intermediate_certificate.cert.content),
             ('ca_certificate_chain', rsa_intermediate_certificate.chain.content),
             )))
+
+        expected_message = 'Note: You are using a custom CA certificate.'
+        ca_notes = [rec for rec in caplog.records if expected_message in rec.message]
+        assert len(ca_notes) == 1

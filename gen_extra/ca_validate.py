@@ -153,6 +153,9 @@ class CustomCACertValidator:
     # valid from now on.
     MIN_VALID_DAYS = 365
 
+    # Path where the private key is expected on the master nodes
+    PRIVATE_KEY_PATH_ON_MASTERS = '/var/lib/dcos/pki/tls/CA/private/custom_ca.key'
+
     def __init__(self, cert, key, chain=None, allow_ec_key=True):
         """
         Args:

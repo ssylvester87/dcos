@@ -21,5 +21,6 @@ popd
 
 # TODO(mh): Figure out how to install without adding it to dcos/setup.py
 pip3 install cryptography==1.7.2
+pip3 install pytest-catchlog
 
 echo "Enviroment is ready"
