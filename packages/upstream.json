@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/surdy/dcos",
   "kind": "git",
-  "ref": "a9970fa84ff5c102bbc01700524683a18a8fb97a",
+  "ref": "3f0bbb82070092022f6cd1934d39f35729bc1b79",
   "ref_origin": "1.10"
 }
