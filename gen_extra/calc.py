@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import os.path
 import sys
 from base64 import b64encode
@@ -317,6 +318,19 @@ def validate_ca_certificate(
         CustomCACertValidator(cert, key, chain, allow_ec_key=False).validate()
     except CustomCACertValidationError as err:
         raise AssertionError(str(err))
+
+    # The validation has passed, notify the user that they need to have private key
+    # available on the master nodes.
+    message = (
+        "\n"
+        "Note: You are using a custom CA certificate. For security reasons, "
+        "the DC/OS installer did not copy the private key corresponding to the "
+        "custom CA certificate. DC/OS expects the private key file to be "
+        "manually copied to all DC/OS master nodes. It must be placed to the "
+        "path `{path}` and should have minimal file permissions."
+        "\n"
+        ).format(path=CustomCACertValidator.PRIVATE_KEY_PATH_ON_MASTERS)
+    logging.info(message)
 
 
 def calculate_ca_certificate_enabled(ca_certificate):

@@ -12,6 +12,7 @@ RestartSec=5
 LimitNOFILE=16384
 EnvironmentFile=/opt/mesosphere/environment
 EnvironmentFile=-/run/dcos/etc/cockroach
+Environment=COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
 ExecStartPre=/usr/bin/mkdir -p /run/dcos/cockroach
 ExecStartPre=/usr/bin/chown -R dcos_cockroach /run/dcos/cockroach
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-cockroach

@@ -53,7 +53,7 @@ test: devkit clean
 		$(DEVKIT_COMMON_DOCKER_OPTS) \
 		mesosphereci/$(DEVKIT_CONTAINER_NAME):full /bin/bash -x -c " \
 			source cache/build_venv/bin/activate && \
-			pytest gen_extra/ \
+			pytest --no-print-logs gen_extra/ \
 		"
 
 .PHONY: stop
