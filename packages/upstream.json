@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mellenburg/dcos",
   "kind": "git",
-  "ref": "edc111c18bd0a8e43066d6d4dabc96412f725618",
-  "ref_origin": "1.9"
+  "ref": "fe0a48635c6f327481a7e7482a7665698c637d48",
+  "ref_origin": "fix_tests_1_9"
 }
