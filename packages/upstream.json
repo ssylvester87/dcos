@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mhrabovcin/dcos",
   "kind": "git",
-  "ref": "a9970fa84ff5c102bbc01700524683a18a8fb97a",
-  "ref_origin": "1.10"
+  "ref": "cec98f9c73b660edec09ea6c70b8d5dd56218a84",
+  "ref_origin": "mh/genconf-logging-1.10"
 }
