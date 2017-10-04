@@ -142,10 +142,9 @@ def grant_permissions(superuser, user_id, permissions):
             superuser.iam.grant_user_permission(user_id, action, permission['rid'])
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     bootstrap_config['security'] in {'disabled', 'permissive'},
-    reason='Mesos authZ is currently enabled only in strict mode.',
-    strict=False)
+    reason='Mesos authZ is currently enabled only in strict mode.')
 class TestMesosAuthz:
     @pytest.mark.parametrize(('path', 'targets', 'rid_template'), [
         ('/logging/toggle', ['master', 'agent'], 'dcos:mesos:{}:endpoint:path:{}'),
