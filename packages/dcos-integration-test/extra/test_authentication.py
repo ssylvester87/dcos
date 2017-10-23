@@ -3,6 +3,8 @@ Test authentication behavior of various components.
 """
 import pytest
 
+import requests
+
 from ee_helpers import bootstrap_config
 
 pytestmark = [
@@ -72,8 +74,8 @@ def test_component_auth_direct_peter(
     # Expect success or forbidden.
     try:
         r.raise_for_status()
-    except:
-        if 'teardown' in r.request.url:
+    except requests.HTTPError:
+        if r.request.url is not None and 'teardown' in r.request.url:
             assert r.status_code == 400
         else:
             assert r.status_code == 403
