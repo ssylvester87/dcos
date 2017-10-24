@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/margaret/dcos",
   "kind": "git",
-  "ref": "387670915e9e3be893a31fabc951ef47ae138bac",
-  "ref_origin": "1.10"
+  "ref": "6210243fd98993c133a7edf2a2a5eaf1d8918bd0",
+  "ref_origin": "update_centos_1-10"
 }
