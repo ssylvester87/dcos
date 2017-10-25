@@ -467,8 +467,7 @@ class TestADS1:
         # and labeled as remote users.
         r = superuser_api_session.iam.get('/users')
         r.raise_for_status()
-        l = r.json()['array']
-        users = {d['uid']: d for d in l}
+        users = {d['uid']: d for d in r.json()['array']}
         for uid in john_uids:
             assert users[uid]['is_remote'] is True
 
@@ -476,8 +475,7 @@ class TestADS1:
         # the expected set of members.
         r = superuser_api_session.iam.get('/groups/johngroup/users')
         r.raise_for_status()
-        l = r.json()['array']
-        assert set((d['user']['uid'] for d in l)) == set(john_uids)
+        assert set((d['user']['uid'] for d in r.json()['array'])) == set(john_uids)
 
 
 @pytest.mark.usefixtures("iam_verify_and_reset")
@@ -510,8 +508,7 @@ class TestFreeIPA:
         # and labeled as remote users.
         r = superuser_api_session.iam.get('/users')
         r.raise_for_status()
-        l = r.json()['array']
-        users = {d['uid']: d for d in l}
+        users = {d['uid']: d for d in r.json()['array']}
         for uid in expected_uids:
             assert users[uid]['is_remote'] is True
 
@@ -519,5 +516,4 @@ class TestFreeIPA:
         # and that it has the expected set of members.
         r = superuser_api_session.iam.get('/groups/employees/users')
         r.raise_for_status()
-        l = r.json()['array']
-        assert set((d['user']['uid'] for d in l)) == set(expected_uids)
+        assert set((d['user']['uid'] for d in r.json()['array'])) == set(expected_uids)
