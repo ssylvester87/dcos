@@ -3,7 +3,7 @@ Description=CockroachDB: Database for the DC/OS IAM
 Documentation=https://docs.mesosphere.com
 
 [Service]
-Type=forking
+Type=simple
 PermissionsStartOnly=True
 User=dcos_cockroach
 Restart=always
@@ -16,8 +16,10 @@ Environment=COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
 ExecStartPre=/usr/bin/mkdir -p /run/dcos/cockroach
 ExecStartPre=/usr/bin/chown -R dcos_cockroach /run/dcos/cockroach
 ExecStartPre=/opt/mesosphere/bin/bootstrap dcos-cockroach
-ExecStart=/opt/mesosphere/active/cockroach/bin/cockroach.py
+ExecStartPre=/opt/mesosphere/active/cockroach/bin/register.py
+ExecStart=/opt/mesosphere/active/cockroach/bin/cockroach.sh
 PIDFile=/run/dcos/cockroach/cockroach.pid
+TimeoutStartSec=60s
 
 [Install]
 WantedBy=multi-user.target

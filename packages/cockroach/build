@@ -9,8 +9,11 @@ make build
 mkdir -p $PKG_PATH/bin
 install -m 755 src/github.com/cockroachdb/cockroach/cockroach $PKG_PATH/bin
 
-# Copy the wrapper script to the package bin directory.
-install -m 755 /pkg/extra/cockroach.py $PKG_PATH/bin/cockroach.py
+# Copy the registration script to the package bin directory.
+install -m 755 /pkg/extra/register.py $PKG_PATH/bin/register.py
+
+# Copy the launch script to the package bin directory.
+install -m 755 /pkg/extra/cockroach.sh $PKG_PATH/bin/cockroach.sh
 
 # Copy the disable_diagnostics.py script to the package bin directory.
 install -m 755 /pkg/extra/disable_diagnostics.py $PKG_PATH/bin/disable_diagnostics.py
