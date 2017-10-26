@@ -303,8 +303,7 @@ class TestIAMUserGroupCRUD:
         # Confirm membership.
         r = superuser_api_session.iam.get('/users/{}/groups'.format(peter.uid))
         assert r.status_code == 200
-        l = r.json()['array']
-        assert l[0]['group']['gid'] == gid
+        assert r.json()['array'][0]['group']['gid'] == gid
 
         # Delete group.
         r = superuser_api_session.iam.delete(group_path)
