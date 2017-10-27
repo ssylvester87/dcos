@@ -25,7 +25,7 @@ then
     rm -rf cache/build_venv
 fi
 
-pyvenv cache/build_venv
+python3.5 -m venv cache/build_venv
 
 source cache/build_venv/bin/activate
 
