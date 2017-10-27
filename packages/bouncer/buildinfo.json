@@ -23,7 +23,7 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "d57d5e7e5aacb46715b166d64a640e2fce3a1084",
+      "ref": "8a13490b110273cf0165f31dab6a93cce5816d9d",
       "ref_origin": "master"
     },
     "python3-saml": {

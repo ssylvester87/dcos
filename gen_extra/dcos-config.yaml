@@ -190,7 +190,8 @@ package:
           "sslcert": "/run/dcos/pki/cockroach/client.root.crt",
           "sslrootcert": "/run/dcos/pki/cockroach/ca.crt",
           "sslkey": "/run/dcos/pki/cockroach/client.root.key"
-        }
+        },
+        "ALEMBIC_DIR_PATH": "alembic"
       }
   - path: /etc/dcos-secrets.env
     content: |
