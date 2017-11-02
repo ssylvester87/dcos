@@ -118,11 +118,22 @@ class TestCustomCACert:
             config['ca_certificate_chain_path'] = str(installer_chain_path)
             files_to_copy_to_installer[chain_path] = installer_chain_path
 
+        # Add a private key required for custom CA certificate installation
+        # to a well known location on a master node.
+        # DCOS-18081: Once the dcos-e2e supports working with launched nodes
+        # before running an installation, remove this custom master mounts
+        # and copy the private key file onto a master node before installation.
+        dcos_docker_backend.custom_master_mounts = {
+            str(ca_key_path): {
+                'bind': str(master_key_path),
+                'mode': 'ro',
+            },
+        }
+
         with Cluster(
             log_output_live=True,
             extra_config=config,
             files_to_copy_to_installer=files_to_copy_to_installer,
-            files_to_copy_to_masters={ca_key_path: master_key_path},
             cluster_backend=dcos_docker_backend,
             generate_config_path=artifact_path,
         ) as cluster:
