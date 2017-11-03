@@ -9,6 +9,7 @@
     "python-lxml",
     "python-xmlsec",
     "python-passlib",
+    "python-dateutil",
     "python-pycryptodomex",
     "python-retrying",
     "python-pyyaml",
@@ -22,7 +23,7 @@
     "bouncer": {
       "kind": "git",
       "git": "git@github.com:mesosphere/bouncer.git",
-      "ref": "d57d5e7e5aacb46715b166d64a640e2fce3a1084",
+      "ref": "8a13490b110273cf0165f31dab6a93cce5816d9d",
       "ref_origin": "master"
     },
     "python3-saml": {
@@ -87,6 +88,21 @@
       "kind": "url_extract",
       "url": "https://pypi.python.org/packages/ce/46/eaf163b7f4db1e7dc648f1036902892c91a99f2ee7a5191af0eb9cf39a2e/SQLAlchemy-Utils-0.32.14.tar.gz",
       "sha1": "cf311246998669ed1f97922b2171e5038b9717a5"
+    },
+    "mako": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/eb/f3/67579bb486517c0d49547f9697e36582cd19dafb5df9e687ed8e22de57fa/Mako-1.0.7.tar.gz",
+      "sha1": "bf0c1f4cdfca4dd37bc0c9f83e984a0558268b42"
+    },
+    "python-editor": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/65/1e/adf6e000ea5dc909aa420352d6ba37f16434c8a3c2fa030445411a1ed545/python-editor-1.0.3.tar.gz",
+      "sha1": "018e3c55a09ce6ac6531e9337bfa29a252aacdc2"
+    },
+    "alembic": {
+      "kind": "url_extract",
+      "url": "https://pypi.python.org/packages/52/ec/4514b7b9a849e9b35ebf60888c9a1cf8262e927e9a9c8f894ffbf5a76ec7/alembic-0.9.5.tar.gz",
+      "sha1": "25df8e5085ed47a87d6af47ae906f89079123d5c"
     },
     "cockroachdb-python": {
       "kind": "url_extract",
