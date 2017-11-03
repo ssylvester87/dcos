@@ -2,7 +2,7 @@
 
 import groovy.json.JsonSlurperClassic
 
-@Library('sec_ci_libs') _
+@Library('sec_ci_libs@v2-latest') _
 
 def master_branches = ["master", ] as String[]
 
@@ -23,7 +23,7 @@ def jsonParse(def json) {
 def builders = [:]
 
 builders['adminrouter'] = {
-    task_wrapper('mesos-sec', master_branches) {
+    task_wrapper('mesos-sec', master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-security-ci') {
         stage('Admin Router: Cleanup workspace') {
             deleteDir()
         }
@@ -84,7 +84,7 @@ builders['adminrouter'] = {
 }
 
 builders['gen_extra'] = {
-    task_wrapper('mesos-sec', master_branches) {
+    task_wrapper('mesos-sec', master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-security-ci') {
         stage('gen_extra: Cleanup workspace') {
             deleteDir()
         }

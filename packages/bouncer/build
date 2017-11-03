@@ -28,6 +28,9 @@ for package in \
     ldap3 \
     sqlalchemy \
     sqlalchemy-utils \
+    mako \
+    python-editor \
+    alembic \
     cockroachdb-python \
     psycopg2
 do
