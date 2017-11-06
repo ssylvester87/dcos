@@ -23,7 +23,7 @@ rm golang.tar.gz
 cd /pkg/src/cockroach
 
 # Build the cockroach binary.
-make build
+make build TYPE=portable
 
 # Copy the cockroach binary to the the package bin directory.
 mkdir -p $PKG_PATH/bin
