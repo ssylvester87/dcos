@@ -439,8 +439,19 @@ class Bootstrapper(object):
             'private_keys': private_keys
         }
 
+        # DCOS-17192: Do not store the private key in zookeeper when the private
+        # key was provided during the installation.
+        if isinstance(ca_key, utils.CustomCAPrivateKey):
+            secrets['CA']['RootCA'].pop('key', None)
+
         path = '/dcos/master/secrets'
         secrets = self._create_secrets(path, secrets, acl)
+
+        # Add back private key to in-memory self.secrets dict so it can be
+        # accessed by services bootstrap functions.
+        if isinstance(ca_key, utils.CustomCAPrivateKey):
+            secrets['CA']['RootCA']['key'] = ca_key
+
         utils.dict_merge(self.secrets, secrets)
         return secrets
 
@@ -530,7 +541,8 @@ class Bootstrapper(object):
             # Expect private key file at pre-defined location, read key.
             try:
                 with open(custom_ca_priv_key_path, 'rb') as custom_ca_key_file:
-                    ca_key = custom_ca_key_file.read().decode('utf-8')
+                    ca_key = utils.CustomCAPrivateKey(
+                        custom_ca_key_file.read().decode('utf-8'))
             except OSError as err:
                 raise CustomCAPrivateKeyMissingError(
                     'Failed to read custom CA certificate private key '

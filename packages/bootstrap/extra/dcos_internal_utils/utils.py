@@ -387,3 +387,11 @@ def jwks_to_public_keys(jwks):
         output += pubkey_pem.decode('ascii')
 
     return output
+
+
+class CustomCAPrivateKey(str):
+    """
+    This class is used to distinguish between a private key that was provided by
+    an operator and a private key that was generated as part of bootstrap.
+    """
+    pass
