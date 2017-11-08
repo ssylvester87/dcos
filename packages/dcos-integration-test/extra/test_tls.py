@@ -242,6 +242,24 @@ def test_cert_hostname_verification(netloc, superuser_api_session):
     ssl.match_hostname(certdict, netloc.host)
 
 
+@pytest.mark.parametrize('netloc', tls_netlocs, ids=tls_netlocs_ids)
+def test_tls_compression_disabled(netloc):
+    """
+    TLS connection is negotiated with compression disabled. This is a mitigation
+    for the `CRIME` TLS vulnerability.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(2)
+
+    ss = ssl.wrap_socket(s, do_handshake_on_connect=True)
+    with s:
+        ss.connect((netloc.host, netloc.port))
+        # Against OpenSSL 1.0.2 compiled with zlib support
+        # this is expected to fail with an AssertionError because
+        # `compression()` returns 'ZLIB'.
+        assert ss.compression() is None
+
+
 # Note(JP): SSLv2 and SSLv3 cannot be tested using this test runner (a CPython
 # process), because both are disabled here by default (because our OpenSSL build
 # that backs our CPython build has been compiled w/o SSLv2/v3 support). This
