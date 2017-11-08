@@ -1,6 +1,6 @@
 {
-  "git": "https://github.com/dcos/dcos",
+  "git": "https://github.com/mhrabovcin/dcos",
   "kind": "git",
-  "ref": "eed2f54786b317118f3b53a08d999f3870300b78",
-  "ref_origin": "1.10"
+  "ref": "d2291a02e57383e41236ae8459e4a286b2ee78b4",
+  "ref_origin": "mh/openssl/no-comp-1.10"
 }
