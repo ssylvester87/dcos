@@ -27,7 +27,6 @@ acl_endpoints = [
     ('/mesos/master/state-summary', 'dcos:adminrouter:ops:mesos'),
     ('/mesos_dns/v1/services/_scheduler-alwaysthere._tcp.marathon.mesos',
      'dcos:adminrouter:ops:mesos-dns'),
-    ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/networking/api/v1/foo/bar', 'dcos:adminrouter:ops:networking'),
     ('/package/foo/bar', 'dcos:adminrouter:package'),
     ('/pkgpanda/foo/bar', "dcos:adminrouter:ops:pkgpanda"),
@@ -47,6 +46,7 @@ acl_endpoints = [
 
 authed_endpoints = [
     ('/capabilities', 'dcos:adminrouter:capabilities'),
+    ('/metadata', "dcos:adminrouter:ops:metadata"),
     ('/navstar/lashup/key', 'dcos:adminrouter:navstar-lashup-key'),
     ('/secrets/v1', 'dcos:adminrouter:secrets'),
     ('/system/v1/agent/de1baf83-c36c-4d23-9cb0-f89f596cd6ab-S1/logs',
@@ -297,11 +297,13 @@ class TestAuthEnforcementEE:
             func_name='get_recorded_requests',
             )
 
-        last_request = requests[-1]
-        # In case of /acs/api/v1 two requests will be sent to the iam mock
-        # endpoint so work with first request that was issued by auth.lua
+        assert len(requests) > 0, "IAM was not queried!"
         if path.startswith('/acs/api/v1/'):
+            # In case of /acs/api/v1 two requests will be sent to the iam mock
+            # endpoint so work with first request that was issued by auth.lua
             last_request = requests[-2]
+        else:
+            last_request = requests[-1]
 
         header_names = set(map(lambda h: h[0], last_request["headers"]))
         assert "CUSTOM_HEADER" not in header_names

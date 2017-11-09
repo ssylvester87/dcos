@@ -333,9 +333,13 @@ function _M.init(use_auth)
     end
 
     -- /metadata
+    res.access_metadata_endpoint = function()
+        return res.do_authn_or_exit("dcos:adminrouter:ops:metadata");
+    end
+
     -- /dcos-metadata/bootstrap-config.json
     -- /pkgpanda/active.buildinfo.full.json
-    res.access_metadata_endpoint = function()
+    res.access_misc_metadata_endpoint = function()
         return res.do_authn_and_authz_or_exit("dcos:adminrouter:ops:metadata");
     end
 
