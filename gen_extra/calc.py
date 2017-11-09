@@ -754,7 +754,15 @@ entry = {
         'ca_certificate': calculate_ca_certificate,
         'ca_certificate_enabled': calculate_ca_certificate_enabled,
         'check_config': calculate_check_config
-    }
+    },
+    'secret': [
+        'superuser_password_hash',
+        'zk_super_credentials',
+        'zk_master_credentials',
+        'zk_agent_credentials',
+        'zk_super_digest_jvmflags',
+        'zk_agent_digest',
+    ]
 }
 
 provider_template_defaults = {
