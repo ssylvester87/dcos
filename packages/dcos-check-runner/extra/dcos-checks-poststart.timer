@@ -1,5 +1,5 @@
 [Unit]
 Description=DC/OS Checks Timer: timer for DC/OS Checks service
 [Timer]
-OnCalendar=minutely
+OnCalendar=*:0/2
 AccuracySec=10
