@@ -27,13 +27,16 @@ LDFLAGS="-Wl,-rpath,/opt/mesosphere/lib" "/pkg/src/mesos/configure" \
   --with-boost=/opt/mesosphere/active/boost-libs \
   --disable-werror \
   --sbindir="$PKG_PATH/bin"
-make -j$NUM_CORES
 
-pushd 3rdparty/stout
+pushd 3rdparty
+make
+pushd stout
 make tests
 GLOG_v=2 ./stout-tests --gtest_filter="*Hardlinks" --verbose
 popd
+popd
 
+make -j$NUM_CORES
 make install
 
 cp src/java/target/mesos-*.jar "$libdir"
