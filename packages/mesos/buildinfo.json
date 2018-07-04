@@ -7,9 +7,9 @@
   ], 
   "single_source": {
     "kind": "git", 
-    "git": "https://github.com/apache/mesos", 
-    "ref": "22471b83a418e614b19a7ae50b73ee028dc7c363", 
-    "ref_origin": "master"
+    "git": "https://github.com/mesosphere/mesos.git",
+    "ref": "09a68b9ad893a7a041b0c555f14025018fe8c76d",
+    "ref_origin": "bbannier/strict_storage"
   }, 
   "environment": {
     "JAVA_LIBRARY_PATH": "/opt/mesosphere/lib", 
