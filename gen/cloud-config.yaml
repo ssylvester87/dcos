@@ -17,6 +17,7 @@ root:
       MaxLevelConsole=warning
       RateLimitInterval=1s
       RateLimitBurst=20000
+      ForwardToSyslog=no
   - path: /etc/rexray/config.yml
     permissions: "0644"
     content: {{ rexray_config_contents }}
