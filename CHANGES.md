@@ -16,6 +16,8 @@ Format of the entries must be.
 
 ### Fixed and improved
 
+* Node and cluster checks are executed in parallel. (DCOS_OSS-2239)
+
 * Enabled Windows-based pkgpanda builds. (DCOS_OSS-1899)
 
 * DC/OS Metrics: moved the prometheus producer from port 9273 to port 61091. (DCOS_OSS-2368)
@@ -33,6 +35,8 @@ Format of the entries must be.
 * Admin Router: It is now possible to disable HTTP request buffering for `/service/` endpoint requests through the DCOS_SERVICE_REQUEST_BUFFERING Marathon label. (DCOS_OSS-2420)
 
 * Admin Router: It is now possible to disable upstream request URL rewriting for `/service/` endpoint requests through the DCOS_SERVICE_REWRITE_REQUEST_URLS Marathon label. (DCOS_OSS-2420)
+
+* Fixed ftype=1 check for dcos-docker (DCOS_OSS-3549)
 
 
 ### Security Updates
@@ -52,8 +56,12 @@ Format of the entries must be.
 
 ### Notable changes
 
+* Replaced the dcos-diagnostics check runner with dcos-check-runner. (DCOS_OSS-3491)
+
 * Removed the DC/OS web installer. (DCOS_OSS-2256)
 
 * Updated Metronome to 0.5.0. (DCOS_OSS-2338)
 
 * Updated OTP version to 20.3.2 (DCOS_OSS-2378)
+
+* Updated REX-Ray version to 0.11.2 (DCOS_OSS-3597) [rexray v0.11.2](https://github.com/rexray/rexray/releases/tag/v0.11.2)
