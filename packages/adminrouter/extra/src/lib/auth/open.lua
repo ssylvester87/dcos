@@ -195,6 +195,11 @@ function _M.init(use_auth)
         return res.do_authn_and_authz_or_exit()
     end
 
+    -- /dcos-ui-service/v1/
+    res.access_dcos_ui_service_endpoint = function()
+        return res.do_authn_and_authz_or_exit("dcos:superuser");
+    end
+
     return res
 end
 

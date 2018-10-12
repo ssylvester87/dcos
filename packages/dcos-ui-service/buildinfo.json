@@ -1,0 +1,8 @@
+{
+  "single_source": {
+    "kind": "url",
+    "url": "http://downloads.mesosphere.com/dcos-ui-update-service/latest/dcos-ui-update-service",
+    "sha1": "20d7e1ccdf95ce767779691acc585fe0b54fd18d"
+  },
+  "username": "dcos_ui_service"
+}
