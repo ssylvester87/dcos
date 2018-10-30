@@ -1,3 +1,14 @@
+## DC/OS 1.12.1
+
+### Notable changes
+
+### Fixed and improved
+
+* dcos-net continously restarting systemd-networkd on a bare-metal server with bond interfaces (DCOS_OSS-4398)
+
+### Security updates
+
+
 ## DC/OS 1.12.0
 
 ```
