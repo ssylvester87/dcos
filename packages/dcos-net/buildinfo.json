@@ -4,8 +4,8 @@
     "dcos-net": {
       "kind": "git",
       "git": "https://github.com/dcos/dcos-net.git",
-      "ref": "b053b4a08a23b052625a82a18393f8333828a5a2",
-      "ref_origin": "1.11.x"
+      "ref": "11614124d579d14100395314e230a2ba1855d2c3",
+      "ref_origin": "urbanserj/1.11/health-check-info"
     }
   },
   "sysctl": {
