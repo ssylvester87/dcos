@@ -15,6 +15,8 @@ Also the script prevents from duplicating iptables rules [3]
 The script allows to add configuration for networkd
 """
 
+import datetime
+import filecmp
 import os
 import shutil
 import subprocess
@@ -50,7 +52,7 @@ def main():
 def add_networkd_config(src):
     networkd = b'systemd-networkd.service'
 
-    # check if there is networkd
+    # Check if there is networkd
     result = subprocess.run(['systemctl', 'list-unit-files', networkd],
                             stdout=subprocess.PIPE)
     if result.returncode != 0:
@@ -58,10 +60,12 @@ def add_networkd_config(src):
     if networkd not in result.stdout:
         return result
 
-    # copy the configuration
+    # Copy the configuration
     bname = os.path.basename(src)
     dst = os.path.join('/etc/systemd/network', bname)
-    shutil.copyfile(src, dst)
+
+    if not safe_filecmp(src, dst):
+        shutil.copyfile(src, dst)
 
     # Restart networkd only if it's active
     result = subprocess.run(['systemctl', 'is-active', networkd],
@@ -70,7 +74,27 @@ def add_networkd_config(src):
         result.returncode = 0
         return result
 
+    # Restart networkd only if the configuration is updated
+    mtime = os.path.getmtime(dst)
+    result = subprocess.run(['systemctl', 'show', '--value',
+                             '--property', 'ActiveEnterTimestamp',
+                             networkd], stdout=subprocess.PIPE)
+    if result.returncode == 0:
+        started = datetime.datetime.strptime(
+            result.stdout.strip().decode(),
+            '%a %Y-%m-%d %H:%M:%S %Z')
+        if started.timestamp() > mtime:
+            return result
+
+    # Restart networkd
     return subprocess.run(['systemctl', 'restart', networkd])
+
+
+def safe_filecmp(src, dst):
+    try:
+        return filecmp.cmp(src, dst)
+    except:
+        return False
 
 
 if __name__ == "__main__":
